@@ -309,7 +309,7 @@
                                 </div>\n\
                                 <div class="col-sm-3 form-group float-label-control" style="padding-top:10px;">\n\
                                     <label for="">Amount</label>\n\
-                                    <input type="number" name="invoiceServiceAmtEdit[]" class="form-control form-group invoiceServiceAmtEdit" id="invoiceServiceAmtEdit" value="' + amt + '" placeholder="Amount">\n\
+                                    <input type="number" name="invoiceServiceAmtEdit[]" class="form-control form-group invoiceServiceAmtEdit" id="invoiceServiceAmtEdit" value="' + amt + '" placeholder="Amount" step="0.01" inputmode="decimal">\n\
                                 </div>\n\
                                 <div class="col-sm-1 removeServiceEditCol">\n\
                                     <a class="removeServiceEditAmt pull-right" id="removeServiceEditAmt" style="cursor: pointer;">\n\

@@ -102,10 +102,10 @@ $service_tax = "";
 $total_amt = 0;
 
 if (isset($_POST['netPrice'])) {
-    $net_price = floor($_POST['netPrice']);
+    $net_price = round((float) $_POST['netPrice'], 2);
 }
 if (isset($_POST['netPriceEdit'])) {
-    $net_price = floor($_POST['netPriceEdit']);
+    $net_price = round((float) $_POST['netPriceEdit'], 2);
 }
 if (isset($_POST['taxType'])) {
     $tax_type = $_POST['taxType'];
@@ -114,12 +114,12 @@ if (isset($_POST['taxTypeEdit'])) {
     $tax_type = $_POST['taxTypeEdit'];
 }
 if (isset($_POST['serviceTax'])) {
-    $service_tax = floor($_POST['serviceTax']);
-    $total_amt = $net_price + $service_tax;
+    $service_tax = round((float) $_POST['serviceTax'], 2);
+    $total_amt = round($net_price + $service_tax, 2);
 }
 if (isset($_POST['serviceTaxEdit'])) {
-    $service_tax = floor($_POST['serviceTaxEdit']);
-    $total_amt = $net_price + $service_tax;
+    $service_tax = round((float) $_POST['serviceTaxEdit'], 2);
+    $total_amt = round($net_price + $service_tax, 2);
 }
 
 //echo $_POST['invoiceFirmId'];
@@ -163,10 +163,12 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
             if ($serviceArray[$count] != "") {
                 $services = $services . $serviceArray[$count] . ',';
             }
-            if ($serviceAmtArray[$count] != "") {
-                $svcamount = $svcamount . $serviceAmtArray[$count] . ',';
+            $serviceAmountRaw = trim($serviceAmtArray[$count]);
+            if ($serviceAmountRaw !== "") {
+                $serviceAmountValue = number_format((float) $serviceAmountRaw, 2, '.', '');
+                $svcamount = $svcamount . $serviceAmountValue . ',';
 
-                $serviceRow = $serviceRow . '<tr><td>' . ($count + 1) . '</td><td>' . $serviceArray[$count] . '</td><td>' . $serviceAmtArray[$count] . '/-</td></tr>';
+                $serviceRow = $serviceRow . '<tr><td>' . ($count + 1) . '</td><td>' . $serviceArray[$count] . '</td><td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
                 $count = $count + 1;
             }
         }
@@ -179,7 +181,8 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
     $statement->bindParam(':id', $_POST['invoiceEditId']);
     $statement->bindParam(':customerId', $customerId);
     $statement->bindParam(':customerName', $customerName);
-    $statement->bindParam(':invoicedate', date("Y-m-d", strtotime($quotation_date)));
+    $invoiceDate = date("Y-m-d", strtotime($quotation_date));
+    $statement->bindParam(':invoicedate', $invoiceDate);
     $statement->bindParam(':netprice', $net_price);
     $statement->bindParam(':servicetax', $service_tax);
     $statement->bindParam(':invsvc', $services);
@@ -233,10 +236,12 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
             if ($serviceArray[$count] != "") {
                 $services = $services . $serviceArray[$count] . ',';
             }
-            if ($serviceAmtArray[$count] != "") {
-                $svcamount = $svcamount . $serviceAmtArray[$count] . ',';
+            $serviceAmountRaw = trim($serviceAmtArray[$count]);
+            if ($serviceAmountRaw !== "") {
+                $serviceAmountValue = number_format((float) $serviceAmountRaw, 2, '.', '');
+                $svcamount = $svcamount . $serviceAmountValue . ',';
 
-                $serviceRow = $serviceRow . '<tr><td>' . ($count + 1) . '</td><td>' . $serviceArray[$count] . '</td><td>' . $serviceAmtArray[$count] . '/-</td></tr>';
+                $serviceRow = $serviceRow . '<tr><td>' . ($count + 1) . '</td><td>' . $serviceArray[$count] . '</td><td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
                 $count = $count + 1;
             }
         }
@@ -355,7 +360,7 @@ $html = '
 		<td style="vertical-align:top; position:relative; padding:0;"><div style="padding:10px;"> INVOICE NO: ' . $abbrevation . '/' . $newInvoice . '</div><hr style="border:1px solid #000; margin:0; width:100%;"/><div style="position:absolute; bottom:5px; left:10px;">DATE: ' . $quotation_date . '</div></td>
 	</tr>
     <tr><td colspan="3"><b>' . 
-    ($invoiceDetails['firm_id'] == 34 
+    ($firm_id == 34 
         ? 'HSN / SAC</b> : 998311' 
         : 'CONSULTATION FEES</b> : Management System Services') . 
 '</td></tr>
@@ -443,31 +448,42 @@ $pdf->Output('invoice.pdf', 'I');
 //============================================================+
 
 function convertcash($num, $currency) {
-    if (strlen($num) > 3) {
-        $lastthree = substr($num, strlen($num) - 3, strlen($num));
-        $restunits = substr($num, 0, strlen($num) - 3); // extracts the last three digits 
-        $restunits = (strlen($restunits) % 2 == 1) ? "0" . $restunits : $restunits; // explodes the remaining digits in 2's formats, adds a zero in the beginning to maintain the 2's grouping. 
+    if ($num === "" || $num === null) {
+        $num = 0;
+    }
+    $normalized = number_format((float) $num, 2, '.', '');
+    $parts = explode('.', $normalized);
+    $intPart = $parts[0];
+    $decPart = $parts[1];
+    $negative = false;
+
+    if (strpos($intPart, '-') === 0) {
+        $negative = true;
+        $intPart = substr($intPart, 1);
+    }
+
+    if (strlen($intPart) > 3) {
+        $lastthree = substr($intPart, strlen($intPart) - 3, strlen($intPart));
+        $restunits = substr($intPart, 0, strlen($intPart) - 3);
+        $restunits = (strlen($restunits) % 2 == 1) ? "0" . $restunits : $restunits;
         $explrestunits = "";
         $expunit = str_split($restunits, 2);
         for ($i = 0; $i < sizeof($expunit); $i++) {
-            $explrestunits .= (int) $expunit[$i] . ","; // creates each of the 2's group and adds a comma to the end 
+            $explrestunits .= (int) $expunit[$i] . ",";
         }
-
         $thecash = $explrestunits . $lastthree;
     } else {
-        $thecash = $num;
+        $thecash = $intPart;
     }
 
-    return $currency . $thecash; // writes the final format where $currency is the currency symbol. 
+    if ($negative) {
+        $thecash = '-' . $thecash;
+    }
+
+    return $currency . $thecash . '.' . $decPart;
 }
 
 function convertToWord($number) {
-    $no = round($number);
-    $point = round($number - $no, 2) * 100;
-    $hundred = null;
-    $digits_1 = strlen($no);
-    $i = 0;
-    $str = array();
     $words = array('0' => '', '1' => 'One', '2' => 'Two',
         '3' => 'Three', '4' => 'Four', '5' => 'Five', '6' => 'Six',
         '7' => 'Seven', '8' => 'Eight', '9' => 'Nine',
@@ -479,26 +495,50 @@ function convertToWord($number) {
         '60' => 'Sixty', '70' => 'Seventy',
         '80' => 'Eighty', '90' => 'Ninety');
     $digits = array('', 'Hundred', 'Thousand', 'Lakh', 'Crore');
-    while ($i < $digits_1) {
-        $divider = ($i == 2) ? 10 : 100;
-        $number = floor($no % $divider);
-        $no = floor($no / $divider);
-        $i += ($divider == 10) ? 1 : 2;
-        if ($number) {
-            $plural = (($counter = count($str)) && $number > 9) ? 's' : null;
-            $hundred = ($counter == 1 && $str[0]) ? ' and ' : null;
-            $str [] = ($number < 21) ? $words[$number] .
-                    " " . $digits[$counter] . $plural . " " . $hundred :
-                    $words[floor($number / 10) * 10]
-                    . " " . $words[$number % 10] . " "
-                    . $digits[$counter] . $plural . " " . $hundred;
-        } else
-            $str[] = null;
+    $formatted = number_format((float) $number, 2, '.', '');
+    $parts = explode('.', $formatted);
+    $no = (int) $parts[0];
+    $point = (int) $parts[1];
+
+    if ($no == 0) {
+        $result = 'Zero';
+    } else {
+        $digits_1 = strlen($no);
+        $i = 0;
+        $str = array();
+        while ($i < $digits_1) {
+            $divider = ($i == 2) ? 10 : 100;
+            $number = floor($no % $divider);
+            $no = floor($no / $divider);
+            $i += ($divider == 10) ? 1 : 2;
+            if ($number) {
+                $plural = (($counter = count($str)) && $number > 9) ? 's' : null;
+                $hundred = ($counter == 1 && $str[0]) ? ' and ' : null;
+                $str[] = ($number < 21) ? $words[$number] .
+                        " " . $digits[$counter] . $plural . " " . $hundred :
+                        $words[floor($number / 10) * 10]
+                        . " " . $words[$number % 10] . " "
+                        . $digits[$counter] . $plural . " " . $hundred;
+            } else {
+                $str[] = null;
+            }
+        }
+        $str = array_reverse($str);
+        $result = trim(implode('', $str));
     }
-    $str = array_reverse($str);
-    $result = implode('', $str);
-    $points = ($point) ?
-            "." . $words[$point / 10] . " " .
-            $words[$point = $point % 10] : '';
-    return $result . "Rupees  " . $points . " Only";
+
+    $paiseWords = '';
+    if ($point > 0) {
+        if ($point < 21) {
+            $paiseWords = $words[$point];
+        } else {
+            $paiseWords = trim($words[floor($point / 10) * 10] . " " . $words[$point % 10]);
+        }
+    }
+
+    $output = $result . " Rupees";
+    if ($paiseWords !== '') {
+        $output .= " and " . $paiseWords . " Paise";
+    }
+    return trim($output) . " Only";
 }

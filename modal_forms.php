@@ -251,7 +251,7 @@ $listOfUsers = $statement->fetchAll();
                             </div>
                             <div class="col-sm-4 form-group float-label-control" style="padding-top:10px;">
                                 <label for="">Amount</label>
-                                <input type="number" name="invoiceServiceAmt[]" class="form-control form-group invoiceServiceAmt" placeholder="Amount">
+                                <input type="number" name="invoiceServiceAmt[]" class="form-control form-group invoiceServiceAmt" placeholder="Amount" step="0.01" inputmode="decimal">
                             </div>
                         </div>
                     </div>
@@ -273,7 +273,7 @@ $listOfUsers = $statement->fetchAll();
                     <div class="row">
                         <div class="col-sm-6 form-group float-label-control">
                             <label>Net Price</label>
-                            <input type="number" class="netPrice" id="netPrice" placeholder="Net Price" name="netPrice" readonly>
+                            <input type="number" class="netPrice" id="netPrice" placeholder="Net Price" name="netPrice" readonly step="0.01" inputmode="decimal">
                         </div>
                         <div class="col-sm-6 form-group float-label-control">
                             <label>GST/TAX</label>
@@ -353,7 +353,7 @@ $listOfUsers = $statement->fetchAll();
             </div>
             <div class="col-sm-4 form-group float-label-control" style="padding-top:10px;">
               <label>Amount</label>
-              <input type="number" name="invoiceServiceAmtEdit[]" class="form-control form-group invoiceServiceAmtEdit" id="invoiceServiceAmtEdit" placeholder="Amount">
+              <input type="number" name="invoiceServiceAmtEdit[]" class="form-control form-group invoiceServiceAmtEdit" id="invoiceServiceAmtEdit" placeholder="Amount" step="0.01" inputmode="decimal">
             </div>
           </div>
 
@@ -362,7 +362,7 @@ $listOfUsers = $statement->fetchAll();
           <div class="row">
             <div class="col-sm-6 form-group float-label-control">
               <label>Net Price</label>
-              <input type="number" class="netPriceEdit" id="netPriceEdit" name="netPriceEdit" placeholder="Net Price" readonly>
+              <input type="number" class="netPriceEdit" id="netPriceEdit" name="netPriceEdit" placeholder="Net Price" readonly step="0.01" inputmode="decimal">
             </div>
             <div class="col-sm-6 form-group float-label-control">
 <input type="hidden" class="serviceTaxEdit" id="serviceTaxEdit" name="serviceTaxEdit">
@@ -3032,7 +3032,7 @@ $('body').on('change', 'input[name="taxTypeEdit"]', function () {
                                 </div>\n\
                                 <div class="col-sm-3 form-group float-label-control" style="padding-top:10px;">\n\
                                     <label for="">Amount</label>\n\
-                                    <input type="number" name="invoiceServiceAmtEdit[]" class="form-control form-group invoiceServiceAmtEdit" id="invoiceServiceAmtEdit" value="" placeholder="Amount">\n\
+                                    <input type="number" name="invoiceServiceAmtEdit[]" class="form-control form-group invoiceServiceAmtEdit" id="invoiceServiceAmtEdit" value="" placeholder="Amount" step="0.01" inputmode="decimal">\n\
                                 </div>\n\
                                 <div class="col-sm-1 removeServiceEditCol">\n\
                                     <a class="removeServiceEditAmt pull-right" id="removeServiceEditAmt" style="cursor: pointer;">\n\
@@ -3061,7 +3061,7 @@ $('body').on('change', 'input[name="taxTypeEdit"]', function () {
         </div>\n\
         <div class = "col-sm-3 form-group float-label-control" style = "padding-top:10px;" > \n\
         <label for = "" > Amount </label>\n\
-        <input type = "text" name = "invoiceServiceAmt[]" class = "form-control form-group invoiceServiceAmt" id = "invoiceService" placeholder = "Amount" > </input>\n\
+        <input type = "number" name = "invoiceServiceAmt[]" class = "form-control form-group invoiceServiceAmt" id = "invoiceService" placeholder = "Amount" step="0.01" inputmode="decimal"> </input>\n\
         </div>\n\
         <div class="col-sm-1 removeServiceAmtCol">\n\
         <a class="removeServiceAmt pull-right" id="removeServiceAmt" style="cursor: pointer;">\n\
