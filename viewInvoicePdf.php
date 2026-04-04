@@ -330,7 +330,11 @@ function convertcash($num, $currency) {
         $explrestunits = "";
         $expunit = str_split($restunits, 2);
         for ($i = 0; $i < sizeof($expunit); $i++) {
-            $explrestunits .= (int) $expunit[$i] . ",";
+            if ($i == 0) {
+                $explrestunits .= (int) $expunit[$i] . ",";
+            } else {
+                $explrestunits .= $expunit[$i] . ",";
+            }
         }
         $thecash = $explrestunits . $lastthree;
     } else {
