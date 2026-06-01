@@ -207,14 +207,51 @@ Follow me on Twitter @maridlcrmn
             margin: 0 !important;
             border: 0;
             border-radius: 0;
-            background: linear-gradient(135deg, #0f172a 0%, #123054 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14);
             overflow: visible;
-            min-height: 70px;
+            height: 80px;
+            min-height: 80px;
             width: 100% !important;
-            position: relative;
+            position: fixed !important;
+            top: 0 !important;
             left: 0;
             right: 0;
+            z-index: 1000 !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .public-nav.scrolled {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+            height: 75px !important;
+            min-height: 75px !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+
+        .public-nav.scrolled .navbar-nav > li > a {
+            color: #1e293b !important;
+        }
+
+        .public-nav.scrolled .navbar-nav > li > a:hover,
+        .public-nav.scrolled .navbar-nav > li > a:focus {
+            color: #0f172a !important;
+            background: rgba(59, 130, 246, 0.1) !important;
+        }
+
+        .public-nav.scrolled .navbar-nav > li > a.login-form {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .public-nav.scrolled .navbar-nav > li > a.login-form:hover,
+        .public-nav.scrolled .navbar-nav > li > a.login-form:focus {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        }
+
+        body {
+            padding-top: 80px !important;
         }
 
         .public-nav .container-fluid {
@@ -226,6 +263,8 @@ Follow me on Twitter @maridlcrmn
             align-items: center;
             justify-content: space-between;
             margin: 0 !important;
+            min-height: 80px;
+            height: 100%;
         }
 
         .public-nav .navbar-header {
@@ -233,18 +272,45 @@ Follow me on Twitter @maridlcrmn
             align-items: center;
         }
 
-        .navbar-brand {
-            padding: 10px 0;
+        .public-nav .navbar-brand {
+            padding: 5px 0;
             margin: 0;
-            height: auto;
+            height: 100%;
             display: flex;
             align-items: center;
+            line-height: 0;
         }
 
-        .navbar-brand .logo-img {
-            height: 50px;
-            width: auto;
-            display: block;
+        .public-nav .navbar-brand .logo-img,
+        .public-nav .navbar-brand img {
+            height: auto !important;
+            max-height: calc((100% - 10px) * 0.5) !important;
+            width: auto !important;
+            max-width: 110px !important;
+            display: block !important;
+            object-fit: contain !important;
+            transition: all 0.3s ease !important;
+            border: 0 !important;
+            outline: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            border-radius: 0 !important;
+        }
+
+        .public-nav .navbar-brand:focus,
+        .public-nav .navbar-brand:active {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .public-nav.scrolled .navbar-brand {
+            height: 100%;
+        }
+
+        .public-nav.scrolled .navbar-brand .logo-img,
+        .public-nav.scrolled .navbar-brand img {
+            height: 100% !important;
+            max-height: 100% !important;
         }
 
         .public-nav .navbar-collapse {
@@ -319,6 +385,48 @@ Follow me on Twitter @maridlcrmn
                 padding-top: 10px;
             }
 
+            body {
+                padding-top: 75px !important;
+            }
+
+            .public-nav {
+                height: 75px !important;
+                min-height: 75px !important;
+            }
+
+            .public-nav.scrolled {
+                height: 70px !important;
+                min-height: 70px !important;
+            }
+
+            .public-nav .container-fluid {
+                min-height: 75px;
+                height: 100%;
+            }
+
+            .public-nav.scrolled .navbar-collapse {
+                background: rgba(255, 255, 255, 0.98) !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+
+            .public-nav.scrolled .navbar-nav > li > a {
+                color: #1e293b !important;
+            }
+
+            .public-nav.scrolled .navbar-nav > li > a:hover {
+                background: rgba(59, 130, 246, 0.1) !important;
+                color: #0f172a !important;
+            }
+
+            .public-nav.scrolled .navbar-toggle {
+                border-color: #cbd5e1 !important;
+                background: rgba(59, 130, 246, 0.1) !important;
+            }
+
+            .public-nav.scrolled .navbar-toggle .icon-bar {
+                background: #1e293b !important;
+            }
+
             .public-nav .container-fluid {
                 padding-left: 16px;
                 padding-right: 16px;
@@ -329,8 +437,24 @@ Follow me on Twitter @maridlcrmn
                 display: block;
             }
 
-            .navbar-brand .logo-img {
-                height: 40px;
+            .public-nav .navbar-brand {
+                height: 100%;
+            }
+
+            .public-nav .navbar-brand .logo-img,
+            .public-nav .navbar-brand img {
+                height: 100% !important;
+                max-height: 100% !important;
+            }
+
+            .public-nav.scrolled .navbar-brand {
+                height: 100%;
+            }
+
+            .public-nav.scrolled .navbar-brand .logo-img,
+            .public-nav.scrolled .navbar-brand img {
+                height: 100% !important;
+                max-height: 100% !important;
             }
 
             .public-nav .navbar-collapse {
@@ -368,13 +492,29 @@ Follow me on Twitter @maridlcrmn
     </style>
     <script type="text/javascript">
         // Enable login button after reCAPTCHA verification
-        function enableLoginBtn() {
+        // Note: pages can contain multiple reCAPTCHA widgets (e.g. contact form + this login modal).
+        // Use the token passed to THIS widget's callback to avoid checking the wrong widget.
+        window.loginModalRecaptchaToken = '';
+
+        function enableLoginBtn(token) {
+            window.loginModalRecaptchaToken = token || '';
             var btn = document.getElementById('loginSubmitBtn');
             if (btn) {
                 btn.disabled = false;
                 btn.value = 'Login';
                 btn.style.opacity = '1';
                 btn.style.cursor = 'pointer';
+            }
+        }
+
+        function disableLoginBtn() {
+            window.loginModalRecaptchaToken = '';
+            var btn = document.getElementById('loginSubmitBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.value = 'Please Verify Captcha';
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
             }
         }
         
@@ -399,8 +539,7 @@ Follow me on Twitter @maridlcrmn
             
             // reCAPTCHA v2 validation for login form
             $("#loginForm").submit(function(e) {
-                var recaptchaResponse = grecaptcha.getResponse();
-                if (recaptchaResponse.length === 0) {
+                if (!window.loginModalRecaptchaToken) {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'warning',
@@ -409,6 +548,15 @@ Follow me on Twitter @maridlcrmn
                         confirmButtonColor: '#3085d6'
                     });
                     return false;
+                }
+            });
+            
+            // Navbar scroll effect
+            $(window).scroll(function() {
+                if ($(window).scrollTop() > 50) {
+                    $('.public-nav').addClass('scrolled');
+                } else {
+                    $('.public-nav').removeClass('scrolled');
                 }
             });
         });
@@ -450,7 +598,7 @@ Follow me on Twitter @maridlcrmn
                                 </span>
                             </div>
                             <!-- Google reCAPTCHA v2 -->
-                            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-callback="enableLoginBtn" style="margin: 15px 0; transform:scale(0.95); transform-origin:0 0;"></div>
+                            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-callback="enableLoginBtn" data-expired-callback="disableLoginBtn" style="margin: 15px 0; transform:scale(0.95); transform-origin:0 0;"></div>
                             <input type="submit" name="login" id="loginSubmitBtn" class="login loginmodal-submit" value="Please Verify Captcha" disabled style="opacity: 0.6; cursor: not-allowed;" />
                         </form>                                        
                 </div>

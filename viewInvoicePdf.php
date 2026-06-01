@@ -120,7 +120,8 @@ $firmContact = $firmDetails['firm_contact'];
 $bank_name = $firmDetails['bank_name'];
 $bank_address = $firmDetails['bank_address'];
 $bank_account_no = $firmDetails['bank_account_no'];
-$ifsc_code = $firmDetails['ifsc_code'];
+
+$ifsc_code = $firmDetails['ifsc_code'];
 $micr_no = $firmDetails['micr_no'];
 $firmSign = $firmDetails['firmSignature'];
 $abbrevation = $firmDetails['firm_abbrevation'];
@@ -305,9 +306,7 @@ if ($invoiceDetails['firm_id'] == 34) {
 $pdf->writeHTML($html, true, false, true, false, '');
 $pdf->Output('invoice.pdf', 'I');
 
-//============================================================+
-// END OF FILE
-//============================================================+
+
 
 function convertcash($num, $currency) {
     if ($num === "" || $num === null) {

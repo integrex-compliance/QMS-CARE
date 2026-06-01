@@ -16,12 +16,13 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <?php
-        $pageIdentifier = "contact";
-        include('./sourceheader.php');
-        ?>
+    <?php
+    $pageIdentifier = "contact";
+    
+    include('./sourceheader.php');
+    ?>
 
+    <div class="contact-page-wrapper">
         <!-- Hero Section -->
         <div class="contact-hero">
             <div class="hero-content">
@@ -61,7 +62,7 @@
 
                         <!-- Google reCAPTCHA v2 -->
                         <div class="form-group">
-                            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-callback="enableContactBtn"></div>
+                            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-callback="enableContactBtn" data-expired-callback="disableContactBtn"></div>
                         </div>
 
                         <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
@@ -123,12 +124,16 @@
             </div>
         </div>
 
-        <?php include('./sourcefootr.php') ?>
     </div>
+
+    <?php include('./sourcefootr.php') ?>
     
     <script>
         // Enable contact button after reCAPTCHA verification
-        function enableContactBtn() {
+        window.contactRecaptchaToken = '';
+
+        function enableContactBtn(token) {
+            window.contactRecaptchaToken = token || '';
             var btn = document.getElementById('contactSubmitBtn');
             if (btn) {
                 btn.disabled = false;
@@ -137,11 +142,21 @@
                 btn.style.cursor = 'pointer';
             }
         }
+
+        function disableContactBtn() {
+            window.contactRecaptchaToken = '';
+            var btn = document.getElementById('contactSubmitBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>Please Verify Captcha</span><i class="fas fa-shield-alt"></i>';
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
+            }
+        }
         
         $(document).ready(function() {
             $("#contactForm").submit(function(e) {
-                var recaptchaResponse = grecaptcha.getResponse();
-                if (recaptchaResponse.length === 0) {
+                if (!window.contactRecaptchaToken) {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'warning',

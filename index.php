@@ -29,10 +29,7 @@
                         <span class="hero-title-highlight">Expand Your Reach</span>
                     </h1>
                     <p class="hero-subtitle">Leading ISO Consultants Delivering 100% Customized Quality Management Solutions</p>
-                    <div class="hero-cta">
-                        <button class="cta-button primary">Get Started</button>
-                        <button class="cta-button secondary">Learn More</button>
-                    </div>
+                    
                 </div>
                 <div class="hero-image-right">
                     <img src="images/At the office-amico.png" alt="Quality Management Consulting" class="hero-illustration-img" />
@@ -153,6 +150,14 @@
                             <h3>Proven Expertise</h3>
                             <p>Our team has handled projects delivering the same level of implementation effectiveness. Our consultants combine the unique differentiator that is functional expertise on various ISO standards and technical expertise on various industry domains. This is the reason we are able to constantly maintain the market leadership in terms of market share for ISO consulting.</p>
                         </div>
+
+                        <div class="content-block">
+                            <div class="content-block-icon">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <h3>Client-Centric Approach</h3>
+                            <p>We believe in building long-term partnerships with our clients. Our dedicated support team ensures seamless communication throughout the certification journey. From initial consultation to post-certification support, we remain committed to your success, providing ongoing guidance and assistance to help you maintain compliance and achieve continuous improvement.</p>
+                        </div>
                     </div>
                 </div>
                 <div class="bg-image-overlay">
@@ -221,6 +226,15 @@
                             <p class="approach-text">Easy to implement solutions and timely project completion</p>
                         </div>
                     </li>
+                    <li class="approach-item">
+                        <div class="approach-number">6</div>
+                        <div class="approach-content">
+                            <div class="approach-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <p class="approach-text">Comprehensive risk management and compliance assurance throughout the certification process</p>
+                        </div>
+                    </li>
                 </ul>
             </section>
 
@@ -273,6 +287,18 @@
                             <div class="feature-badge">
                                 <i class="fas fa-check"></i>
                                 Proven
+                            </div>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <h3 class="feature-title">Timely Delivery</h3>
+                            <p class="feature-description">Committed to meeting deadlines with efficient project management and streamlined processes</p>
+                            <div class="feature-badge">
+                                <i class="fas fa-check"></i>
+                                Reliable
                             </div>
                         </div>
                     </div>

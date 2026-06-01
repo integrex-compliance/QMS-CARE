@@ -162,7 +162,12 @@
 
                         <!-- Google reCAPTCHA v2 -->
                         <div class="form-group recaptcha-wrapper">
-                            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-callback="enableLoginPageBtn"></div>
+                            <div
+                                class="g-recaptcha"
+                                data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                                data-callback="enableLoginPageBtn"
+                                data-expired-callback="disableLoginPageBtn"
+                            ></div>
                         </div>
 
                         <button type="submit" name="login" id="loginPageSubmitBtn" class="login-btn" disabled style="opacity: 0.6; cursor: not-allowed;">
@@ -183,13 +188,30 @@
 
     <script>
         // Enable login button after reCAPTCHA verification
-        function enableLoginPageBtn() {
+        // Note: page can have multiple reCAPTCHA widgets (login modal + this form).
+        // Use the token passed to THIS widget's callback, instead of grecaptcha.getResponse()
+        // which can return the first widget's response.
+        window.loginPageRecaptchaToken = '';
+
+        function enableLoginPageBtn(token) {
+            window.loginPageRecaptchaToken = token || '';
             var btn = document.getElementById('loginPageSubmitBtn');
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Login to Account</span><i class="fas fa-arrow-right"></i>';
                 btn.style.opacity = '1';
                 btn.style.cursor = 'pointer';
+            }
+        }
+
+        function disableLoginPageBtn() {
+            window.loginPageRecaptchaToken = '';
+            var btn = document.getElementById('loginPageSubmitBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>Please Verify Captcha</span><i class="fas fa-shield-alt"></i>';
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
             }
         }
         
@@ -238,8 +260,8 @@
             const loginForm = document.getElementById('loginPageForm');
             if (loginForm) {
                 loginForm.addEventListener('submit', function(e) {
-                    var recaptchaResponse = grecaptcha.getResponse();
-                    if (recaptchaResponse.length === 0) {
+                    // Use widget-specific token (see enableLoginPageBtn).
+                    if (!window.loginPageRecaptchaToken) {
                         e.preventDefault();
                         Swal.fire({
                             icon: 'warning',

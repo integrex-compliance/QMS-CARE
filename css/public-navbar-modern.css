@@ -112,11 +112,12 @@ body {
 .navbar-brand {
     display: flex !important;
     align-items: center !important;
-    padding: 15px 0 !important;
+    padding: 0 !important;
     height: 80px !important;
     transition: all 0.3s ease !important;
     text-decoration: none !important;
     float: left !important;
+    line-height: 0 !important;
 }
 
 .navbar-brand:hover,
@@ -128,15 +129,25 @@ body {
     height: 70px !important;
 }
 
-.logo-img {
-    height: 50px !important;
+.logo-img,
+.navbar-brand img {
+    height: auto !important;
+    max-height: calc((100% - 10px) * 0.5) !important;
     width: auto !important;
     margin-right: 12px !important;
     transition: all 0.3s ease !important;
+    object-fit: contain !important;
+    max-width: 110px !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
 }
 
 .navbar-modern.scrolled .logo-img {
-    height: 45px !important;
+    height: 100% !important;
+    max-height: 100% !important;
 }
 
 .brand-text {
@@ -194,9 +205,7 @@ body {
     transform: rotate(-45deg) translate(6px, -6px) !important;
 }
 
-/* ========================================
-   NAVBAR MENU ITEMS - FORCE OVERRIDE
-   ======================================== */
+
 
 .navbar-nav {
     margin: 0 !important;
@@ -270,9 +279,6 @@ body {
     transform: rotate(180deg) !important;
 }
 
-/* ========================================
-   DROPDOWN MENU - FORCE OVERRIDE
-   ======================================== */
 
 .navbar-nav .dropdown-menu {
     background: #fff !important;
@@ -350,9 +356,6 @@ body {
     height: 1px !important;
 }
 
-/* ========================================
-   LOGIN BUTTON - FORCE OVERRIDE
-   ======================================== */
 
 .login-btn-wrapper {
     margin-left: 15px !important;
@@ -393,9 +396,6 @@ body {
     margin-right: 6px !important;
 }
 
-/* ========================================
-   PAGE TITLE SECTION - FORCE OVERRIDE
-   ======================================== */
 
 .page-title-section {
     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
@@ -440,9 +440,7 @@ body {
     color: #fff !important;
 }
 
-/* ========================================
-   MOBILE RESPONSIVE - FORCE OVERRIDE
-   ======================================== */
+
 
 @media (max-width: 767px) {
     .top-bar {
@@ -465,11 +463,12 @@ body {
     
     .navbar-brand {
         height: 60px !important;
-        padding: 10px 0 !important;
+        padding: 0 !important;
     }
     
     .logo-img {
-        height: 40px !important;
+        height: 100% !important;
+        max-height: 100% !important;
     }
     
     .brand-text {
@@ -557,9 +556,7 @@ body {
     }
 }
 
-/* ========================================
-   CLEARFIX
-   ======================================== */
+
 
 .navbar-modern::after,
 .navbar-modern .container::after {
@@ -568,9 +565,7 @@ body {
     clear: both !important;
 }
 
-/* ========================================
-   SMOOTH ANIMATIONS
-   ======================================== */
+
 
 html {
     scroll-behavior: smooth !important;
