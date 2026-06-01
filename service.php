@@ -1,203 +1,253 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<!--
-Design by TEMPLATED
-http://templated.co
-Released for free under the Creative Commons Attribution License
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Quality Management Certification Services - ISO Consulting">
+    <title>Our Services - QMS Care</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/service-modern.css">
+</head>
 
-Name       : Retention 
-Description: A two-column, fixed-width design with dark color scheme.
-Version    : 1.0
-Released   : 20140221
+<body>
+    <?php
+    $pageIdentifier = "service";
+    include('./sourceheader.php');
+    ?>
+    
+    <div class="service-container">
+        <!-- Page Header -->
+        <section class="page-header">
+            <div class="header-content">
+                <div class="header-badge">
+                    <i class="fas fa-cogs"></i>
+                    Our Services
+                </div>
+                <h1 class="page-title">Quality Management Services</h1>
+                <p class="page-subtitle">Following are the services provided by Quality Management Certification</p>
+            </div>
+        </section>
 
--->
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <div class="content-grid">
+                
+                <!-- Main Services Grid -->
+                <div class="main-content">
+                    <div class="services-grid">
+                        <!-- Service Card 1 -->
+                        <a href="iso.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <h3 class="service-title">ISO 9001:2015</h3>
+                            <p class="service-description">Quality Management System Certification</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>Retention</title>
-        <meta name="keywords" content="" />
-        <meta name="description" content="" />
-        <link href="http://fonts.googleapis.com/css?family=Karla:400,700" rel="stylesheet" />
-        <link href="default.css" rel="stylesheet" type="text/css" media="all" />
-        <link href="fonts.css" rel="stylesheet" type="text/css" media="all" />
-        <!--[if IE 6]>
-        <link href="default_ie6.css" rel="stylesheet" type="text/css" />
-        <![endif]-->
-    </head>
-    <style>
-        .form-login {
-            background-color: #EDEDED;
-            padding-top: 10px;
-            padding-bottom: 20px;
-            padding-left: 20px;
-            padding-right: 20px;
-            border-radius: 15px;
-            border-color:#d2d2d2;
-            border-width: 5px;
-            box-shadow:0 1px 0 #cfcfcf;
-        }
+                        <!-- Service Card 2 -->
+                        <a href="iatf.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <h3 class="service-title">IATF 16949</h3>
+                            <p class="service-description">Automotive Quality Management</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-        h4 { 
-            border:0 solid #fff; 
-            border-bottom-width:1px;
-            padding-bottom:10px;
-            text-align: center;
-        }
+                        <!-- Service Card 3 -->
+                        <a href="nsic.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h3 class="service-title">NSIC Registration</h3>
+                            <p class="service-description">National Small Industries Corporation</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-        .form-control {
-            border-radius: 10px;
-        }
+                        <!-- Service Card 4 -->
+                        <a href="mpcb.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <h3 class="service-title">MPCB Compliance</h3>
+                            <p class="service-description">Pollution Control Board Compliance</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-        .wrapper {
-            text-align: center;
-        }
-        #slideshow { 
-            margin: 0px auto; 
-            position: relative; 
-            width: 240px; 
-            height: 150px; 
-            padding: 5px; 
+                        <!-- Service Card 5 -->
+                        <a href="isi.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-stamp"></i>
+                            </div>
+                            <h3 class="service-title">ISI Mark</h3>
+                            <p class="service-description">Indian Standards Institute Mark</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-        }
+                        <!-- Service Card 6 -->
+                        <a href="ce.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-globe-europe"></i>
+                            </div>
+                            <h3 class="service-title">CE Mark</h3>
+                            <p class="service-description">European Conformity Certification</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-        #slideshow > div { 
-            position: absolute; 
-            top: 5px; 
-            left: 10px; 
-            right: 10px; 
-            bottom: 10px; 
-        }
-    </style>
+                        <!-- Service Card 7 -->
+                        <a href="iso14.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-tree"></i>
+                            </div>
+                            <h3 class="service-title">ISO 14001 Certification</h3>
+                            <p class="service-description">Environmental Management System</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-    <body>
-        <div class="container">
-            <div class="row">
-                <?php
-                $pageIdentifier = "service";
-                include('./sourceheader.php');
-                ?>
-                <div class="col-sm-3" style="">
-                    <!--                <div class="row">
-                                        <div class="col-sm-12">-->
-                    <div class="form-login">
-                        <form method="POST" action="form_submit.php">
-                            <h4 >Need an expert guidance?</h4>
-                            <input type="text" id="name" name="name" class="form-control input-sm chat-input" placeholder="Name" />
-                            </br>
-                            <input type="text" id="phnumber" name="no" class="form-control input-sm chat-input" placeholder="Ph. No." />
-                            <br>
-                                <textarea rows="3" name="msg" name="msg" class="form-control input-sm chat-input msg" placeholder="Message"></textarea>
-                            <!--<input type="text" id="userPassword" class="form-control input-sm chat-input" placeholder="password" />-->
-                            </br>
-                            <div class="wrapper">
-                                <span class="group-btn">     
-                                    <!--<a href="#" class="btn btn-primary btn-md">Submit <i class="fa fa-sign-in"></i></a>-->
-                                    <button type="submit" class="btn btn-default btn-md" name="submit" value="submit">Submit</button>
-                                    <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
-                                    <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
-                                </span>
+                        <!-- Service Card 8 -->
+                        <a href="iso18.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-hard-hat"></i>
                             </div>
-                        </form>
-                    </div>
-                    <br/>
-                    <div class="form-login">
+                            <h3 class="service-title">ISO 18001 Certification</h3>
+                            <p class="service-description">Occupational Health & Safety</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
 
-                        <h4>OUR CLIENT'S</h4>
-                        <div id="slideshow" style="background-color: white;">
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/1.jpg" />
+                        <!-- Service Card 9 -->
+                        <a href="fsms.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-utensils"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/2.jpg"/>
+                            <h3 class="service-title">FSMS Certification</h3>
+                            <p class="service-description">Food Safety Management System</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/3.jpg"/>
+                        </a>
+
+                        <!-- Service Card 10 -->
+                        <a href="haccp.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-shield-alt"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/4.jpg"/>
+                            <h3 class="service-title">HACCP Certification</h3>
+                            <p class="service-description">Hazard Analysis Critical Control</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/5.jpg"/>
+                        </a>
+
+                        <!-- Service Card 11 -->
+                        <a href="cright.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-copyright"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/6.jpg"/>
+                            <h3 class="service-title">Copy Right</h3>
+                            <p class="service-description">Copyright Registration Services</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/7.jpg"/>
+                        </a>
+
+                        <!-- Service Card 12 -->
+                        <a href="trade.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-trademark"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/8.jpg"/>
+                            <h3 class="service-title">Trade Mark Registration</h3>
+                            <p class="service-description">Brand Protection & Registration</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/9.jpg"/>
+                        </a>
+
+                        <!-- Service Card 13 -->
+                        <a href="fssi.php" class="service-card">
+                            <div class="service-icon">
+                                <i class="fas fa-file-alt"></i>
                             </div>
-                        </div> 
+                            <h3 class="service-title">FSSI</h3>
+                            <p class="service-description">Food Safety Standards India</p>
+                            <div class="service-arrow">
+                                <i class="fas fa-arrow-right"></i>
+                            </div>
+                        </a>
                     </div>
                 </div>
-                <div class="col-sm-6">
 
-                    <div class="title">
-                        <h2>Services </h2>
-                    </div>
-                    <p><b>Following are the services provided by Quality Management Certification</b></p>
-                    <div>
-                        <u>
-                            <li><a href="iso.php">ISO 9001:2015</a></li>
-                            <li><a href="iatf.php">IATF 16949</a></li>
-                            <li><a href="nsic.php">NSIC Registration</a></li>
-                            <li><a href="mpcb.php">MPCB Compliance</a></li>
-                            <li><a href="isi.php">ISI Mark</a></li>
-                            <li><a href="ce.php">CE Mark</a></li>
-                            <li><a href="iso14.php">ISO 14001Certification</a></li>
-                            <li><a href="iso18.php">ISO 18001: Certification</a></li>
-                            <li><a href="fsms.php">FSMS Certification</a></li>
-                            <li><a href="haccp.php">HACCP Certification</a></li>
-                            <li><a href="cright.php">Copy Right</a></li>
-                            <li><a href="trade.php">Trade Mark Registration</a></li>
-                            <li><a href="fssi.php">FSSI</a></li>
-                        </u>
-                    </div>
-                </div>        
-
-                <div class="col-sm-3" style="">
-                    <div class="form-login">
-                        <form method="POST" action="form_submit.php">
-                            <h4 >Our Services</h4>
-                            <ul class="style2">
-                                <li><a href="iso.php">ISO 9001:2015</a></li>
-                                <li><a href="iatf.php">IATF 16949</a></li>
-                                <li><a href="nsic.php">NSIC Registration</a></li>
-                                <li><a href="mpcb.php">MPCB Compliance</a></li>
-                                <li><a href="isi.php">ISI Mark</a></li>
-                                <li><a href="ce.php">CE Mark</a></li>
-                                <li><a href="iso14.php">ISO 14001Certification</a></li>
-                                <li><a href="iso18.php">ISO 18001: Certification</a></li>
-                                <li><a href="fsms.php">FSMS Certification</a></li>
-                                <li><a href="haccp.php">HACCP Certification</a></li>
-                                <li><a href="cright.php">Copy Right</a></li>
-                                <li><a href="trade.php">Trade Mark Registration</a></li>
-                                <li><a href="fssi.php">FSSI</a></li>
-                            </ul>
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <!-- Contact Form -->
+                    <div class="sidebar-card contact-card">
+                        <div class="sidebar-header">
+                            <i class="fas fa-headset"></i>
+                            <h3>Need Expert Guidance?</h3>
+                        </div>
+                        <form method="POST" action="form_submit.php" class="contact-form">
+                            <div class="form-group">
+                                <input type="text" id="name" name="name" class="form-input" placeholder="Your Name" required />
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="phnumber" name="no" class="form-input" placeholder="Phone Number" required />
+                            </div>
+                            <div class="form-group">
+                                <textarea rows="4" name="msg" class="form-input" placeholder="Your Message"></textarea>
+                            </div>
+                            <button type="submit" class="submit-btn" name="submit" value="submit">
+                                <span>Send Message</span>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                            <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
+                            <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
                         </form>
-                    </div>                
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div class="sidebar-card quick-links-card">
+                        <div class="sidebar-header">
+                            <i class="fas fa-list-check"></i>
+                            <h3>Quick Links</h3>
+                        </div>
+                        <ul class="quick-links-list">
+                            <li><a href="iso.php"><i class="fas fa-chevron-right"></i> ISO 9001:2015</a></li>
+                            <li><a href="iatf.php"><i class="fas fa-chevron-right"></i> IATF 16949</a></li>
+                            <li><a href="nsic.php"><i class="fas fa-chevron-right"></i> NSIC Registration</a></li>
+                            <li><a href="mpcb.php"><i class="fas fa-chevron-right"></i> MPCB Compliance</a></li>
+                            <li><a href="isi.php"><i class="fas fa-chevron-right"></i> ISI Mark</a></li>
+                            <li><a href="ce.php"><i class="fas fa-chevron-right"></i> CE Mark</a></li>
+                            <li><a href="iso14.php"><i class="fas fa-chevron-right"></i> ISO 14001 Certification</a></li>
+                            <li><a href="iso18.php"><i class="fas fa-chevron-right"></i> ISO 18001 Certification</a></li>
+                            <li><a href="fsms.php"><i class="fas fa-chevron-right"></i> FSMS Certification</a></li>
+                            <li><a href="haccp.php"><i class="fas fa-chevron-right"></i> HACCP Certification</a></li>
+                            <li><a href="cright.php"><i class="fas fa-chevron-right"></i> Copy Right</a></li>
+                            <li><a href="trade.php"><i class="fas fa-chevron-right"></i> Trade Mark Registration</a></li>
+                            <li><a href="fssi.php"><i class="fas fa-chevron-right"></i> FSSI</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-            <?php include('./sourcefootr.php') ?>
         </div>
-        <div id="wrapper">
-        </div>
+    </div>
 
+    <?php include('./sourcefootr.php') ?>
 
-    </body>
-    <script type="text/javascript">
-        $("#slideshow > div:gt(0)").hide();
-
-        setInterval(function () {
-            $('#slideshow > div:first')
-                    .fadeOut(1000)
-                    .next()
-                    .fadeIn(1000)
-                    .end()
-                    .appendTo('#slideshow');
-        }, 3000);
-    </script>
+</body>
+</html>

@@ -292,6 +292,11 @@ if (!Utitlity::checkIfLoggedIn()) {
     if (!(Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForUserConsultant() || Utitlity::checkForOfficeBDM())) {
         header("Location: invalidAccess.php?errorCode=102");
     }
+} else if (isset($pageIdentifier) && $pageIdentifier == "Business Insights") {
+    $addBusinessInsightsClass = "active";
+    if (!Utitlity::checkForMainAdmin()) {
+        header("Location: invalidAccess.php?errorCode=102");
+    }
 }
 
 function simpleDateConversion($inputStr) {
@@ -332,6 +337,7 @@ function getFlatDate($inputStr) {
             <!--<li><a href="homePage.php" class="animate <?php echo $addClass ?>">CUSTOMERS<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a>-->
                 <li><a href="homePage_Test.php" class="animate <?php echo $addClass ?>">CUSTOMERS<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a>     
             </li>
+            <li><a href="business_insights.php" class="animate <?php echo isset($addBusinessInsightsClass) ? $addBusinessInsightsClass : '' ?>">BUSINESS INSIGHTS<i class="sub_icon fa fa-line-chart fa-2x" style="vertical-align:middle"></i></a></li>
         <?php } ?>
         <?php if ($_SESSION['username']=="Harish Ajabe") { ?>
             <!--<li><a href="newEnquiry_Test.php" class="animate <?php echo $addClass ?>">REFERED ENQUIRY(Test)<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a></li>-->
@@ -446,6 +452,9 @@ function getFlatDate($inputStr) {
                 <!--Adding hidden menu items here -->
                 <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
                     <li class="visible-xs"><a href="homePage.php" class="animate //<?php echo $addClass ?>">CUSTOMERS</a></li>
+                    <?php if (Utitlity::checkForMainAdmin()) { ?>
+                    <li class="visible-xs"><a href="business_insights.php" class="animate //<?php echo isset($addBusinessInsightsClass) ? $addBusinessInsightsClass : '' ?>">BUSINESS INSIGHTS</a></li>
+                    <?php } ?>
                 <?php } ?>
                 <?php if (Utitlity::checkForUserMarketing() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
                     <li class="visible-xs"><a href="newEnquiry.php" class="animate //<?php echo $addWorkingClass ?>">NEW ENQUIRY</a></li>

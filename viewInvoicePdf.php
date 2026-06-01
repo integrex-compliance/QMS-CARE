@@ -120,7 +120,7 @@ $firmContact = $firmDetails['firm_contact'];
 $bank_name = $firmDetails['bank_name'];
 $bank_address = $firmDetails['bank_address'];
 $bank_account_no = $firmDetails['bank_account_no'];
-$ifsc_code = $firmDetails['ifsc_code'];
+$ifsc_code = $firmDetails['ifsc_code'];
 $micr_no = $firmDetails['micr_no'];
 $firmSign = $firmDetails['firmSignature'];
 $abbrevation = $firmDetails['firm_abbrevation'];
@@ -129,6 +129,7 @@ $firm_pan_no = $firmDetails['firm_pan_no'];
 $customerName = $customer['company_name'];
 $customName = explode("(",$customerName);
 $customerAddress = $customer['company_address'];
+$customergst = isset($customer['gst_number']) ? $customer['gst_number'] : '';
 
 $newInvoice = $invoiceDetails['invoice_no'];
 $quotation_date = date("d-m-Y", strtotime($invoiceDetails['invoice_date']));

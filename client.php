@@ -1,147 +1,113 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<!--
-Design by TEMPLATED
-http://templated.co
-Released for free under the Creative Commons Attribution License
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Clients - Quality Management Certification</title>
+    <meta name="keywords" content="clients, quality management, certification, ISO" />
+    <meta name="description" content="Our trusted clients across various industries" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="default.css" rel="stylesheet" type="text/css" media="all" />
+    <link href="css/client-modern.css" rel="stylesheet" type="text/css" media="all" />
+</head>
+<body>
+    <?php
+    $pageIdentifier = "client";
+    include('./sourceheader.php');
+    ?>
+    
+    <div class="container">
+        <!-- Large Client Slider Section -->
+        <div class="client-slider-section">
+            <div class="slider-header">
+                <h2><i class="fas fa-building"></i> Our Valued Clients</h2>
+                <p>We are proud to serve these amazing organizations</p>
+            </div>
 
-Name       : Retention 
-Description: A two-column, fixed-width design with dark color scheme.
-Version    : 1.0
-Released   : 20140221
-
--->
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>Retention</title>
-        <meta name="keywords" content="" />
-        <meta name="description" content="" />
-        <link href="http://fonts.googleapis.com/css?family=Karla:400,700" rel="stylesheet" />
-        <link href="default.css" rel="stylesheet" type="text/css" media="all" />
-        <link href="fonts.css" rel="stylesheet" type="text/css" media="all" />
-        <!--[if IE 6]>
-        <link href="default_ie6.css" rel="stylesheet" type="text/css" />
-        <![endif]-->
-    </head>
-
-    <style>
-        .form-login {
-            background-color: #EDEDED;
-            padding-top: 10px;
-            padding-bottom: 20px;
-            padding-left: 20px;
-            padding-right: 20px;
-            border-radius: 15px;
-            border-color:#d2d2d2;
-            border-width: 5px;
-            box-shadow:0 1px 0 #cfcfcf;
-        }
-
-        h4 { 
-            border:0 solid #fff; 
-            border-bottom-width:1px;
-            padding-bottom:10px;
-            text-align: center;
-        }
-
-        .form-control {
-            border-radius: 10px;
-        }
-
-        .wrapper {
-            text-align: center;
-        }
-        #slideshow { 
-            margin: 0px auto; 
-            position: relative; 
-            width: 240px; 
-            height: 150px; 
-            padding: 5px; 
-
-        }
-
-        #slideshow > div { 
-            position: absolute; 
-            top: 5px; 
-            left: 10px; 
-            right: 10px; 
-            bottom: 10px; 
-        }
-    </style>
-
-    <body>
-        <div class="container">
-            <div class="row">
-                <?php
-                $pageIdentifier = "client";
-                include('./sourceheader.php');
-                ?>
-                <div class="col-sm-3" style="">
-                    <!--                <div class="row">
-                                        <div class="col-sm-12">-->
-                    <div class="form-login">
-                        <form method="POST" action="form_submit.php">
-                            <h4 >Need an expert guidance?</h4>
-                            <input type="text" id="name" name="name" class="form-control input-sm chat-input" placeholder="Name" />
-                            </br>
-                            <input type="text" id="phnumber" name="no" class="form-control input-sm chat-input" placeholder="Ph. No." />
-                            <br>
-                                <textarea rows="3" name="msg" name="msg" class="form-control input-sm chat-input msg" placeholder="Message"></textarea>
-                            <!--<input type="text" id="userPassword" class="form-control input-sm chat-input" placeholder="password" />-->
-                            </br>
-                            <div class="wrapper">
-                                <span class="group-btn">     
-                                    <!--<a href="#" class="btn btn-primary btn-md">Submit <i class="fa fa-sign-in"></i></a>-->
-                                    <button type="submit" class="btn btn-default btn-md" name="submit" value="submit">Submit</button>
-                                    <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
-                                    <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
-                                </span>
-                            </div>
-                        </form>
-                    </div>
-                    <br/>
-                    <div class="form-login">
-
-                        <h4>OUR CLIENT'S</h4>
-                        <div id="slideshow" style="background-color: white;">
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/1.jpg" />
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/2.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/3.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/4.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/5.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/6.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/7.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/8.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/9.jpg"/>
-                            </div>
-                        </div> 
+            <div class="infinite-slider-container">
+                <!-- First Row - Slides Left to Right -->
+                <div class="slider-row row-1">
+                    <div class="slider-track track-1">
+                        <!-- First Set -->
+                        <div class="client-logo">
+                            <img src="images/client/1.jpg" alt="Client 1" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/2.jpg" alt="Client 2" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/3.jpg" alt="Client 3" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/4.jpg" alt="Client 4" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/5.jpg" alt="Client 5" />
+                        </div>
+                        <!-- Duplicate Set for Seamless Loop -->
+                        <div class="client-logo">
+                            <img src="images/client/1.jpg" alt="Client 1" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/2.jpg" alt="Client 2" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/3.jpg" alt="Client 3" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/4.jpg" alt="Client 4" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/5.jpg" alt="Client 5" />
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-sm-6">                    
-                    <div class="title">
-                        <h2>Client</h2>
+                <!-- Second Row - Slides Right to Left (Opposite) -->
+                <div class="slider-row row-2">
+                    <div class="slider-track track-2">
+                        <!-- First Set -->
+                        <div class="client-logo">
+                            <img src="images/client/6.jpg" alt="Client 6" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/7.jpg" alt="Client 7" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/8.jpg" alt="Client 8" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/9.jpg" alt="Client 9" />
+                        </div>
+                        <!-- Duplicate Set for Seamless Loop -->
+                        <div class="client-logo">
+                            <img src="images/client/6.jpg" alt="Client 6" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/7.jpg" alt="Client 7" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/8.jpg" alt="Client 8" />
+                        </div>
+                        <div class="client-logo">
+                            <img src="images/client/9.jpg" alt="Client 9" />
+                        </div>
                     </div>
-                    <a href="client.php"><img src="images/clients.jpg" alt="" width="500" height="500" style="float:left; display: block; padding: 0em 0em; margin: 0.3em 0 0.5em 1em"/></a>
-                    <p>Consultants of our organization have been associated with top Government & Private organizations of various size and 
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Content Section -->
+        <div class="client-content-section">
+            <div class="content-grid">
+                <div class="content-main">
+                    <div class="content-card">
+                        <div class="card-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h2>Client</h2>
+                        <p>Consultants of our organization have been associated with top Government & Private organizations of various size and 
                         nature across all the industry verticals. We have been partnering organizations across the world for their 
                         standardization and process improvement initiatives and guarantee 100% successful completion of the ISO certification 
                         projects with highest level of consulting standards, proven consulting and implementation methodologies and timely 
@@ -149,90 +115,58 @@ Released   : 20140221
                         only initial certification but post certification consulting has become a regular part of our relationship with all our 
                         clients. An impressive 98% repeat customer base speaks about quality of our services and our customer oriented services. 
                         We consult organizations from across the industry domains. Our clients are from manufacturing to service providers.</p>
-                    <p>We partner our clients to gain sustainable competitive advantage in the market.... contact us at 
+                        <p>We partner our clients to gain sustainable competitive advantage in the market.... contact us at 
                         qmscare@gmail.com to get our client references and case studies.</p>
-                </div>        
-                <div class="col-sm-3" style="">
-                    <div class="form-login">
-                        <form method="POST" action="form_submit.php">
-                            <h4 >Our Services</h4>
-                            <ul class="style2">
-                                <li><a href="iso.php">ISO 9001:2015</a></li>
-                                <li><a href="iatf.php">IATF 16949</a></li>
-                                <li><a href="nsic.php">NSIC Registration</a></li>
-                                <li><a href="mpcb.php">MPCB Compliance</a></li>
-                                <li><a href="service.php">ISI Mark</a></li>
-                                <li><a href="service.php">CE Mark</a></li>
-                                <li><a href="service.php">ISO 14001Certification</a></li>
-                                <li><a href="service.php">ISO 18001: Certification</a></li>
-                                <li><a href="service.php">FSMS Certification</a></li>
-                                <li><a href="service.php">HACCP Certification</a></li>
-                                <li><a href="service.php">Copy Right</a></li>
-                                <li><a href="service.php">Trade Mark Registration</a></li>
-                                <li><a href="service.php">FSSI</a></li>
-                            </ul>
-                        </form>
-                    </div>                
-                </div>
-            </div>
-            <?php include('./sourcefootr.php') ?>
-        </div>
-        <div id="wrapper">
-        </div>
-
-        <!--    <div id="footer-wrapper">
-                <div id="footer" class="container">
-        
-                    <div id="box3">
-                        <div class="title">
-                            <h2>QUALITY MANAGEMENT CERTIFICATION</h2>
-                        </div>
-                        <p>Address: Ramnagar Complex, Bhosari, Pune- 411 039.
-                            </br> E mail : qmscare@gmail.com
-                            </br>Ph. No.: 7774034698 / 9689882677</p>
                     </div>
                 </div>
-            </div>	-->
-    </body>
 
-    <!--<body>
-    <div id="wrapper">
-            <div id="page" class="container">
-                    <div id="content">
-                            <div class="title">
-                                    <h2>Integer sit amet aliquet</h2>
-                                    <span class="byline">Phasellus nec erat sit amet nibh pellentesque congue</span> </div>
-                            <p>This is <strong>Retention</strong>, a free, fully standards-compliant CSS template designed by <a href="http://templated.co" rel="nofollow">TEMPLATED</a>. The photos in this template are from <a href="http://fotogrph.com/"> Fotogrph</a>. This free template is released under the <a href="http://templated.co/license">Creative Commons Attribution</a> license, so you're pretty much free to do whatever you want with it (even use it commercially) provided you give us credit for it. Have fun :) </p>
-                            <p>Consectetuer adipiscing elit. Nam pede erat, porta eu, lobortis eget, tempus et, tellus. Etiam neque. Vivamus consequat lorem at nisl. Nullam non wisi a sem semper eleifend. Donec mattis libero eget urna. Duis pretium velit ac mauris. Proin eu wisi suscipit nulla suscipit interdum. Aenean lectus lorem, imperdiet at, ultrices eget, ornare et, wisi. Pellentesque adipiscing purus ac magna. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.  Nullam non wisi a sem semper eleifend. Donec mattis libero eget urna. </p>
-                    </div>
-                    
-            </div>
-    </div>
-            
-    <div id="footer-wrapper">
-            <div id="footer" class="container">
-                    
-                    <div id="box3">
-                            <div class="title">
-                                    <h2>QUALITY MANAGEMENT CERTIFICATION</h2>
+                <div class="content-sidebar">
+                    <!-- Contact Form -->
+                    <div class="sidebar-card">
+                        <h3><i class="fas fa-paper-plane"></i> Need an expert guidance?</h3>
+                        <form method="POST" action="form_submit.php" class="sidebar-form">
+                            <div class="form-group">
+                                <input type="text" id="name" name="name" class="form-input" placeholder="Name" required />
                             </div>
-                        <p>Address: Ramnagar Complex, Bhosari, Pune- 411 039.
-                            </br> E mail : qmscare@gmail.com
-                                </br>Ph. No.: 7774034698 / 9689882677</p>
+                            <div class="form-group">
+                                <input type="text" id="phnumber" name="no" class="form-input" placeholder="Ph. No." required />
+                            </div>
+                            <div class="form-group">
+                                <textarea rows="3" name="msg" class="form-input" placeholder="Message" required></textarea>
+                            </div>
+                            <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
+                            <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
+                            <button type="submit" class="submit-btn" name="submit" value="submit">
+                                <span>Submit</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </form>
                     </div>
-                    </div>
-            </div>	
-    </body>-->
-</html>
-<script type="text/javascript">
-    $("#slideshow > div:gt(0)").hide();
 
-    setInterval(function () {
-        $('#slideshow > div:first')
-                .fadeOut(1000)
-                .next()
-                .fadeIn(1000)
-                .end()
-                .appendTo('#slideshow');
-    }, 3000);
-</script>
+                    <!-- Services List -->
+                    <div class="sidebar-card">
+                        <h3><i class="fas fa-cogs"></i> Our Services</h3>
+                        <ul class="services-list">
+                            <li><a href="iso.php"><i class="fas fa-chevron-right"></i> ISO 9001:2015</a></li>
+                            <li><a href="iatf.php"><i class="fas fa-chevron-right"></i> IATF 16949</a></li>
+                            <li><a href="nsic.php"><i class="fas fa-chevron-right"></i> NSIC Registration</a></li>
+                            <li><a href="mpcb.php"><i class="fas fa-chevron-right"></i> MPCB Compliance</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> ISI Mark</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> CE Mark</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> ISO 14001Certification</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> ISO 18001: Certification</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> FSMS Certification</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> HACCP Certification</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> Copy Right</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> Trade Mark Registration</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> FSSI</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <?php include('./sourcefootr.php') ?>
+    </div>
+</body>
+</html>

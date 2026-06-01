@@ -1,6 +1,41 @@
 <?php 
 if(isset($_POST['submit']) || isset($_POST['ajax'])){
 	
+		// Verify reCAPTCHA v2 first
+		if (isset($_POST['g-recaptcha-response']) && !empty($_POST['g-recaptcha-response'])) {
+			$secretKey = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
+			$verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $secretKey . '&response=' . $_POST['g-recaptcha-response']);
+			$responseData = json_decode($verifyResponse);
+			
+			if (!$responseData->success) {
+				echo '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>';
+				echo '<script type="text/javascript">
+					Swal.fire({
+						icon: "error",
+						title: "Verification Failed!",
+						text: "Please complete the reCAPTCHA verification.",
+						confirmButtonColor: "#d33"
+					}).then(function() {
+						window.location.href = "contact.php";
+					});
+				</script>';
+				exit();
+			}
+		} else {
+			echo '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>';
+			echo '<script type="text/javascript">
+				Swal.fire({
+					icon: "error",
+					title: "Verification Required!",
+					text: "Please complete the reCAPTCHA verification.",
+					confirmButtonColor: "#d33"
+				}).then(function() {
+					window.location.href = "contact.php";
+				});
+			</script>';
+			exit();
+		}
+	
 		$errorC = false;
 	
 		$the_name = $_POST['name'];

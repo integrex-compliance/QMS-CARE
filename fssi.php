@@ -1,261 +1,141 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<!--
-Design by TEMPLATED
-http://templated.co
-Released for free under the Creative Commons Attribution License
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FSSAI Registration - Food Safety and Standards Authority of India">
+    <title>FSSAI Registration - QMS Care</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/detail-modern.css">
+</head>
 
-Name       : Retention 
-Description: A two-column, fixed-width design with dark color scheme.
-Version    : 1.0
-Released   : 20140221
+<body>
+    <?php
+    $pageIdentifier = "fssi";
+    include('./sourceheader.php');
+    ?>
+    
+    <div class="detail-container">
+        <!-- Page Header -->
+        <section class="page-header">
+            <div class="header-content">
+                <div class="header-badge">
+                    <i class="fas fa-utensils"></i>
+                    Food Safety Registration
+                </div>
+                <h1 class="page-title">FSSAI Registration</h1>
+                <p class="page-subtitle">Food Safety and Standards Authority of India (FSSAI) is an autonomous body established under the Ministry of Health & Family Welfare, Government of India.</p>
+            </div>
+        </section>
 
--->
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>Retention</title>
-        <meta name="keywords" content="" />
-        <meta name="description" content="" />
-        <link href="http://fonts.googleapis.com/css?family=Karla:400,700" rel="stylesheet" />
-        <link href="default.css" rel="stylesheet" type="text/css" media="all" />
-        <link href="fonts.css" rel="stylesheet" type="text/css" media="all" />
-        <!--[if IE 6]>
-        <link href="default_ie6.css" rel="stylesheet" type="text/css" />
-        <![endif]-->
-    </head>
-    <style>
-        .form-login {
-            background-color: #EDEDED;
-            padding-top: 10px;
-            padding-bottom: 20px;
-            padding-left: 20px;
-            padding-right: 20px;
-            border-radius: 15px;
-            border-color:#d2d2d2;
-            border-width: 5px;
-            box-shadow:0 1px 0 #cfcfcf;
-        }
-
-        h4 { 
-            border:0 solid #fff; 
-            border-bottom-width:1px;
-            padding-bottom:10px;
-            text-align: center;
-        }
-
-        .form-control {
-            border-radius: 10px;
-        }
-
-        .wrapper {
-            text-align: center;
-        }
-        #slideshow { 
-            margin: 0px auto; 
-            position: relative; 
-            width: 240px; 
-            height: 150px; 
-            padding: 5px; 
-
-        }
-
-        #slideshow > div { 
-            position: absolute; 
-            top: 5px; 
-            left: 10px; 
-            right: 10px; 
-            bottom: 10px; 
-        }
-    </style>
-
-    <body>
-        <div class="container">
-            <div class="row">
-                <?php
-                $pageIdentifier = "iso";
-                include('./sourceheader.php');
-                ?>
-                <div class="col-sm-3" style="">
-                    <!--                <div class="row">
-                                        <div class="col-sm-12">-->
-                    <div class="form-login">
-                        <form method="POST" action="form_submit.php">
-                            <h4 >Need an expert guidance?</h4>
-                            <input type="text" id="name" name="name" class="form-control input-sm chat-input" placeholder="Name" />
-                            </br>
-                            <input type="text" id="phnumber" name="no" class="form-control input-sm chat-input" placeholder="Ph. No." />
-                            <br>
-                                <textarea rows="3" name="msg" name="msg" class="form-control input-sm chat-input msg" placeholder="Message"></textarea>
-                            <!--<input type="text" id="userPassword" class="form-control input-sm chat-input" placeholder="password" />-->
-                            </br>
-                            <div class="wrapper">
-                                <span class="group-btn">     
-                                    <!--<a href="#" class="btn btn-primary btn-md">Submit <i class="fa fa-sign-in"></i></a>-->
-                                    <button type="submit" class="btn btn-default btn-md" name="submit" value="submit">Submit</button>
-                                    <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
-                                    <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
-                                </span>
-                            </div>
-                        </form>
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <div class="content-grid">
+                
+                <!-- Main Content Column -->
+                <div class="main-content">
+                    <!-- About FSSAI Section -->
+                    <div class="content-card intro-section">
+                        <div class="section-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <h2 class="section-heading">About FSSAI</h2>
+                        <p>Food Safety and Standards Authority of India (FSSAI) is an autonomous body established under the Ministry of Health & Family Welfare, Government of India. The FSSAI has been established under the Food Safety and Standards Act, 2006 which is a consolidating statute related to food safety and regulation in India. FSSAI is responsible for protecting and promoting public health through the regulation and supervision of food safety.</p>
                     </div>
-                    <br/>
-                    <div class="form-login">
 
-                        <h4>OUR CLIENT'S</h4>
-                        <div id="slideshow" style="background-color: white;">
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/1.jpg" />
+                    <!-- Statutory Powers -->
+                    <div class="benefits-card">
+                        <div class="benefits-header">
+                            <div class="benefits-icon">
+                                <i class="fas fa-gavel"></i>
                             </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/2.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/3.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/4.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/5.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/6.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/7.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/8.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/9.jpg"/>
-                            </div>
-                        </div> 
+                            <h2>Statutory Powers of FSSAI</h2>
+                        </div>
+                        <p style="font-size: 16px; color: #475569; margin-bottom: 24px;">The following are the statutory powers that the FSS Act, 2006 gives to the Food Safety and Standards Authority of India (FSSAI):</p>
+                        <ul class="benefits-list">
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                <span>Framing of regulations to lay down food safety standards</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                <span>Laying down guidelines for accreditation of laboratories for food testing</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                <span>Providing scientific advice and technical support to the Central Government</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                <span>Contributing to the development of international technical standards in food</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                <span>Collecting and collating data regarding food consumption, contamination, emerging risks etc.</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle"></i>
+                                <span>Disseminating information and promoting awareness about food safety and nutrition in India</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
-                <div class="col-sm-6">                    
-                    <div class="title">
-                        <h2>
-                            FSSAI Registration
-                        </h2>
-                        <span>Food Safety and Standards Authority of India (FSSAI) is an autonomous body established under the Ministry of Health & Family Welfare, Government of India.</span>
-                    </div>
-                    <p>
-                        Food Safety and Standards Authority of India (FSSAI) is an autonomous body established under the Ministry
-                        of Health & Family Welfare, Government of India.[3] The FSSAI has been established under the Food Safety 
-                        and Standards Act, 2006 which is a consolidating statute related to food safety and regulation in India.
-                        FSSAI is responsible for protecting and promoting public health through the regulation and supervision of 
-                        food safety.
-                        <br/>The following are the statutory powers that the FSS Act, 2006 gives to the Food Safety and Standards Authority of India (FSSAI).[12]
-                        <br/>- Framing of regulations to lay down food safety standards
-                        <br/>- Laying down guidelines for accreditation of laboratories for food testing
-                        <br/>- Providing scientific advice and technical support to the Central Government
-                        <br/>- Contributing to the development of international technical standards in food
-                        <br/>- Collecting and collating data regarding food consumption, contamination, emerging risks etc.
-                        <br/>- Disseminating information and promoting awareness about food safety and nutrition in India
-                    </p>
-                    </br>
-                </div>        
-                <div class="col-sm-3" style="">
-                    <div class="form-login">
-                        <form method="POST" action="form_submit.php">
-                            <h4 >Our Services</h4>
-                            <ul class="style2">
-                                <li><a href="iso.php">ISO 9001:2015</a></li>
-                                <li><a href="iatf.php">IATF 16949</a></li>
-                                <li><a href="nsic.php">NSIC Registration</a></li>
-                                <li><a href="mpcb.php">MPCB Compliance</a></li>
-                                <li><a href="isi.php">ISI Mark</a></li>
-                                <li><a href="ce.php">CE Mark</a></li>
-                                <li><a href="iso14.php">ISO 14001Certification</a></li>
-                                <li><a href="iso18.php">ISO 18001: Certification</a></li>
-                                <li><a href="fsms.php">FSMS Certification</a></li>
-                                <li><a href="haccp.php">HACCP Certification</a></li>
-                                <li><a href="cright.php">Copy Right</a></li>
-                                <li><a href="trade.php">Trade Mark Registration</a></li>
-                                <li><a href="fssi.php">FSSI</a></li>
-                            </ul>
+
+                <!-- Sidebar -->
+                <div class="sidebar">
+                    <!-- Contact Form -->
+                    <div class="sidebar-card contact-card">
+                        <div class="sidebar-header">
+                            <i class="fas fa-headset"></i>
+                            <h3>Need Expert Guidance?</h3>
+                        </div>
+                        <form method="POST" action="form_submit.php" class="contact-form">
+                            <div class="form-group">
+                                <input type="text" id="name" name="name" class="form-input" placeholder="Your Name" required />
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="phnumber" name="no" class="form-input" placeholder="Phone Number" required />
+                            </div>
+                            <div class="form-group">
+                                <textarea rows="4" name="msg" class="form-input" placeholder="Your Message"></textarea>
+                            </div>
+                            <button type="submit" class="submit-btn" name="submit" value="submit">
+                                <span>Send Message</span>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                            <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
+                            <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
                         </form>
-                    </div>                
+                    </div>
+
+                    <!-- Services List -->
+                    <div class="sidebar-card services-card">
+                        <div class="sidebar-header">
+                            <i class="fas fa-list-check"></i>
+                            <h3>Our Services</h3>
+                        </div>
+                        <ul class="services-list">
+                            <li><a href="iso.php"><i class="fas fa-chevron-right"></i> ISO 9001:2015</a></li>
+                            <li><a href="iatf.php"><i class="fas fa-chevron-right"></i> IATF 16949</a></li>
+                            <li><a href="nsic.php"><i class="fas fa-chevron-right"></i> NSIC Registration</a></li>
+                            <li><a href="mpcb.php"><i class="fas fa-chevron-right"></i> MPCB Compliance</a></li>
+                            <li><a href="isi.php"><i class="fas fa-chevron-right"></i> ISI Mark</a></li>
+                            <li><a href="ce.php"><i class="fas fa-chevron-right"></i> CE Mark</a></li>
+                            <li><a href="iso14.php"><i class="fas fa-chevron-right"></i> ISO 14001 Certification</a></li>
+                            <li><a href="iso18.php"><i class="fas fa-chevron-right"></i> ISO 18001 Certification</a></li>
+                            <li><a href="fsms.php"><i class="fas fa-chevron-right"></i> FSMS Certification</a></li>
+                            <li><a href="haccp.php"><i class="fas fa-chevron-right"></i> HACCP Certification</a></li>
+                            <li><a href="cright.php"><i class="fas fa-chevron-right"></i> Copy Right</a></li>
+                            <li><a href="trade.php"><i class="fas fa-chevron-right"></i> Trade Mark Registration</a></li>
+                            <li><a href="fssi.php" class="active"><i class="fas fa-chevron-right"></i> FSSAI</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-            <?php include('./sourcefootr.php') ?>
         </div>
-        <div id="wrapper">
-        </div>
-
-        <!--    <div id="footer-wrapper">
-                <div id="footer" class="container">
-        
-                    <div id="box3">
-                        <div class="title">
-                            <h2>QUALITY MANAGEMENT CERTIFICATION</h2>
-                        </div>
-                        <p>Address: Ramnagar Complex, Bhosari, Pune- 411 039.
-                            </br> E mail : qmscare@gmail.com
-                            </br>Ph. No.: 7774034698 / 9689882677</p>
-                    </div>
-                </div>
-            </div>	-->
-    </body>
-
-
-    <!--<body>
-    <div id="wrapper">
-            
-            <div id="page" class="container">
-                    <div id="content">
-                            <div class="title">
-                                    <h2>ISO 9001:2015</h2>
-                                    <span class="byline">Quality Management System</span> </div>
-                            <p><br/>ISO 9001 Certification will provide maximum benefit to your organization if it approaches ISO 9001 implementation in a practical way. This will ensure that the Quality Management Systems that are adopted, work to improve the business and are not just a set of procedures that your employees will find hard to manage.
-    
-    <br/>By adopting an approach that starts out to implement more efficient working practices and focuses on the business objectives of the organization, you will achieve a system that will help and support your staff, and improve your levels of customer satisfaction.
-    
-    <br/>Whether you use an external assessor or allocate an internal resource to carry out the initial assessments, you will need to ensure that they have buy-in from senior management, so that all areas of the organization are aware of the importance of the ISO 9001 Certification process.
-    
-    <br/>ISO 9001 Certification is not just suitable for large organizations but also small businesses that will benefit from adopting efficient Quality Management Systems that will save time and cost, improve efficiency and ultimately improve customer relationships.
-    <br/><br/><b>Some of the benefits to your organization:</b>
-    <br/>•	Provides senior management with an efficient management process
-    <br/>•	Sets out areas of responsibility across the organization
-    <br/>•	Mandatory if you want to tender for some public sector work
-    <br/>•	Communicates a positive message to staff and customers
-    <br/>•	Identifies and encourages more efficient and time saving processes
-    <br/>•	Highlights deficiencies
-    <br/>•	Reduces your costs
-    <br/>•	Provides continuous assessment and improvement
-    <br/>•	Marketing opportunities
-    
-                            </p>
-                    </div>
-                    </div>
     </div>
-            
-    <div id="footer-wrapper">
-            <div id="footer" class="container">
-                    
-                    <div id="box3">
-                            <div class="title">
-                                    <h2>QUALITY MANAGEMENT CERTIFICATION</h2>
-                            </div>
-                        <p>Address: Ramnagar Complex, Bhosari, Pune- 411 039.
-                            </br> E mail : qmscare@gmail.com
-                                </br>Ph. No.: 7774034698 / 9689882677</p>
-                    </div>
-                    </div>
-            </div>	
-    </body>-->
-</html>
-<script type="text/javascript">
-    $("#slideshow > div:gt(0)").hide();
 
-    setInterval(function () {
-        $('#slideshow > div:first')
-                .fadeOut(1000)
-                .next()
-                .fadeIn(1000)
-                .end()
-                .appendTo('#slideshow');
-    }, 3000);
-</script>
+    <?php include('./sourcefootr.php') ?>
+
+</body>
+</html>

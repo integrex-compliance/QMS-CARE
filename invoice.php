@@ -462,6 +462,7 @@ function convertcash($num, $currency) {
         $intPart = substr($intPart, 1);
     }
 
+    
     if (strlen($intPart) > 3) {
         $lastthree = substr($intPart, strlen($intPart) - 3, strlen($intPart));
         $restunits = substr($intPart, 0, strlen($intPart) - 3);

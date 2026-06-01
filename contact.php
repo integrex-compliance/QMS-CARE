@@ -1,228 +1,158 @@
-<!--
-Design by TEMPLATED
-http://templated.co
-Released for free under the Creative Commons Attribution License
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Quality Management Certification</title>
+    <meta name="keywords" content="contact, quality management, certification, ISO" />
+    <meta name="description" content="Get in touch with Quality Management Certification for expert guidance on ISO certifications and compliance services." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="default.css" rel="stylesheet" type="text/css" media="all" />
+    <link href="css/contact-modern.css" rel="stylesheet" type="text/css" media="all" />
+    <!-- Google reCAPTCHA v2 -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <?php
+        $pageIdentifier = "contact";
+        include('./sourceheader.php');
+        ?>
 
-Name       : Retention 
-Description: A two-column, fixed-width design with dark color scheme.
-Version    : 1.0
-Released   : 20140221
-
--->
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <title>Retention</title>
-        <meta name="keywords" content="" />
-        <meta name="description" content="" />
-        <link href="http://fonts.googleapis.com/css?family=Karla:400,700" rel="stylesheet" />
-        <link href="default.css" rel="stylesheet" type="text/css" media="all" />
-        <link href="fonts.css" rel="stylesheet" type="text/css" media="all" />
-        <!--[if IE 6]>
-        <link href="default_ie6.css" rel="stylesheet" type="text/css" />
-        <![endif]-->
-    </head>
-
-    <style>
-        .form-login {
-            background-color: #EDEDED;
-            padding-top: 10px;
-            padding-bottom: 20px;
-            padding-left: 20px;
-            padding-right: 20px;
-            border-radius: 15px;
-            border-color:#d2d2d2;
-            border-width: 5px;
-            box-shadow:0 1px 0 #cfcfcf;
-        }
-
-        h4 { 
-            border:0 solid #fff; 
-            border-bottom-width:1px;
-            padding-bottom:10px;
-            text-align: center;
-        }
-
-        .form-control {
-            border-radius: 10px;
-        }
-
-        .wrapper {
-            text-align: center;
-        }
-        #slideshow { 
-            margin: 0px auto; 
-            position: relative; 
-            width: 240px; 
-            height: 150px; 
-            padding: 5px; 
-
-        }
-
-        #slideshow > div { 
-            position: absolute; 
-            top: 5px; 
-            left: 10px; 
-            right: 10px; 
-            bottom: 10px; 
-        }
-    </style>
-
-    <body>
-        <div class="container">
-            <div class="row">
-                <?php
-                $pageIdentifier = "contact";
-                include('./sourceheader.php');
-                ?>
-                <div class="col-sm-3" style="">
-                    <!--                <div class="row">
-                                        <div class="col-sm-12">-->
-                    <div class="form-login">
-                        <form method="POST" action="form_submit.php">
-                            <h4 >Need an expert guidance?</h4>
-                            <input type="text" id="name" name="name" class="form-control input-sm chat-input" placeholder="Name" />
-                            </br>
-                            <input type="text" id="phnumber" name="no" class="form-control input-sm chat-input" placeholder="Ph. No." />
-                            <br>
-                                <textarea rows="3" name="msg" name="msg" class="form-control input-sm chat-input msg" placeholder="Message"></textarea>
-                            <!--<input type="text" id="userPassword" class="form-control input-sm chat-input" placeholder="password" />-->
-                            </br>
-                            <div class="wrapper">
-                                <span class="group-btn">     
-                                    <!--<a href="#" class="btn btn-primary btn-md">Submit <i class="fa fa-sign-in"></i></a>-->
-                                    <button type="submit" class="btn btn-default btn-md" name="submit" value="submit">Submit</button>
-                                    <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
-                                    <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
-                                </span>
-                            </div>
-                        </form>
-                    </div>
-                    <br/>
-                    <div class="form-login">
-
-                        <h4>OUR CLIENT'S</h4>
-                        <div id="slideshow" style="background-color: white;">
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/1.jpg" />
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/2.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/3.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/4.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/5.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/6.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/7.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/8.jpg"/>
-                            </div>
-                            <div style="display:table-cell; vertical-align:middle; text-align:center">
-                                <img src="images/client/9.jpg"/>
-                            </div>
-                        </div> 
-                    </div>
+        <!-- Hero Section -->
+        <div class="contact-hero">
+            <div class="hero-content">
+                <div class="hero-icon">
+                    <i class="fas fa-envelope"></i>
                 </div>
-                <div class="col-sm-6">                    
-                    <div class="title">
-                        <h2>Contact Us</h2>
-                        <span class="byline">Feel free to contact us</span> 
-                        <br/><br/><p><strong>QUALITY MANAGEMENT CERTIFICATION</strong></p>
-                        <p>Address: Ramnagar Complex, Bhosari, Pune- 411 039.
-                            <br/> E mail : qmscare@gmail.com
-                            <br/>Ph. No.: 7774034698 / 9689882677</p>
-                    </div>
-                    <a href="contact.php"><img src="images/QMC_card.jpg" alt="" width="550" height="300" style="float:left; display: block; padding: 0em 3em; margin: 0.3em 0 0.5em 1em"/></a>
+                <h1>Contact Us</h1>
+                <p class="hero-subtitle">Feel free to contact us</p>
+            </div>
+        </div>
 
-<!--                    <p><strong>QUALITY MANAGEMENT CERTIFICATION</strong></p>
-                    <p>Address: Ramnagar Complex, Bhosari, Pune- 411 039.
-                        </br> E mail : qmscare@gmail.com
-                        </br>Ph. No.: 7774034698 / 9689882677</p>-->
-                </div>        
-                <div class="col-sm-3" style="">
-                    <div class="form-login">
-                        <form method="POST" action="form_submit.php">
-                            <h4 >Our Services</h4>
-                            <ul class="style2">
-                                <li><a href="iso.php">ISO 9001:2015</a></li>
-                                <li><a href="iatf.php">IATF 16949</a></li>
-                                <li><a href="nsic.php">NSIC Registration</a></li>
-                                <li><a href="mpcb.php">MPCB Compliance</a></li>
-                                <li><a href="service.php">ISI Mark</a></li>
-                                <li><a href="service.php">CE Mark</a></li>
-                                <li><a href="service.php">ISO 14001Certification</a></li>
-                                <li><a href="service.php">ISO 18001: Certification</a></li>
-                                <li><a href="service.php">FSMS Certification</a></li>
-                                <li><a href="service.php">HACCP Certification</a></li>
-                                <li><a href="service.php">Copy Right</a></li>
-                                <li><a href="service.php">Trade Mark Registration</a></li>
-                                <li><a href="service.php">FSSI</a></li>
-                            </ul>
-                        </form>
-                    </div>                
+        <!-- Main Content -->
+        <div class="contact-main-content">
+            <div class="contact-grid">
+                <!-- Contact Form Section -->
+                <div class="contact-form-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-paper-plane"></i> Need an expert guidance?</h2>
+                        <p>Send us a message and we'll get back to you as soon as possible</p>
+                    </div>
+                    
+                    <form method="POST" action="form_submit.php" class="modern-contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="name"><i class="fas fa-user"></i> Your Name</label>
+                            <input type="text" id="name" name="name" class="form-input" placeholder="Enter your full name" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phnumber"><i class="fas fa-phone"></i> Phone Number</label>
+                            <input type="text" id="phnumber" name="no" class="form-input" placeholder="Enter your phone number" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message"><i class="fas fa-comment-dots"></i> Your Message</label>
+                            <textarea id="message" name="msg" rows="6" class="form-input" placeholder="Tell us how we can help you..." required></textarea>
+                        </div>
+
+                        <!-- Google reCAPTCHA v2 -->
+                        <div class="form-group">
+                            <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-callback="enableContactBtn"></div>
+                        </div>
+
+                        <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
+                        <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
+
+                        <button type="submit" class="submit-btn" id="contactSubmitBtn" name="submit" value="submit" disabled style="opacity: 0.6; cursor: not-allowed;">
+                            <span>Please Verify Captcha</span>
+                            <i class="fas fa-shield-alt"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Contact Information Sidebar -->
+                <div class="contact-sidebar">
+                    <!-- Contact Information Cards -->
+                    <div class="info-section">
+                        <h3><i class="fas fa-info-circle"></i> Contact Information</h3>
+                        
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="info-content">
+                                <h4>QUALITY MANAGEMENT CERTIFICATION</h4>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <h4>Address</h4>
+                                <p>Ramnagar Complex, Bhosari, Pune- 411 039.</p>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="info-content">
+                                <h4>E mail</h4>
+                                <p><a href="mailto:qmscare@gmail.com">qmscare@gmail.com</a></p>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <div class="info-icon">
+                                <i class="fas fa-phone-alt"></i>
+                            </div>
+                            <div class="info-content">
+                                <h4>Ph. No.</h4>
+                                <p><a href="tel:7774034698">7774034698</a> / <a href="tel:9689882677">9689882677</a></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <?php include('./sourcefootr.php') ?>
-        </div>
-        <div id="wrapper">
         </div>
 
-        <!--    <div id="footer-wrapper">
-                <div id="footer" class="container">
-        
-                    <div id="box3">
-                        <div class="title">
-                            <h2>QUALITY MANAGEMENT CERTIFICATION</h2>
-                        </div>
-                        <p>Address: Ramnagar Complex, Bhosari, Pune- 411 039.
-                            </br> E mail : qmscare@gmail.com
-                            </br>Ph. No.: 7774034698 / 9689882677</p>
-                    </div>
-                </div>
-            </div>	-->
-    </body>
-
-    <!--<body>
-    <div id="wrapper">
-            
-            <div id="page" class="container">
-                    <div id="content">
-                            <div class="title">
-                                    <h2>Contact Us</h2>
-                                    <span class="byline">Feel free to contact us</span> 
-                            </div>
-                                    <a href="index.html"><img src="images/QMC_card.jpg" alt="" width="550" height="300" style="float:left; display: block; padding: 0em 3em; margin: 0.3em 0 0.5em 1em"/></a>
-                                
-                            <p><strong>QUALITY MANAGEMENT CERTIFICATION</strong></p>
-                            <p>Address: Ramnagar Complex, Bhosari, Pune- 411 039.
-                            </br> E mail : qmscare@gmail.com
-                                </br>Ph. No.: 7774034698 / 9689882677</p>
-                    </div>
-                
-                    </div>
+        <?php include('./sourcefootr.php') ?>
     </div>
-    </body>-->
+    
+    <script>
+        // Enable contact button after reCAPTCHA verification
+        function enableContactBtn() {
+            var btn = document.getElementById('contactSubmitBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<span>Send Message</span><i class="fas fa-arrow-right"></i>';
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        }
+        
+        $(document).ready(function() {
+            $("#contactForm").submit(function(e) {
+                var recaptchaResponse = grecaptcha.getResponse();
+                if (recaptchaResponse.length === 0) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Verification Required',
+                        text: 'Please complete the reCAPTCHA verification before submitting.',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    return false;
+                }
+            });
+        });
+    </script>
+</body>
 </html>
-<script type="text/javascript">
-    $("#slideshow > div:gt(0)").hide();
-
-    setInterval(function () {
-        $('#slideshow > div:first')
-                .fadeOut(1000)
-                .next()
-                .fadeIn(1000)
-                .end()
-                .appendTo('#slideshow');
-    }, 3000);
-</script>

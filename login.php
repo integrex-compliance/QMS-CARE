@@ -11,6 +11,22 @@ include 'utility.php';
 //include_once './dbConnect.php';
 
 if (isset($_POST['useremail']) && !empty($_POST['useremail']) && isset($_POST['password']) && !empty($_POST['password'])) {
+    
+    // Verify reCAPTCHA v2
+    if (isset($_POST['g-recaptcha-response']) && !empty($_POST['g-recaptcha-response'])) {
+        $secretKey = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
+        $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $secretKey . '&response=' . $_POST['g-recaptcha-response']);
+        $responseData = json_decode($verifyResponse);
+        
+        if (!$responseData->success) {
+            header("Location: index.php?invalid=captcha");
+            exit();
+        }
+    } else {
+        header("Location: index.php?invalid=captcha");
+        exit();
+    }
+    
     try {
         $localIP = getHostByName(php_uname('n'));
 //        echo $localIP; die;
