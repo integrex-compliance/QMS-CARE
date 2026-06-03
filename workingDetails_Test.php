@@ -68,6 +68,28 @@
             // Optional: Log error or show message
             // echo "Error loading data: " . $mainException->getMessage();
         }
+        function workingDetailsValue($row, $key) {
+            return isset($row[$key]) ? $row[$key] : "";
+        }
+
+        function workingDetailsMoney($value) {
+            if ($value === "" || $value === null) {
+                return "";
+            }
+            return number_format((float) $value, 2);
+        }
+
+        function workingDetailsEsc($value) {
+            return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+        }
+
+        function workingDetailsDraftInput($value, $draftKey, $placeholder = "") {
+            return '<input type="text" class="sheet-cell-input sheet-draft-input" data-draft-key="' . workingDetailsEsc($draftKey) . '" value="' . workingDetailsEsc($value) . '" placeholder="' . workingDetailsEsc($placeholder) . '" />';
+        }
+
+        function workingDetailsDraftTextarea($value, $draftKey, $placeholder = "") {
+            return '<textarea rows="3" class="sheet-cell-input sheet-draft-input" data-draft-key="' . workingDetailsEsc($draftKey) . '" placeholder="' . workingDetailsEsc($placeholder) . '">' . workingDetailsEsc($value) . '</textarea>';
+        }
 //        print_r($listOfCustomers);
     }
     ?>
@@ -103,96 +125,197 @@
                                 </div>-->
                 <!--                    </div>
                                 </div>-->
+                <style>
+                    .working-entry-toolbar {
+                        display: flex;
+                        align-items: center;
+                        justify-content: flex-end;
+                        gap: 12px;
+                        margin: 8px 5px 10px;
+                        padding: 0;
+                    }
+                    .working-entry-toolbar .entry-actions {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .add-entry-row {
+                        border: 0;
+                        border-radius: 20px;
+                        padding: 8px 18px;
+                        background: linear-gradient(135deg, #1769aa, #2b9acb);
+                        color: #ffffff;
+                        font-weight: 700;
+                        box-shadow: 0 8px 18px rgba(23, 105, 170, .25);
+                    }
+                    .add-entry-row:hover,
+                    .add-entry-row:focus {
+                        color: #ffffff;
+                        background: linear-gradient(135deg, #125a92, #238ab8);
+                    }
+                    .working-sheet-wrap {
+                        padding-left: 5px;
+                        padding-right: 5px;
+                        overflow-x: auto;
+                    }
+                    #table_working_details {
+                        min-width: 3600px;
+                        border-collapse: collapse;
+                        background: #ffffff;
+                        table-layout: fixed;
+                    }
+                    #table_working_details th,
+                    #table_working_details td {
+                        border: 1px solid #d9e2ef !important;
+                        vertical-align: middle !important;
+                        padding: 5px 6px;
+                        color: #172033;
+                    }
+                    #table_working_details thead th {
+                        background: #eaf2ff;
+                        color: #172033;
+                        text-align: center;
+                        font-weight: 700;
+                        white-space: normal;
+                        line-height: 1.2;
+                    }
+                    #table_working_details thead tr:first-child th {
+                        background: #bcd4f6;
+                        text-transform: uppercase;
+                        letter-spacing: .03em;
+                    }
+                    #table_working_details thead tr:nth-child(2) th {
+                        background: #d8e8fb;
+                    }
+                    #table_working_details tbody td {
+                        background: #ffffff;
+                        white-space: normal;
+                        font-size: 12px;
+                    }
+                    #table_working_details tbody tr:nth-child(even) td {
+                        background: #f8fbff;
+                    }
+                    #table_working_details .sheet-cell-input,
+                    #table_working_details select,
+                    #table_working_details textarea {
+                        width: 100%;
+                        border: 1px solid #cbd7e6;
+                        border-radius: 2px;
+                        background: #fff;
+                        font-size: 12px;
+                        padding: 3px 4px;
+                    }
+                    #table_working_details .sheet-cell-input:focus,
+                    #table_working_details select:focus,
+                    #table_working_details textarea:focus {
+                        border-color: #2b6fbd;
+                        box-shadow: 0 0 0 2px rgba(43, 111, 189, .14);
+                        outline: none;
+                    }
+                    #table_working_details .sheet-draft-input.sheet-dirty {
+                        background: #fff9df;
+                    }
+                    #table_working_details .blank-entry-row td {
+                        background: #fffdf5;
+                    }
+                    #table_working_details textarea {
+                        min-height: 44px;
+                        resize: vertical;
+                    }
+                    #table_working_details td[data-name="company_name"] .sheet-cell-input {
+                        white-space: nowrap;
+                    }
+                    #table_working_details th:nth-child(4),
+                    #table_working_details td:nth-child(4) {
+                        width: 300px !important;
+                        min-width: 300px !important;
+                        max-width: 300px !important;
+                    }
+                    #table_working_details td:nth-child(7) {
+                        width: 300px !important;
+                        min-width: 300px !important;
+                        max-width: 300px !important;
+                    }
+                    #table_working_details td:nth-child(4) .sheet-cell-input {
+                        min-width: 270px;
+                    }
+                    #table_working_details td:nth-child(7) textarea {
+                        min-width: 270px;
+                    }
+                    #table_working_details td[data-name="contract_installment_details"] textarea {
+                        min-height: 58px;
+                        line-height: 1.35;
+                    }
+                    .sheet-col-sr { width: 55px; }
+                    .sheet-col-sm { width: 115px; }
+                    .sheet-col-md { width: 155px; }
+                    .sheet-col-lg { width: 220px; }
+                    .sheet-col-company { width: 300px; }
+                    .sheet-col-installment { width: 300px; }
+                    .sheet-col-xl { width: 280px; }
+                </style>
+                <div class="working-entry-toolbar">
+                    <div class="entry-actions">
+                        <button type="button" class="add-entry-row">+ Add 5 Rows</button>
+                    </div>
+                </div>
                 <div class="row clearfix" style="margin-top:  ">
-                    <div class="col-md-12 table-responsive" style="padding-left:5px; padding-right:5px">
+                    <div class="col-md-12 working-sheet-wrap">
                         <table class="table table-bordered table-hover table-sortable table-striped" id="table_working_details">
+                            <colgroup>
+                                <col style="width:55px">
+                                <col style="width:115px">
+                                <col style="width:115px">
+                                <col style="width:430px">
+                                <col style="width:155px">
+                                <col style="width:115px">
+                                <col style="width:430px">
+                                <col style="width:115px">
+                                <col style="width:115px">
+                                <col style="width:155px">
+                                <col style="width:115px">
+                                <col style="width:115px">
+                                <col style="width:115px">
+                                <col style="width:115px">
+                                <col style="width:155px">
+                                <col style="width:155px">
+                                <col style="width:115px">
+                                <col style="width:115px">
+                                <col style="width:155px">
+                                <col style="width:155px">
+                                <col style="width:280px">
+                                <col style="width:280px">
+                            </colgroup>
                             <thead>
                                 <tr>
-                                    <th class="">
-                                        <small><a>Priori</a></small>
-                                    </th>
-                                    <th class="">
-                                        <small><a>Client</a></small>
-                                    </th>
-                                    <th class="">
-                                        <small><a>Ser. Type</a></small>
-                                    </th>
-                                    <th class="">
-                                        <small><a>Cert Body</a></small>
-                                    </th>
-                                    <th class="">
-                                        <small><a>Auditor</a></small>
-                                    </th>
-                                    <th class="">
-                                        <small><a>Audit Date</a></small>
-                                    </th>
-                                    <th class="">
-                                        <small><a>Consultant</a></small>
-                                    </th>
-                                    <?php
-                                    $date = date("d-m-Y");
-                                    $newdate1 = strtotime('-2 day', strtotime($date));
-                                    $newdate1 = date('d-M-Y', $newdate1);
-                                    $orderdate = explode('-', $newdate1);
-                                    $day1 = $orderdate[0];
-									$columnName1 = 'day' . $day1;
-									$monthName1 = $orderdate[1];
-									$year1 = $orderdate[2];
-                                    ?>
-                                    <th class="">
-                                        <small><a>Day <?php echo $day1 ?></a></small>
-                                    </th>
-                                    <?php
-                                    $newdate2 = strtotime('-1 day', strtotime($date));
-                                    $newdate2 = date('d-M-Y', $newdate2);
-                                    $orderdate = explode('-', $newdate2);
-                                    $day2 = $orderdate[0];
-									$columnName2 = 'day' . $day2;
-									$monthName2 = $orderdate[1];
-									$year2 = $orderdate[2];
-                                    ?>
-                                    <th class="">
-                                        <small><a>Day <?php echo $day2 ?></a></small>
-                                    </th>
-                                    <?php
-                                    $newdate3 = strtotime($date);
-                                    $newdate3 = date('d-M-Y', $newdate3);
-                                    $orderdate = explode('-', $newdate3);
-                                    $day3 = $orderdate[0];
-									$columnName3 = 'day' . $day3;
-									$monthName3 = $orderdate[1];
-									$year3 = $orderdate[2];
-                                    ?>
-                                    <th class="">
-                                        <small><a>Day <?php echo $day3; ?></a></small>
-                                    </th>
-                                    <?php
-                                    $newdate4 = strtotime('+1 day', strtotime($date));
-                                    $newdate4 = date('d-M-Y', $newdate4);
-                                    $orderdate = explode('-', $newdate4);
-                                    $day4 = $orderdate[0];
-									$columnName4 = 'day' . $day4;
-									$monthName4 = $orderdate[1];
-									$year4 = $orderdate[2];
-                                    ?>
-                                    <th class="">
-                                        <small><a>Day <?php echo $day4; ?></a></small>
-                                    </th>
-                                    <?php
-                                    $newdate5 = strtotime('+2 day', strtotime($date));
-                                    $newdate5 = date('d-M-Y', $newdate5);
-                                    $orderdate = explode('-', $newdate5);
-                                    $day5 = $orderdate[0];
-									$columnName5 = 'day' . $day5;
-									$monthName5 = $orderdate[1];
-									$year5 = $orderdate[2];
-                                    ?>
-                                    <th class="">
-                                        <small><a>Day <?php echo $day5; ?></a></small>
-                                    </th>
-                                    <th class="">
-                                        <small><a>Comments</a></small>
-                                    </th>
+                                    <th rowspan="2" class="sheet-col-sr"><small>Sr. No.</small></th>
+                                    <th rowspan="2" class="sheet-col-sm"><small>Service Type</small></th>
+                                    <th rowspan="2" class="sheet-col-sm"><small>Standard</small></th>
+                                    <th rowspan="2" class="sheet-col-company"><small>Company Name</small></th>
+                                    <th rowspan="2" class="sheet-col-md"><small>Service Firm</small></th>
+                                    <th colspan="4"><small>Project Costing (Decided)</small></th>
+                                    <th rowspan="2" class="sheet-col-md"><small>Contract Thanks Mail Date</small></th>
+                                    <th colspan="2"><small>Received Amount</small></th>
+                                    <th colspan="2"><small>Remaining Amount</small></th>
+                                    <th rowspan="2" class="sheet-col-md"><small>1st Visit Date (Project Start)</small></th>
+                                    <th colspan="3"><small>Consultant Visits Record</small></th>
+                                    <th rowspan="2" class="sheet-col-md"><small>Audit Date (Project Closing)</small></th>
+                                    <th rowspan="2" class="sheet-col-md"><small>Project Status</small></th>
+                                    <th rowspan="2" class="sheet-col-xl"><small>Other Comments</small></th>
+                                    <th rowspan="2" class="sheet-col-xl"><small>Guidelines / Notes section</small></th>
+                                </tr>
+                                <tr>
+                                    <th class="sheet-col-sm"><small>Contract Total Cost</small></th>
+                                    <th class="sheet-col-installment"><small>Contract Installment Details</small></th>
+                                    <th class="sheet-col-sm"><small>CB Amount</small></th>
+                                    <th class="sheet-col-sm"><small>Consultant Amount</small></th>
+                                    <th class="sheet-col-sm"><small>CB</small></th>
+                                    <th class="sheet-col-sm"><small>Consultant</small></th>
+                                    <th class="sheet-col-sm"><small>CB</small></th>
+                                    <th class="sheet-col-sm"><small>Consultant</small></th>
+                                    <th class="sheet-col-md"><small>Consultant</small></th>
+                                    <th class="sheet-col-sm"><small>Total Visit</small></th>
+                                    <th class="sheet-col-sm"><small>Month Visit</small></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -200,75 +323,100 @@
                                 $count = 0;
                                 foreach ($listOfCustomers as $customer) {
                                     $count = $count + 1;
-                                    $diff = $customer['DateDiff'];
+                                    $serviceId = workingDetailsValue($customer, "service_id");
+                                    $cbSummary = array("contract_details" => "", "amount_decided" => 0, "payment_received" => 0, "balance" => 0);
+                                    $consultingSummary = array("consulting_fees" => "", "consulting_amount_decided" => 0, "consulting_payment_received" => 0, "consulting_balance" => 0);
+                                    $totalVisits = 0;
+                                    $monthVisits = 0;
+
+                                    if (!empty($serviceId)) {
+                                        try {
+                                            $sql = "SELECT GROUP_CONCAT(contract_details SEPARATOR ', ') AS contract_details, SUM(amount_decided) AS amount_decided, SUM(payment_received) AS payment_received, SUM(balance) AS balance FROM certification_body WHERE service_id = :serviceid";
+                                            $statement = $db->prepare($sql);
+                                            $statement->bindParam(':serviceid', $serviceId);
+                                            $statement->execute();
+                                            $cbData = $statement->fetch();
+                                            if ($cbData) {
+                                                $cbSummary = $cbData;
+                                            }
+                                        } catch (Exception $e) {
+                                        }
+
+                                        try {
+                                            $sql = "SELECT GROUP_CONCAT(consulting_fees SEPARATOR ', ') AS consulting_fees, SUM(consulting_amount_decided) AS consulting_amount_decided, SUM(consulting_payment_received) AS consulting_payment_received, SUM(consulting_balance) AS consulting_balance FROM consulting WHERE service_id = :serviceid";
+                                            $statement = $db->prepare($sql);
+                                            $statement->bindParam(':serviceid', $serviceId);
+                                            $statement->execute();
+                                            $consultingData = $statement->fetch();
+                                            if ($consultingData) {
+                                                $consultingSummary = $consultingData;
+                                            }
+                                        } catch (Exception $e) {
+                                        }
+                                    }
+
+                                    for ($visitCounter = 1; $visitCounter <= 31; $visitCounter++) {
+                                        $visitKey = "day" . $visitCounter;
+                                        if (!empty($customer[$visitKey])) {
+                                            $totalVisits++;
+                                            $monthVisits++;
+                                        }
+                                    }
+
+                                    $cbAmount = isset($cbSummary['amount_decided']) ? $cbSummary['amount_decided'] : 0;
+                                    $consultantAmount = isset($consultingSummary['consulting_amount_decided']) ? $consultingSummary['consulting_amount_decided'] : 0;
+                                    $contractTotal = (float) $cbAmount + (float) $consultantAmount;
+                                    $contractInstallments = trim(workingDetailsValue($cbSummary, "contract_details") . " " . workingDetailsValue($consultingSummary, "consulting_fees"));
                                     ?>
                                     <tr id='addr0' >
-                                        <td data-name="mail" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
+                                        <td data-name="sr">
+                                            <small><?php echo $count; ?></small>
+                                        </td>
+                                        <td data-name="service_type">
+                                            <?php echo workingDetailsDraftInput(workingDetailsValue($customer, 'service_type'), "existing-" . $serviceId . "-service_type", "Service Type"); ?>
+                                        </td>
+                                        <td data-name="standard">
+                                            <?php echo workingDetailsDraftInput(workingDetailsValue($customer, 'cert_body'), "existing-" . $serviceId . "-standard", "Standard"); ?>
+                                        </td>
+                                        <td data-id="<?php echo workingDetailsValue($customer, 'customer_id'); ?>" data-name="company_name">
+                                            <?php echo workingDetailsDraftInput(workingDetailsValue($customer, 'company_name'), "existing-" . $serviceId . "-company_name", "Company Name"); ?>
+                                        </td>
+                                        <td data-name="service_firm">
+                                            <?php echo workingDetailsDraftInput(workingDetailsValue($customer, 'consulting_firm'), "existing-" . $serviceId . "-service_firm", "Service Firm"); ?>
+                                        </td>
+                                        <td data-name="contract_total_cost">
+                                            <?php echo workingDetailsDraftInput(workingDetailsMoney($contractTotal), "existing-" . $serviceId . "-contract_total_cost", "Total Cost"); ?>
+                                        </td>
+                                        <td data-name="contract_installment_details">
+                                            <?php echo workingDetailsDraftTextarea($contractInstallments, "existing-" . $serviceId . "-contract_installment_details", "Installment Details"); ?>
+                                        </td>
+                                        <td data-name="cb_amount">
+                                            <?php echo workingDetailsDraftInput(workingDetailsMoney($cbAmount), "existing-" . $serviceId . "-cb_amount", "CB Amount"); ?>
+                                        </td>
+                                        <td data-name="consultant_amount">
+                                            <?php echo workingDetailsDraftInput(workingDetailsMoney($consultantAmount), "existing-" . $serviceId . "-consultant_amount", "Consultant Amount"); ?>
+                                        </td>
+                                        <td data-name="contract_thanks_mail_date">
+                                            <?php echo workingDetailsDraftInput(workingDetailsValue($customer, 'contract_thanks_mail_date'), "existing-" . $serviceId . "-contract_thanks_mail_date", "DD.MM.YYYY"); ?>
+                                        </td>
+                                        <td data-name="received_cb">
+                                            <?php echo workingDetailsDraftInput(workingDetailsMoney(workingDetailsValue($cbSummary, 'payment_received')), "existing-" . $serviceId . "-received_cb", "Received CB"); ?>
+                                        </td>
+                                        <td data-name="received_consultant">
+                                            <?php echo workingDetailsDraftInput(workingDetailsMoney(workingDetailsValue($consultingSummary, 'consulting_payment_received')), "existing-" . $serviceId . "-received_consultant", "Received Consultant"); ?>
+                                        </td>
+                                        <td data-name="remaining_cb">
+                                            <?php echo workingDetailsDraftInput(workingDetailsMoney(workingDetailsValue($cbSummary, 'balance')), "existing-" . $serviceId . "-remaining_cb", "Remaining CB"); ?>
+                                        </td>
+                                        <td data-name="remaining_consultant">
+                                            <?php echo workingDetailsDraftInput(workingDetailsMoney(workingDetailsValue($consultingSummary, 'consulting_balance')), "existing-" . $serviceId . "-remaining_consultant", "Remaining Consultant"); ?>
+                                        </td>
+                                        <td data-name="project_start">
+                                            <?php echo workingDetailsDraftInput(simpleDateConversion(workingDetailsValue($customer, 'created_at')), "existing-" . $serviceId . "-project_start", "DD.MM.YYYY"); ?>
+                                        </td>
+                                        <td data-name="consultant">
                                             <div class="table-edit-control">
-                                                <select  class="workingPriority" id="workingPriority" name="workingPriority" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" >
-                                                    <option value="<?php
-                                                    if (isset($customer["priorty"])) {
-                                                        echo $customer["priorty"];
-                                                    } else {
-                                                        echo "";
-                                                    }
-                                                    ?>" ><?php
-                                                                if (isset($customer["priorty"]) && !empty($customer["priorty"])) {
-                                                                    echo $customer["priorty"];
-                                                                } else {
-                                                                    echo "Select";
-                                                                }
-                                                                ?> </option>
-                                                    <option value="1" >1</option>
-                                                    <option value="2" >2</option>
-                                                    <option value="3" >3</option>
-                                                    <option value="4" >4</option>
-                                                    <option value="5" >5</option>
-                                                </select>
-                                                <!--<input type="text" class="dalyConsult" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" value="<?php echo $customer["priorty"]; ?>">-->
-                                            </div>
-                                        </td>
-                                        <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="mail" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                            <small><a data-id="<?php echo $customer['customer_id'] ?>" class="customerAccount"><?php echo $customer['company_name'] ?></a></small>
-                                        </td>
-                                        <td class=""  data-name="desc" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                            <small><span><?php echo $customer['consultant']; ?>~</span><?php echo $customer['service_type'] ?></small>
-                                        </td>
-                                        <td class="" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                            <small><?php echo $customer['cert_body'] ?></small>
-                                        </td>
-                                        <td data-name="mail" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                            <div class="table-edit-control">
-                                                <select  class="workingAuditor" id="workingAuditor" name="workingAuditor" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" >
-                                                    <option value="<?php
-                                                    if (isset($customer['auditor'])) {
-                                                        echo $customer['auditor'];
-                                                    } else {
-                                                        echo "";
-                                                    }
-                                                    ?>" ><?php
-                                                                if (isset($customer['auditor']) && !empty($customer['auditor'])) {
-                                                                    echo $customer['auditor'];
-                                                                } else {
-                                                                    echo "Select";
-                                                                }
-                                                                ?> </option>
-                                                    <option value="" >Select</option>
-                                                    <?php foreach ($allAuditorList as $auditor) { ?>
-                                                        <option value="<?php echo $auditor["auditor_name"] ?>" ><?php echo $auditor["auditor_name"] ?></option>
-                                                    <?php } ?>
-                                                </select>
-                                            </div>
-                                        </td>
-                                        <td style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                            <div class="table-edit-control">                                                                
-                                                <small><input type="text" class="workingAuditDate" name="workingAuditDate" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>"  value="<?php echo simpleDateConversion($customer['audit_date']); ?>" placeholder="" ></small>
-                                            </div>
-                                            <!--<small><span><?php echo getFlatDate($customer['next_service_date']); ?>~</span><?php echo simpleDateConversion($customer['certification_date']); ?></small>-->
-                                        </td>
-                                        <td data-name="mail" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                            <div class="table-edit-control">                                                        
-                                                <select  class="workingConsultant" id="workingConsultant" name="workingConsultant" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" >
+                                                <select class="workingConsultant" id="workingConsultant" name="workingConsultant" data-custome="<?php echo workingDetailsValue($customer, "customer_id"); ?>" data-service="<?php echo $serviceId; ?>" >
                                                     <option value="<?php
                                                     if (isset($customer['consultant'])) {
                                                         echo $customer['consultant'];
@@ -289,72 +437,56 @@
                                                 </select>
                                             </div>
                                         </td>
-                                        <?php
-                                        if ($diff == "2") {
-                                            $bg = "background-color: orange";
-                                        } else {
-                                            $bg = "";
-                                        }
-                                        ?>
-                                        <td class="" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; <?php echo $bg ?>">
+                                        <td data-name="total_visit">
+                                            <?php echo workingDetailsDraftInput($totalVisits, "existing-" . $serviceId . "-total_visit", "Total Visit"); ?>
+                                        </td>
+                                        <td data-name="month_visit">
+                                            <?php echo workingDetailsDraftInput($monthVisits, "existing-" . $serviceId . "-month_visit", "Month Visit"); ?>
+                                        </td>
+                                        <td data-name="audit_date">
                                             <div class="table-edit-control">
-                                                <input type="text" class="dalyConsult" data-date="<?php echo $newdate1 ?>" data-column="<?php echo $columnName1; ?>" data-day="<?php echo $day1; ?>" data-month="<?php echo $monthName1; ?>" data-year="<?php echo $year1; ?>" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" value="<?php echo $customer["day1"]; ?>">
+                                                <small><input type="text" class="workingAuditDate sheet-cell-input" name="workingAuditDate" data-custome="<?php echo workingDetailsValue($customer, "customer_id"); ?>" data-service="<?php echo $serviceId; ?>"  value="<?php echo simpleDateConversion(workingDetailsValue($customer, 'audit_date')); ?>" placeholder="" ></small>
                                             </div>
                                         </td>
-                                        <?php
-                                        if ($diff == "1") {
-                                            $bg = "background-color: orange";
-                                        } else {
-                                            $bg = "";
-                                        }
-                                        ?>
-                                        <td class="" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; <?php echo $bg; ?>">
+                                        <td data-name="project_status">
+                                            <?php echo workingDetailsDraftInput(workingDetailsValue($customer, 'add_service_to'), "existing-" . $serviceId . "-project_status", "Project Status"); ?>
+                                        </td>
+                                        <td data-name="other_comments">
                                             <div class="table-edit-control">
-												<input type="text" class="dalyConsult" data-date="<?php echo $newdate2 ?>" data-column="<?php echo $columnName2; ?>" data-day="<?php echo $day2; ?>" data-month="<?php echo $monthName2; ?>" data-year="<?php echo $year2; ?>" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" value="<?php echo $customer["day2"]; ?>">
+                                                <textarea data-row-id="" rows="3" id="autosavecomments" class="autosavecomments saveChanges customComments" data-row="<?php echo workingDetailsValue($customer, 'customer_id'); ?>" name="payComments" value="" placeholder="" ><?php if (isset($customer['comments'])) echo $customer['comments'] ?></textarea>
                                             </div>
                                         </td>
-                                        <?php
-                                        if ($diff == "0") {
-                                            $bg = "background-color: orange";
-                                        } else {
-                                            $bg = "";
-                                        }
-                                        ?>
-                                        <td class="" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; <?php echo $bg; ?>">
+                                        <td data-name="guidelines_notes">
                                             <div class="table-edit-control">
-												<input type="text" class="dalyConsult" data-date="<?php echo $newdate3 ?>" data-column="<?php echo $columnName3; ?>" data-day="<?php echo $day3; ?>" data-month="<?php echo $monthName3; ?>" data-year="<?php echo $year3; ?>" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" value="<?php echo $customer["day3"]; ?>">
+                                                <?php echo workingDetailsDraftTextarea(workingDetailsValue($customer, 'guidelines_notes'), "existing-" . $serviceId . "-guidelines_notes", "Guidelines / Notes"); ?>
                                             </div>
                                         </td>
-                                        <?php
-                                        if ($diff == "-1") {
-                                            $bg = "background-color: orange";
-                                        } else {
-                                            $bg = "";
-                                        }
-                                        ?>
-                                        <td class="" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; <?php echo $bg; ?>">
-                                            <div class="table-edit-control">
-												<input type="text" class="dalyConsult" data-date="<?php echo $newdate4 ?>" data-column="<?php echo $columnName4; ?>" data-day="<?php echo $day4; ?>" data-month="<?php echo $monthName4; ?>" data-year="<?php echo $year4; ?>" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" value="<?php echo $customer["day4"]; ?>">
-                                            </div>
-                                        </td>
-                                        <?php
-                                        if ($diff == "-2") {
-                                            $bg = "background-color: orange";
-                                        } else {
-                                            $bg = "";
-                                        }
-                                        ?>
-                                        <td class="" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; <?php echo $bg; ?>">
-                                            <div class="table-edit-control">
-												<input type="text" class="dalyConsult" data-date="<?php echo $newdate5 ?>" data-column="<?php echo $columnName5; ?>" data-day="<?php echo $day5; ?>" data-month="<?php echo $monthName5; ?>" data-year="<?php echo $year5; ?>" data-custome="<?php echo $customer["customer_id"]; ?>" data-service="<?php echo $customer["service_id"] ?>" value="<?php echo $customer["day5"]; ?>">
-                                            </div>
-                                        </td>
-                                        <td data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                            <div class="table-edit-control">                                                                
-                                                <textarea data-row-id="" rows="3" id="autosavecomments" class="autosavecomments saveChanges customComments" data-row="<?php echo $customer['customer_id'] ?>" name="payComments" value="" placeholder="" ><?php if (isset($customer['comments'])) echo $customer['comments'] ?></textarea>
-                                            </div>
-                                            <!--<small><?php echo nl2br($customer['comments']); ?></small>-->
-                                        </td>
+                                    </tr>
+                                <?php } ?>
+                                <?php for ($blankRow = 1; $blankRow <= 25; $blankRow++) { ?>
+                                    <tr class="blank-entry-row">
+                                        <td data-name="sr"><small><?php echo $count + $blankRow; ?></small></td>
+                                        <td data-name="service_type"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-service_type", "Service Type"); ?></td>
+                                        <td data-name="standard"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-standard", "Standard"); ?></td>
+                                        <td data-name="company_name"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-company_name", "Company Name"); ?></td>
+                                        <td data-name="service_firm"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-service_firm", "Service Firm"); ?></td>
+                                        <td data-name="contract_total_cost"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-contract_total_cost", "Total Cost"); ?></td>
+                                        <td data-name="contract_installment_details"><?php echo workingDetailsDraftTextarea("", "blank-" . $blankRow . "-contract_installment_details", "Installment Details"); ?></td>
+                                        <td data-name="cb_amount"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-cb_amount", "CB Amount"); ?></td>
+                                        <td data-name="consultant_amount"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-consultant_amount", "Consultant Amount"); ?></td>
+                                        <td data-name="contract_thanks_mail_date"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-contract_thanks_mail_date", "DD.MM.YYYY"); ?></td>
+                                        <td data-name="received_cb"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-received_cb", "Received CB"); ?></td>
+                                        <td data-name="received_consultant"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-received_consultant", "Received Consultant"); ?></td>
+                                        <td data-name="remaining_cb"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-remaining_cb", "Remaining CB"); ?></td>
+                                        <td data-name="remaining_consultant"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-remaining_consultant", "Remaining Consultant"); ?></td>
+                                        <td data-name="project_start"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-project_start", "DD.MM.YYYY"); ?></td>
+                                        <td data-name="consultant"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-consultant", "Consultant"); ?></td>
+                                        <td data-name="total_visit"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-total_visit", "Total Visit"); ?></td>
+                                        <td data-name="month_visit"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-month_visit", "Month Visit"); ?></td>
+                                        <td data-name="audit_date"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-audit_date", "DD.MM.YYYY"); ?></td>
+                                        <td data-name="project_status"><?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-project_status", "Project Status"); ?></td>
+                                        <td data-name="other_comments"><?php echo workingDetailsDraftTextarea("", "blank-" . $blankRow . "-other_comments", "Other Comments"); ?></td>
+                                        <td data-name="guidelines_notes"><?php echo workingDetailsDraftTextarea("", "blank-" . $blankRow . "-guidelines_notes", "Guidelines / Notes"); ?></td>
                                     </tr>
                                 <?php } ?>
                             </tbody>
@@ -386,7 +518,7 @@
 
                 if (certification != "") {
 //                        alert(certification);
-                    var certificationStr = data[3] || ""; // use data for the age column
+                    var certificationStr = data[2] || "";
                     //            alert(servieTypeStr);
                     if (certificationStr.toUpperCase().trim() == certification.toUpperCase().trim()) {
                         //                alert("test");
@@ -398,9 +530,9 @@
 
                 if (consultant != "") {
 //                        alert("test");
-                    var consultantStr = data[2] || "";
+                    var consultantStr = data[15] || "";
 //                        alert(consultantStr);
-                    var dateSplit = consultantStr.split("~");// use data for the age column
+                    var dateSplit = consultantStr.split("~");
 //                                    alert(dateSplit[0]);
 //                        alert(consultant);
                     if (dateSplit[0].toUpperCase().trim() == consultant.toUpperCase().trim()) {
@@ -452,58 +584,104 @@
         "ordering": false,
         "columnDefs": [
             {
-                "width": "7%",
-                "targets": 0
-            },
-            {
-                "width": "3%",
-                "targets": 1
-            },
-            {
-                "width": "5%",
-                "targets": 2
-            },
-            {
-                "width": "5%",
-                "targets": 3
-            },
-            {
-                "width": "10%",
-                "targets": 4
-            },
-            {
-                "width": "5%",
-                "targets": 5
-            },
-            {
-                "width": "3%",
-                "targets": 6
-            },
-            {
-                "width": "3%",
-                "targets": 7
-            },
-            {
-                "width": "3%",
-                "targets": 8
-            },
-            {
-                "width": "3%",
-                "targets": 9
-            },
-            {
-                "width": "3%",
-                "targets": 10
-            },
-            {
-                "width": "3%",
-                "targets": 11
+                "targets": "_all",
+                "className": "dt-head-center dt-body-left"
             },
         ]
                 //        "paging":         false
     });
 
     table.columns.adjust().draw();
+
+    var workingDraftPrefix = 'workingDetailsTestDraft:';
+    var blankRowCounter = $('#table_working_details tbody tr').length;
+    var blankColumns = [
+        ['service_type', 'Service Type', 'input'],
+        ['standard', 'Standard', 'input'],
+        ['company_name', 'Company Name', 'input'],
+        ['service_firm', 'Service Firm', 'input'],
+        ['contract_total_cost', 'Total Cost', 'input'],
+        ['contract_installment_details', 'Installment Details', 'textarea'],
+        ['cb_amount', 'CB Amount', 'input'],
+        ['consultant_amount', 'Consultant Amount', 'input'],
+        ['contract_thanks_mail_date', 'DD.MM.YYYY', 'input'],
+        ['received_cb', 'Received CB', 'input'],
+        ['received_consultant', 'Received Consultant', 'input'],
+        ['remaining_cb', 'Remaining CB', 'input'],
+        ['remaining_consultant', 'Remaining Consultant', 'input'],
+        ['project_start', 'DD.MM.YYYY', 'input'],
+        ['consultant', 'Consultant', 'input'],
+        ['total_visit', 'Total Visit', 'input'],
+        ['month_visit', 'Month Visit', 'input'],
+        ['audit_date', 'DD.MM.YYYY', 'input'],
+        ['project_status', 'Project Status', 'input'],
+        ['other_comments', 'Other Comments', 'textarea'],
+        ['guidelines_notes', 'Guidelines / Notes', 'textarea']
+    ];
+
+    function escapeSheetValue(value) {
+        return $('<div>').text(value || '').html();
+    }
+
+    function loadWorkingDrafts(scope) {
+        $(scope).find('.sheet-draft-input').each(function () {
+            var draftKey = $(this).attr('data-draft-key');
+            var savedValue = localStorage.getItem(workingDraftPrefix + draftKey);
+            if (savedValue !== null) {
+                $(this).val(savedValue).addClass('sheet-dirty');
+            }
+        });
+    }
+
+    function buildBlankRow(rowNumber) {
+        var rowKey = 'manual-' + rowNumber;
+        var html = '<tr class="blank-entry-row"><td data-name="sr"><small>' + rowNumber + '</small></td>';
+        for (var i = 0; i < blankColumns.length; i++) {
+            var column = blankColumns[i];
+            var draftKey = rowKey + '-' + column[0];
+            html += '<td data-name="' + column[0] + '">';
+            if (column[2] === 'textarea') {
+                html += '<textarea rows="3" class="sheet-cell-input sheet-draft-input" data-draft-key="' + draftKey + '" placeholder="' + escapeSheetValue(column[1]) + '"></textarea>';
+            } else {
+                html += '<input type="text" class="sheet-cell-input sheet-draft-input" data-draft-key="' + draftKey + '" placeholder="' + escapeSheetValue(column[1]) + '" />';
+            }
+            html += '</td>';
+        }
+        html += '</tr>';
+        return $(html);
+    }
+
+    loadWorkingDrafts(document);
+
+    $(document).on('input change', '.sheet-draft-input', function () {
+        var draftKey = $(this).attr('data-draft-key');
+        localStorage.setItem(workingDraftPrefix + draftKey, $(this).val());
+        $(this).addClass('sheet-dirty');
+    });
+
+    $('.add-entry-row').on('click', function () {
+        for (var i = 0; i < 5; i++) {
+            blankRowCounter++;
+            var row = buildBlankRow(blankRowCounter);
+            table.row.add(row[0]).draw(false);
+        }
+        table.columns.adjust().draw(false);
+    });
+
+    $(document).on('keydown', '#table_working_details input, #table_working_details select, #table_working_details textarea', function (e) {
+        if (e.key !== 'Enter') {
+            return;
+        }
+        if ($(this).is('textarea') && e.shiftKey) {
+            return;
+        }
+        e.preventDefault();
+        var cells = $('#table_working_details').find('input:visible, select:visible, textarea:visible').filter(':not([readonly])');
+        var currentIndex = cells.index(this);
+        if (currentIndex > -1 && currentIndex + 1 < cells.length) {
+            cells.eq(currentIndex + 1).focus().select();
+        }
+    });
 
     $(document).ready(function () {
 
