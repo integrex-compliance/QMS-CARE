@@ -59,10 +59,11 @@
                     <div class="col-sm-12 contact-form">
                         <div class="row clearfix" style="margin-top: 20px; ">
                             <div class="col-md-12 table-responsive" style="padding-left:5px; padding-right:5px">
-                                <table class="table table-bordered table-hover table-sortable table-striped" id="table_working_details">
+                                <table class="table table-bordered table-hover table-sortable table-striped"
+                                    id="table_working_details">
                                     <thead>
                                         <tr>
-<!--                                            <th class="">
+                                            <!--                                            <th class="">
                                                 <small><a>Sr.</a></small>
                                             </th>-->
                                             <th class="">
@@ -109,41 +110,64 @@
                                             $statement = $db->prepare($sql);
                                             $statement->execute();
                                             $pendingConsulting = $statement->fetch();
-//                                                        echo $customer['service_id'];
+                                            //                                                        echo $customer['service_id'];
                                             ?>
-                                            <tr id='addr0' >
-    <!--                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="mail" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
+                                            <tr id='addr0'>
+                                                <!--                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="mail" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
                                                     <small><a data-id="<?php echo $customer['customer_id'] ?>" class="customerAccount"><?php echo $count ?></a></small>
                                                 </td>-->
-                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="mail" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                                    <small><a data-id="<?php echo $customer['customer_id'] ?>" class="customerAccount"><?php echo $customer['company_name'] ?></a></small>
+                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>"
+                                                    data-name="mail"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
+                                                    <small><a data-id="<?php echo $customer['customer_id'] ?>"
+                                                            class="customerAccount"><?php echo $customer['company_name'] ?></a></small>
                                                 </td>
-                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="desc" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
+                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>"
+                                                    data-name="desc"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
                                                     <small><?php echo $customer['service_type'] ?></small>
                                                 </td>
-                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
+                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>"
+                                                    data-name="sel"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
                                                     <small><?php echo $customer['cert_body'] ?></small>
                                                 </td>
-                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; text-align: center">
+                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>"
+                                                    data-name="sel"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; text-align: center">
                                                     <small><?php echo $pendingCert["pending_cert"] ?></small>
                                                 </td>
-                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; text-align: center">
+                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>"
+                                                    data-name="sel"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; text-align: center">
                                                     <small><?php echo $pendingConsulting["pending_cb"] ?></small>
                                                 </td>
-                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
+                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>"
+                                                    data-name="sel"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
                                                     <small><?php echo $customer['auditor'] ?></small>
                                                 </td>
-                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; text-align: center">
+                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>"
+                                                    data-name="sel"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; text-align: center">
                                                     <small><span><?php echo getFlatDate($customer['audit_date']); ?></span><?php echo simpleDateConversion($customer['audit_date']); ?></small>
                                                 </td>
-                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>" data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
+                                                <td class="customerAccount" data-id="<?php echo $customer['customer_id'] ?>"
+                                                    data-name="sel"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
                                                     <small><span><?php echo $customer['consultant']; ?></span><?php echo $customer['consultant']; ?></small>
                                                 </td>
-                                                <td data-name="sel" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
-                                                    <div class="table-edit-control">                                                                
-                                                        <textarea data-row-id="" rows="3" id="autosavecomments" class="autosavecomments saveChanges customComments" data-row="<?php echo $customer['customer_id'] ?>" name="payComments" value="" placeholder="" ><?php if (isset($customer['comments'])) echo $customer['comments'] ?></textarea>
-                                                    </div>
-                                                    <!--<small><?php echo nl2br($customer['comments']); ?></small>-->
+                                                <td data-name="sel"
+                                                    style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff;">
+                                                    <div class="table-edit-control">
+                                                        <textarea data-row-id="" rows="3" id="autosavecomments"
+                                                            class="autosavecomments saveChanges customComments"
+                                                            data-row="<?php echo $customer['customer_id'] ?>"
+                                                            name="payComments" value=""
+                                                            placeholder=""><?php if (isset($customer['comments']))
+                                                                echo $customer['comments'] ?></textarea>
+                                                        </div>
+                                                        <!--<small><?php echo nl2br($customer['comments']); ?></small>-->
                                                 </td>
                                             </tr>
                                         <?php } ?>
@@ -182,13 +206,13 @@ $statement->execute();
         e.preventDefault();
         $("#wrapper").toggleClass("active");
         $(".container").toggleClass("active");
-//                 $('.dataTable').resize();
-//                alert("after");
+        //                 $('.dataTable').resize();
+        //                alert("after");
         table.draw();
     });
 
     var table = $('#table_working_details').DataTable({
-//            "scrollY": "450px",
+        //            "scrollY": "450px",
         "sScrollX": "100%",
         "scrollY": '70vh',
         "scrollCollapse": true,
@@ -231,24 +255,24 @@ $statement->execute();
                 "width": "45%",
                 "targets": 8
             }
-//                {
-//                    "width": "60%",
-//                    "targets": 9
-//                }
+            //                {
+            //                    "width": "60%",
+            //                    "targets": 9
+            //                }
         ]
 
-                //        "paging":         false
+        //        "paging":         false
 
     });
     $(document).ready(function () {
 
         // scroll down the textarea at bottom on page load 
-        $(".autosavecomments").animate({scrollTop: $('.autosavecomments').prop("scrollHeight")}, 1000);
+        $(".autosavecomments").animate({ scrollTop: $('.autosavecomments').prop("scrollHeight") }, 1000);
 
         $('.customComments').change(function (e) {
-//            alert($(this).val());
+            //            alert($(this).val());
             var colVal = $(this).val();
-//            $customer = $(this).attr('data-row');
+            //            $customer = $(this).attr('data-row');
             $.ajax({
                 url: "addCustomerDetails.php",
                 type: "GET",
@@ -259,17 +283,17 @@ $statement->execute();
                     columnValue: colVal,
                 },
                 error: function (xhr, status, error) {
-//                    alert("There seems to be issue saving data!");
+                    //                    alert("There seems to be issue saving data!");
                 },
                 success: function (data) {
-//                    alert(data); 
-//                    (moment(object[0]['start_time']).format('DD-MMM-YYYY'))
-//                    $('.serviceDate').val(data['next_service_date']);
-//                    $('.serviceDate').val(moment(data['next_service_date']).format('DD.MM.YYYY'));
-//                    $('.nextService').val(data['next_service_type']);
+                    //                    alert(data); 
+                    //                    (moment(object[0]['start_time']).format('DD-MMM-YYYY'))
+                    //                    $('.serviceDate').val(data['next_service_date']);
+                    //                    $('.serviceDate').val(moment(data['next_service_date']).format('DD.MM.YYYY'));
+                    //                    $('.nextService').val(data['next_service_type']);
                 }
             });
-//            saveData($(this));
+            //            saveData($(this));
         });
 
         $('.customComments').bind('keypress', function (e) {
@@ -295,8 +319,8 @@ $statement->execute();
             var customerID = $(this).attr('data-id');
             var url = 'customerAccountDetails.php'
             var form = $('<form action="' + url + '" method="get">' +
-                    '<input type="hidden" name="customerid" value="' + customerID + '" />' +
-                    '</form>');
+                '<input type="hidden" name="customerid" value="' + customerID + '" />' +
+                '</form>');
             $('body').append(form);
             form.submit();
         });
