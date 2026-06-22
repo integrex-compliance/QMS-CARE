@@ -69,12 +69,12 @@ if (isset($_POST['consultingFirmName']) && !empty($_POST['consultingFirmName']) 
         if (isset($_FILES ["firmLogo"]) && !( $_FILES['firmLogo']['size'] == 0 ) && isset($_FILES ["firmLogo"] ["name"]))
             $tf = uploadFile($file, "firmLogo");
         else
-            $tf = "upload/img1.png";
+            $tf = "";
 
         if (isset($_FILES ["firmSignature"]) && !( $_FILES['firmSignature']['size'] == 0 ) && isset($_FILES ["firmSignature"] ["name"]))
             $tf1 = uploadFile($file, "firmSignature");
         else
-            $tf1 = "upload/img1.png";
+            $tf1 = "";
 
         $services = explode('~', $_POST['firmServicesHidden']);
         $bankAbbr = explode('~', $_POST['firmBankAbbrHidden']);

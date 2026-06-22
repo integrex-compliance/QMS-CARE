@@ -136,6 +136,9 @@ $firmDetails = $statement->fetch();
 
 $firmName = $firmDetails['firm_name'];
 $firmLogo = $firmDetails['firm_logo'];
+if (!empty($firmLogo) && !file_exists($firmLogo)) {
+    $firmLogo = '';
+}
 $firmEmail = $firmDetails['firm_email'];
 $firm_pan_no = $firmDetails['firm_pan_no'];
 $bank_name = $firmDetails['bank_name'];
@@ -148,6 +151,9 @@ $firmContact = $firmDetails['firm_contact'];
 $invoice = $firmDetails['invoice_no'];
 $abbrevation = $firmDetails['firm_abbrevation'];
 $firmSign = $firmDetails['firmSignature'];
+if (!empty($firmSign) && !file_exists($firmSign)) {
+    $firmSign = '';
+}
 $customerName = $customer['company_name'];
 $customerAddress = $customer['company_address'];
 
@@ -302,10 +308,10 @@ $invoiceHeading = ($firm_id == 34) ? 'TAX INVOICE' : 'INVOICE';
 
 $html = '<table cellpadding="4" cellspacing="0" style="margin:0; padding:0;">
 <tr>
-    <td width="20%" style="text-align:right; vertical-align:top; padding:0; margin:0;">
-        <img src="' . $firmLogo . '" alt="logo" height="110" width="110" style="display:block; margin:0; padding:0;">
+    <td width="' . (!empty($firmLogo) ? '20' : '0') . '%" style="text-align:right; vertical-align:top; padding:0; margin:0;">'
+        . (!empty($firmLogo) ? '<img src="' . $firmLogo . '" alt="logo" height="110" width="110" style="display:block; margin:0; padding:0;">' : '') . '
     </td>
-    <td width="80%" style="text-align:center; font-size:1.4em; vertical-align:middle; padding:0; margin:0; line-height:1.2;">
+    <td width="' . (!empty($firmLogo) ? '80' : '100') . '%" style="text-align:center; font-size:1.4em; vertical-align:middle; padding:0; margin:0; line-height:1.2;">
         <b>' . $firmName . '</b><br>
         <span style="font-size:0.6em;"><b>' . $firmAddress . '</b></span>
     </td>
@@ -392,8 +398,8 @@ $html = '
         Current account No.- ' . $bank_account_no . '<br/>
         IFSC code – ' . $ifsc_code . '
     </td>
-    <td width="50%" align="right" valign="top">
-        <img src="' . $firmSign . '" alt="logo" height="60" width="210"><br/>
+    <td width="50%" align="right" valign="top">'
+        . (!empty($firmSign) ? '<img src="' . $firmSign . '" alt="logo" height="60" width="210"><br/>' : '') . '
         Authorized Signatory
     </td>
 </tr>

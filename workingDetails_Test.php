@@ -325,13 +325,28 @@
                         table-layout: fixed;
                     }
 
-                    #table_working_details th,
+                    #table_working_details th {
+                        border: 1px solid #cbd5e1 !important;
+                        vertical-align: middle !important;
+                        padding: 8px 10px;
+                        color: #1e293b;
+                        position: relative;
+                    }
+
                     #table_working_details td {
                         border: 1px solid #cbd5e1 !important;
                         vertical-align: middle !important;
-                        padding: 6px 8px;
+                        padding: 0 !important;
                         color: #1e293b;
                         position: relative;
+                    }
+
+                    #table_working_details .table-edit-control {
+                        width: 100%;
+                        height: 100%;
+                        display: block;
+                        margin: 0;
+                        padding: 0;
                     }
 
                     #table_working_details td.active-cell {
@@ -345,7 +360,7 @@
                         line-height: 1.3;
                     }
 
-                    /* Header Group Colors - Excel Themed but Modern */
+
                     .hdr-teal {
                         background-color: #d1f2eb !important;
                         color: #0e6251 !important;
@@ -443,41 +458,48 @@
                     #table_working_details select,
                     #table_working_details textarea {
                         width: 100%;
-                        border: 1px solid transparent;
-                        border-radius: 4px;
+                        height: 100%;
+                        min-height: 38px;
+                        border: none !important;
+                        border-radius: 0 !important;
                         background: transparent;
-                        font-size: 12px;
-                        padding: 4px 6px;
+                        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+                        font-size: 13px;
+                        padding: 8px 10px;
                         color: #1e293b;
                         transition: all 0.15s ease;
                         resize: none;
+                        display: block;
+                        box-sizing: border-box;
+                    }
+
+                    #table_working_details td[data-name="company_name"] .sheet-cell-input {
+                        font-weight: 600 !important;
+                        font-size: 15px !important;
+                        color: #0f172a !important;
                     }
 
                     #table_working_details .sheet-cell-input:hover,
                     #table_working_details select:hover,
                     #table_working_details textarea:hover {
-                        border-color: #cbd5e1;
-                        background: #ffffff;
+                        background-color: rgba(241, 245, 249, 0.5);
                     }
 
                     #table_working_details .sheet-cell-input:focus,
                     #table_working_details select:focus,
                     #table_working_details textarea:focus {
-                        border-color: #3b82f6;
-                        background: #ffffff;
-                        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
-                        outline: none;
+                        background-color: #ffffff !important;
+                        box-shadow: inset 0 0 0 2px #3b82f6 !important;
+                        outline: none !important;
                         resize: vertical;
                     }
 
                     #table_working_details .sheet-draft-input.sheet-dirty {
-                        background: #fffbeb !important;
-                        border-color: #fde047;
+                        background-color: #fefdf0 !important;
                     }
 
                     #table_working_details .sheet-draft-input.sheet-dirty:focus {
-                        background: #ffffff !important;
-                        border-color: #3b82f6;
+                        background-color: #ffffff !important;
                     }
 
                     #table_working_details .blank-entry-row td {
@@ -489,14 +511,21 @@
                     }
 
                     #table_working_details td[data-name="company_name"] .sheet-cell-input {
-                        white-space: nowrap;
+                        white-space: normal;
+                    }
+
+                    #table_working_details th:nth-child(3),
+                    #table_working_details td:nth-child(3) {
+                        width: 180px !important;
+                        min-width: 180px !important;
+                        max-width: 180px !important;
                     }
 
                     #table_working_details th:nth-child(4),
                     #table_working_details td:nth-child(4) {
-                        width: 180px !important;
-                        min-width: 180px !important;
-                        max-width: 180px !important;
+                        width: 280px !important;
+                        min-width: 280px !important;
+                        max-width: 280px !important;
                     }
 
                     #table_working_details td:nth-child(7) {
@@ -535,7 +564,7 @@
                     }
 
                     .sheet-col-company {
-                        width: 180px;
+                        width: 280px;
                     }
 
                     .sheet-col-installment {
@@ -923,8 +952,8 @@
                             <colgroup>
                                 <col style="width:55px">
                                 <col style="width:115px">
-                                <col style="width:115px">
-                                <col style="width:430px">
+                                <col style="width:180px">
+                                <col style="width:280px">
                                 <col style="width:155px">
                                 <col style="width:115px">
                                 <col style="width:430px">
@@ -1058,11 +1087,10 @@
                                         </td>
                                         <td data-name="standard">
                                             <div class="standard-selector-wrapper">
-                                                <input type="text"
-                                                    class="sheet-cell-input sheet-draft-input standard-display"
+                                                <textarea class="sheet-cell-input sheet-draft-input standard-display"
                                                     data-draft-key="existing-<?php echo $serviceId; ?>-standard"
-                                                    value="<?php echo workingDetailsEsc(workingDetailsValue($customer, 'cert_body')); ?>"
-                                                    placeholder="Standard" readonly />
+                                                    placeholder="Standard"
+                                                    readonly><?php echo workingDetailsEsc(workingDetailsValue($customer, 'cert_body')); ?></textarea>
                                                 <div class="standard-dropdown" style="display: none;">
                                                     <div class="standard-search-box">
                                                         <input type="text" class="standard-search"
@@ -1097,7 +1125,7 @@
                                         </td>
                                         <td data-id="<?php echo workingDetailsValue($customer, 'customer_id'); ?>"
                                             data-name="company_name">
-                                            <?php echo workingDetailsDraftInput(workingDetailsValue($customer, 'company_name'), "existing-" . $serviceId . "-company_name", "Company Name"); ?>
+                                            <?php echo workingDetailsDraftTextarea(workingDetailsValue($customer, 'company_name'), "existing-" . $serviceId . "-company_name", "Company Name"); ?>
                                         </td>
                                         <td data-name="service_firm">
                                             <div class="service-firm-selector-wrapper">
@@ -1269,10 +1297,9 @@
                                         </td>
                                         <td data-name="standard">
                                             <div class="standard-selector-wrapper">
-                                                <input type="text"
-                                                    class="sheet-cell-input sheet-draft-input standard-display"
-                                                    data-draft-key="blank-<?php echo $blankRow; ?>-standard" value=""
-                                                    placeholder="Standard" readonly />
+                                                <textarea class="sheet-cell-input sheet-draft-input standard-display"
+                                                    data-draft-key="blank-<?php echo $blankRow; ?>-standard"
+                                                    placeholder="Standard" readonly></textarea>
                                                 <div class="standard-dropdown" style="display: none;">
                                                     <div class="standard-search-box">
                                                         <input type="text" class="standard-search"
@@ -1306,7 +1333,7 @@
                                             </div>
                                         </td>
                                         <td data-name="company_name">
-                                            <?php echo workingDetailsDraftInput("", "blank-" . $blankRow . "-company_name", "Company Name"); ?>
+                                            <?php echo workingDetailsDraftTextarea("", "blank-" . $blankRow . "-company_name", "Company Name"); ?>
                                         </td>
                                         <td data-name="service_firm">
                                             <div class="service-firm-selector-wrapper">
@@ -1533,7 +1560,7 @@
     var blankColumns = [
         ['service_type', 'Service Type', 'input'],
         ['standard', 'Standard', 'input'],
-        ['company_name', 'Company Name', 'input'],
+        ['company_name', 'Company Name', 'textarea'],
         ['service_firm', 'Service Firm', 'input'],
         ['contract_total_cost', 'Total Cost', 'input'],
         ['contract_installment_details', 'Installment Details', 'textarea'],
@@ -1593,7 +1620,7 @@
         // Special handling for standard column (multi-select)
         html += '<td data-name="standard">';
         html += '<div class="standard-selector-wrapper">';
-        html += '<input type="text" class="sheet-cell-input sheet-draft-input standard-display" data-draft-key="' + rowKey + '-standard" placeholder="Standard" readonly />';
+        html += '<textarea class="sheet-cell-input sheet-draft-input standard-display" data-draft-key="' + rowKey + '-standard" placeholder="Standard" readonly></textarea>';
         html += '<div class="standard-dropdown" style="display: none;">';
         html += '<div class="standard-search-box">';
         html += '<input type="text" class="standard-search" placeholder="Search standards..." />';
@@ -2176,6 +2203,9 @@
                                 } else {
                                     var day31 = data[key]['day31'];
                                 }
+
+
+
                                 $('.month-work-table-data').append('<tr><td data-name="name" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; border-left: 1px solid #ffffff"><small>' + data[key]['company_name'] + '</small></td>\n\
                                                     <td data-name="name" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; border-left: 1px solid #ffffff"><small>' + data[key]['service_type'] + '</small></td>\n\
                                                     <td data-name="name" style="border-top: 1px solid #ffffff; border-right: 1px solid #ffffff; border-left: 1px solid #ffffff"><small>' + data[key]['cert_body'] + '</small></td>\n\

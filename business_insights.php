@@ -226,7 +226,7 @@ $months = [
         <div class="dashboard-container">
             <div class="dash-header">
                 <div>
-                    <h1 class="dash-title">Business Insights</h1>
+                    <h1 class="dash-title">Invoice Dashboard</h1>
                     <p class="dash-subtitle">Analyze invoice generation and revenue metrics</p>
                 </div>
                 <div class="filter-group">

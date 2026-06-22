@@ -93,26 +93,47 @@ $ST="";
 $gstdec="";
 //get variables from get/post to fill the details php selection code goes here
 
+$invoiceId = isset($_POST['invoiceId']) ? $_POST['invoiceId'] : '';
+$invoiceNo = isset($_POST['invoiceNo']) ? $_POST['invoiceNo'] : '';
+
 $invoice = "SELECT * FROM invoice_details WHERE invoice_id = :invoiceid and invoice_no = :invoiceno";
 $statement = $db->prepare($invoice);
-$statement->bindParam(':invoiceid', $_POST['invoiceId']);
-$statement->bindParam(':invoiceno', $_POST['invoiceNo']);
+$statement->bindParam(':invoiceid', $invoiceId);
+$statement->bindParam(':invoiceno', $invoiceNo);
 $statement->execute();
-$invoiceDetails = $statement->fetch();
+$invoiceDetails = $statement->fetch(PDO::FETCH_ASSOC);
+
+if (!$invoiceDetails) {
+    http_response_code(404);
+    exit('Invoice not found.');
+}
 
 $sql = "SELECT consulting_firm_id, firm_name, firm_email, firm_logo, firm_pan_no, bank_name, bank_address, bank_account_no, ifsc_code, micr_no,firm_address, firm_contact, firm_abbrevation, invoice_no,firmSignature FROM consulting_firm WHERE consulting_firm_id = :firm_id";
 $statement = $db->prepare($sql);
 $statement->bindParam(":firm_id", $invoiceDetails['firm_id']);
 $statement->execute();
-$firmDetails = $statement->fetch();
+$firmDetails = $statement->fetch(PDO::FETCH_ASSOC);
+
+if (!$firmDetails) {
+    http_response_code(404);
+    exit('Consulting firm not found.');
+}
 
 $customerDetails = "SELECT * FROM customer_details WHERE customer_id = :customer_id";
 $statement = $db->prepare($customerDetails);
 $statement->bindParam(":customer_id", $invoiceDetails['customer_id']);
 $statement->execute();
-$customer = $statement->fetch();
+$customer = $statement->fetch(PDO::FETCH_ASSOC);
+
+if (!$customer) {
+    http_response_code(404);
+    exit('Customer not found.');
+}
 
 $firmLogo = $firmDetails['firm_logo'];
+if (!empty($firmLogo) && !file_exists($firmLogo)) {
+    $firmLogo = '';
+}
 $firmName = $firmDetails['firm_name'];
 $firmAddress = $firmDetails['firm_address'];
 $firmEmail = $firmDetails['firm_email'];
@@ -124,6 +145,11 @@ $bank_account_no = $firmDetails['bank_account_no'];
 $ifsc_code = $firmDetails['ifsc_code'];
 $micr_no = $firmDetails['micr_no'];
 $firmSign = $firmDetails['firmSignature'];
+if (!empty($firmSign) && !file_exists($firmSign)) {
+    $firmSign = '';
+}
+$firmLogoHtml = !empty($firmLogo) ? '<img src="' . $firmLogo . '" alt="logo" height="110" width="110" style="display:block; margin:0; padding:0;">' : '';
+$firmSignHtml = !empty($firmSign) ? '<img src="' . $firmSign . '" alt="sign" height="60" width="210"><br/>' : '';
 $abbrevation = $firmDetails['firm_abbrevation'];
 $firm_pan_no = $firmDetails['firm_pan_no'];
 
@@ -160,13 +186,13 @@ if($d1 > $d2)
 }
 $invoiceServices = "SELECT * FROM invoice_services WHERE invoice_ids = :id";
 $statement = $db->prepare($invoiceServices);
-$statement->bindParam(':id', $_POST['invoiceId']);
+$statement->bindParam(':id', $invoiceId);
 $statement->execute();
 $serviceArray = $statement->fetchAll();
 
 $invoiceServicesAmt = "SELECT service_amount FROM invoice_services WHERE invoice_ids = :id";
 $statement = $db->prepare($invoiceServicesAmt);
-$statement->bindParam(':id', $_POST['invoiceId']);
+$statement->bindParam(':id', $invoiceId);
 $statement->execute();
 $serviceAmtArray = $statement->fetchAll();
 
@@ -184,7 +210,7 @@ $invoiceHeading = ($invoiceDetails['firm_id'] == 34) ? 'TAX INVOICE' : 'INVOICE'
 $html = '<table cellpadding="4" cellspacing="0" style="margin:0; padding:0;">
 <tr>
     <td width="20%" style="text-align:right; vertical-align:top; padding:0; margin:0;">
-        <img src="' . $firmLogo . '" alt="logo" height="110" width="110" style="display:block; margin:0; padding:0;">
+        ' . $firmLogoHtml . '
     </td>
     <td width="80%" style="text-align:center; font-size:1.4em; vertical-align:middle; padding:0; margin:0; line-height:1.2;">
         <b>' . $firmName . '</b><br>
@@ -198,12 +224,16 @@ $pdf->writeHTML($html, true, false, true, false, '');
 
 // Service Rows
 $serviceRow = '';
-$serviceDesc = explode(',', $invoiceDetails['svc_desc']);
-$serviceAmount = explode(',', $invoiceDetails['svc_amount']);
+$serviceDesc = explode(',', isset($invoiceDetails['svc_desc']) ? $invoiceDetails['svc_desc'] : '');
+$serviceAmount = explode(',', isset($invoiceDetails['svc_amount']) ? $invoiceDetails['svc_amount'] : '');
+$serviceSrNo = 1;
 for ($i = 0; $i < count($serviceDesc); $i++) {
-    if ($serviceDesc[$i] != "") {
-        $serviceAmountValue = number_format((float) $serviceAmount[$i], 2, '.', '');
-        $serviceRow .= '<tr><td>' . ($i + 1) . '</td><td>' . $serviceDesc[$i] . '</td><td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
+    $description = trim($serviceDesc[$i]);
+    if ($description !== "") {
+        $amount = isset($serviceAmount[$i]) && trim($serviceAmount[$i]) !== "" ? $serviceAmount[$i] : 0;
+        $serviceAmountValue = number_format((float) $amount, 2, '.', '');
+        $serviceRow .= '<tr><td>' . $serviceSrNo . '</td><td>' . $description . '</td><td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
+        $serviceSrNo++;
     }
 }
 
@@ -264,7 +294,7 @@ $html = '
         IFSC code – ' . $ifsc_code . '
     </td>
     <td width="50%" align="right" valign="top">
-        <img src="' . $firmSign . '" alt="sign" height="60" width="210"><br/>
+        ' . $firmSignHtml . '
         Authorized Signatory
     </td>
 </tr>

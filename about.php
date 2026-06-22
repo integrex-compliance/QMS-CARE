@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +15,7 @@
     $pageIdentifier = "about";
     include('./sourceheader.php');
     ?>
-    
+
     <div class="about-container">
         <!-- Page Header -->
         <section class="page-header">
@@ -24,14 +25,15 @@
                     About Us
                 </div>
                 <h1 class="page-title">Quality Management Certification</h1>
-                <p class="page-subtitle">One of the largest & fastest growing business management consulting organization</p>
+                <p class="page-subtitle">One of the largest & fastest growing business management consulting
+                    organization</p>
             </div>
         </section>
 
         <!-- Main Content -->
         <div class="content-wrapper">
             <div class="content-grid">
-                
+
                 <!-- Main Content Column -->
                 <div class="main-content">
                     <div class="content-card">
@@ -39,7 +41,9 @@
                             <i class="fas fa-building"></i>
                         </div>
                         <h2 class="card-title">Who We Are</h2>
-                        <p>Quality Management Certification is one of the largest & fastest growing business management consulting organization offering business consulting services to organizations of all nature and size.</p>
+                        <p>Quality Management Certification is one of the largest & fastest growing business management
+                            consulting organization offering business consulting services to organizations of all nature
+                            and size.</p>
                     </div>
 
                     <div class="content-card">
@@ -47,7 +51,9 @@
                             <i class="fas fa-bullseye"></i>
                         </div>
                         <h2 class="card-title">Our Mission</h2>
-                        <p>Our Mission is to provide effective, competitive, result oriented & practical business solutions to the organizations to optimize their operational efficiency in order to maximize return on investment & ultimately to achieve their Goal.</p>
+                        <p>Our Mission is to provide effective, competitive, result oriented & practical business
+                            solutions to the organizations to optimize their operational efficiency in order to maximize
+                            return on investment & ultimately to achieve their Goal.</p>
                     </div>
 
                     <div class="content-card">
@@ -55,7 +61,9 @@
                             <i class="fas fa-certificate"></i>
                         </div>
                         <h2 class="card-title">Our Expertise</h2>
-                        <p>Quality Management Certification specializes in value added consultancy for the entire range of management system certifications. We specialize in ISO 9001:2008, ISO 14001, HACCP, ISO 22000, OHSAS 18001, TS 16949, etc.</p>
+                        <p>Quality Management Certification specializes in value added consultancy for the entire range
+                            of management system certifications. We specialize in ISO 9001:2008, ISO 14001, HACCP, ISO
+                            22000, OHSAS 18001, TS 16949, etc.</p>
                     </div>
 
                     <div class="content-card">
@@ -63,7 +71,10 @@
                             <i class="fas fa-globe"></i>
                         </div>
                         <h2 class="card-title">Global Reach</h2>
-                        <p>We help you transform your business so that it responds quickly to ever-changing levels of competition, customer expectation and market flux across the world covering Asia, Europe, Australia, Africa with strong client base in India, USA, UK, Saudi Arabia, UAE, Australia, Europe and Africa.</p>
+                        <p>We help you transform your business so that it responds quickly to ever-changing levels of
+                            competition, customer expectation and market flux across the world covering Asia, Europe,
+                            Australia, Africa with strong client base in India, USA, UK, Saudi Arabia, UAE, Australia,
+                            Europe and Africa.</p>
                     </div>
 
                     <div class="content-card">
@@ -71,7 +82,10 @@
                             <i class="fas fa-cogs"></i>
                         </div>
                         <h2 class="card-title">Our Approach</h2>
-                        <p>This means rethinking how processes, people and information can be integrated across your company. Reinventing rigid, costly or under-productive processes. Replacing them with flexible, scalable, productive and cost-effective processes by utilizing ISO 9001:2008, ISO 14001, OHSAS 18001, ISO 27001, HACCP ISO 22000and other management systems.</p>
+                        <p>This means rethinking how processes, people and information can be integrated across your
+                            company. Reinventing rigid, costly or under-productive processes. Replacing them with
+                            flexible, scalable, productive and cost-effective processes by utilizing ISO 9001:2008, ISO
+                            14001, OHSAS 18001, ISO 27001, HACCP ISO 22000and other management systems.</p>
                     </div>
                 </div>
 
@@ -85,10 +99,12 @@
                         </div>
                         <form method="POST" action="form_submit.php" class="contact-form">
                             <div class="form-group">
-                                <input type="text" id="name" name="name" class="form-input" placeholder="Your Name" required />
+                                <input type="text" id="name" name="name" class="form-input" placeholder="Your Name"
+                                    required />
                             </div>
                             <div class="form-group">
-                                <input type="text" id="phnumber" name="no" class="form-input" placeholder="Phone Number" required />
+                                <input type="text" id="phnumber" name="no" class="form-input" placeholder="Phone Number"
+                                    required />
                             </div>
                             <div class="form-group">
                                 <textarea rows="4" name="msg" class="form-input" placeholder="Your Message"></textarea>
@@ -97,8 +113,10 @@
                                 <span>Send Message</span>
                                 <i class="fas fa-paper-plane"></i>
                             </button>
-                            <input type="hidden" id="myemail" name="myemail" value="<?php echo $email_adress_reciever; ?>" />
-                            <input type="hidden" id="myblogname" name="myblogname" value="<?php echo $name_of_your_site; ?>" />
+                            <input type="hidden" id="myemail" name="myemail"
+                                value="<?php echo $email_adress_reciever; ?>" />
+                            <input type="hidden" id="myblogname" name="myblogname"
+                                value="<?php echo $name_of_your_site; ?>" />
                         </form>
                     </div>
 
@@ -115,12 +133,15 @@
                             <li><a href="mpcb.php"><i class="fas fa-chevron-right"></i> MPCB Compliance</a></li>
                             <li><a href="service.php"><i class="fas fa-chevron-right"></i> ISI Mark</a></li>
                             <li><a href="service.php"><i class="fas fa-chevron-right"></i> CE Mark</a></li>
-                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> ISO 14001 Certification</a></li>
-                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> ISO 18001 Certification</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> ISO 14001 Certification</a>
+                            </li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> ISO 18001 Certification</a>
+                            </li>
                             <li><a href="service.php"><i class="fas fa-chevron-right"></i> FSMS Certification</a></li>
                             <li><a href="service.php"><i class="fas fa-chevron-right"></i> HACCP Certification</a></li>
                             <li><a href="service.php"><i class="fas fa-chevron-right"></i> Copy Right</a></li>
-                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> Trade Mark Registration</a></li>
+                            <li><a href="service.php"><i class="fas fa-chevron-right"></i> Trade Mark Registration</a>
+                            </li>
                             <li><a href="service.php"><i class="fas fa-chevron-right"></i> FSSI</a></li>
                         </ul>
                     </div>
@@ -164,4 +185,5 @@
         }, 3000);
     </script>
 </body>
+
 </html>
