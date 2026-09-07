@@ -232,7 +232,7 @@ for ($i = 0; $i < count($serviceDesc); $i++) {
     if ($description !== "") {
         $amount = isset($serviceAmount[$i]) && trim($serviceAmount[$i]) !== "" ? $serviceAmount[$i] : 0;
         $serviceAmountValue = number_format((float) $amount, 2, '.', '');
-        $serviceRow .= '<tr><td>' . $serviceSrNo . '</td><td>' . $description . '</td><td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
+        $serviceRow .= '<tr><td>' . $serviceSrNo . '</td>' . invoiceDescriptionCell($description) . '<td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
         $serviceSrNo++;
     }
 }
@@ -342,40 +342,42 @@ function convertcash($num, $currency) {
     if ($num === "" || $num === null) {
         $num = 0;
     }
-    $normalized = number_format((float) $num, 2, '.', '');
-    $parts = explode('.', $normalized);
-    $intPart = $parts[0];
-    $decPart = $parts[1];
-    $negative = false;
+    $normalized = number_format((float) str_replace(',', '', $num), 2, '.', '');
+    list($intPart, $decPart) = explode('.', $normalized);
 
-    if (strpos($intPart, '-') === 0) {
-        $negative = true;
-        $intPart = substr($intPart, 1);
-    }
+    $negative = strpos($intPart, '-') === 0;
+    $intPart = ltrim($intPart, '-');
 
     if (strlen($intPart) > 3) {
-        $lastthree = substr($intPart, strlen($intPart) - 3, strlen($intPart));
-        $restunits = substr($intPart, 0, strlen($intPart) - 3);
-        $restunits = (strlen($restunits) % 2 == 1) ? "0" . $restunits : $restunits;
-        $explrestunits = "";
-        $expunit = str_split($restunits, 2);
-        for ($i = 0; $i < sizeof($expunit); $i++) {
-            if ($i == 0) {
-                $explrestunits .= (int) $expunit[$i] . ",";
-            } else {
-                $explrestunits .= $expunit[$i] . ",";
-            }
-        }
-        $thecash = $explrestunits . $lastthree;
-    } else {
-        $thecash = $intPart;
+        $lastThree = substr($intPart, -3);
+        $rest = substr($intPart, 0, -3);
+        $rest = preg_replace('/\B(?=(\d{2})+(?!\d))/', ',', $rest);
+        $intPart = $rest . ',' . $lastThree;
     }
 
     if ($negative) {
-        $thecash = '-' . $thecash;
+        $intPart = '-' . $intPart;
     }
 
-    return $currency . $thecash . '.' . $decPart;
+    return $currency . $intPart . '.' . $decPart;
+}
+
+function invoiceDescriptionCell($description) {
+    $description = trim($description);
+    $length = strlen($description);
+    $fontSize = 10;
+
+    if ($length > 160) {
+        $fontSize = 7.5;
+    } elseif ($length > 100) {
+        $fontSize = 8.5;
+    } elseif ($length > 60) {
+        $fontSize = 9;
+    }
+
+    return '<td style="font-size:' . $fontSize . 'pt; line-height:1.15; vertical-align:top;">' .
+            nl2br(htmlspecialchars($description, ENT_QUOTES, 'UTF-8')) .
+            '</td>';
 }
 
 function convertToWord($number) {

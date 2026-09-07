@@ -2455,23 +2455,20 @@ $('body').on('change', 'input[name="taxTypeEdit"]', function () {
 
     function validateInvEditDate() {
         $isError = false;
+        var selectedDate = moment($('#invoiceDtEdit').val(), "DD.MM.YYYY", true);
+
         if ($('#invoiceDtEdit').val() == "") {
             $('#invEditDateErrorMsg').text("Invoice date can not be empty");
             $('#invEditDateError').show();
-            $('#invoiceDt').addClass('inputHighlight');
-            $isError = true;
-        } else if (moment($('#invoiceDtEdit').val(), "DD/MM/YYYY") < (moment($('.invoiceEditDate').val(), "DD/MM/YYYY"))) {
-            $('#invEditDateErrorMsg').text("Date should be greator than prevoius invoice");
-            $('#invEditDateError').show();
             $('#invoiceDtEdit').addClass('inputHighlight');
             $isError = true;
-        } else if ($('.invoiceNxtEditDate').val() != "" && moment($('#invoiceDtEdit').val(), "DD/MM/YYYY") > (moment($('.invoiceNxtEditDate').val(), "DD/MM/YYYY"))) {
-            $('#invEditDateErrorMsg').text("Date should be less than next invoice");
+        } else if (!selectedDate.isValid()) {
+            $('#invEditDateErrorMsg').text("Invalid invoice date");
             $('#invEditDateError').show();
             $('#invoiceDtEdit').addClass('inputHighlight');
             $isError = true;
         } else {
-            $('.invEditDateError').hide();
+            $('#invEditDateError').hide();
             $('.invoiceDtEdit').removeClass('inputHighlight');
         }
         return $isError;

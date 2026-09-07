@@ -1,6 +1,7 @@
 <?php
 require_once('tcpdf_include.php');
 include_once('dbConnect.php');
+date_default_timezone_set('Asia/Kolkata');
 // create new PDF document
 $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
@@ -174,7 +175,7 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
                 $serviceAmountValue = number_format((float) $serviceAmountRaw, 2, '.', '');
                 $svcamount = $svcamount . $serviceAmountValue . ',';
 
-                $serviceRow = $serviceRow . '<tr><td>' . ($count + 1) . '</td><td>' . $serviceArray[$count] . '</td><td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
+                $serviceRow = $serviceRow . '<tr><td>' . ($count + 1) . '</td>' . invoiceDescriptionCell($serviceArray[$count]) . '<td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
                 $count = $count + 1;
             }
         }
@@ -247,7 +248,7 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
                 $serviceAmountValue = number_format((float) $serviceAmountRaw, 2, '.', '');
                 $svcamount = $svcamount . $serviceAmountValue . ',';
 
-                $serviceRow = $serviceRow . '<tr><td>' . ($count + 1) . '</td><td>' . $serviceArray[$count] . '</td><td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
+                $serviceRow = $serviceRow . '<tr><td>' . ($count + 1) . '</td>' . invoiceDescriptionCell($serviceArray[$count]) . '<td>' . convertcash($serviceAmountValue, "") . '/-</td></tr>';
                 $count = $count + 1;
             }
         }
@@ -453,45 +454,46 @@ $pdf->Output('invoice.pdf', 'I');
 // END OF FILE
 //============================================================+
 
+function invoiceDescriptionCell($description) {
+    $description = trim($description);
+    $length = strlen($description);
+    $fontSize = 10;
+
+    if ($length > 160) {
+        $fontSize = 7.5;
+    } elseif ($length > 100) {
+        $fontSize = 8.5;
+    } elseif ($length > 60) {
+        $fontSize = 9;
+    }
+
+    return '<td style="font-size:' . $fontSize . 'pt; line-height:1.15; vertical-align:top;">' .
+            nl2br(htmlspecialchars($description, ENT_QUOTES, 'UTF-8')) .
+            '</td>';
+}
+
 function convertcash($num, $currency) {
     if ($num === "" || $num === null) {
         $num = 0;
     }
-    $normalized = number_format((float) $num, 2, '.', '');
-    $parts = explode('.', $normalized);
-    $intPart = $parts[0];
-    $decPart = $parts[1];
-    $negative = false;
+    $normalized = number_format((float) str_replace(',', '', $num), 2, '.', '');
+    list($intPart, $decPart) = explode('.', $normalized);
 
-    if (strpos($intPart, '-') === 0) {
-        $negative = true;
-        $intPart = substr($intPart, 1);
-    }
+    $negative = strpos($intPart, '-') === 0;
+    $intPart = ltrim($intPart, '-');
 
-    
     if (strlen($intPart) > 3) {
-        $lastthree = substr($intPart, strlen($intPart) - 3, strlen($intPart));
-        $restunits = substr($intPart, 0, strlen($intPart) - 3);
-        $restunits = (strlen($restunits) % 2 == 1) ? "0" . $restunits : $restunits;
-        $explrestunits = "";
-        $expunit = str_split($restunits, 2);
-        for ($i = 0; $i < sizeof($expunit); $i++) {
-            if ($i == 0) {
-                $explrestunits .= (int) $expunit[$i] . ",";
-            } else {
-                $explrestunits .= $expunit[$i] . ",";
-            }
-        }
-        $thecash = $explrestunits . $lastthree;
-    } else {
-        $thecash = $intPart;
+        $lastThree = substr($intPart, -3);
+        $rest = substr($intPart, 0, -3);
+        $rest = preg_replace('/\B(?=(\d{2})+(?!\d))/', ',', $rest);
+        $intPart = $rest . ',' . $lastThree;
     }
 
     if ($negative) {
-        $thecash = '-' . $thecash;
+        $intPart = '-' . $intPart;
     }
 
-    return $currency . $thecash . '.' . $decPart;
+    return $currency . $intPart . '.' . $decPart;
 }
 
 function convertToWord($number) {

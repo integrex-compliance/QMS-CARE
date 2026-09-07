@@ -7,26 +7,129 @@
     include_once './header.php';
     include_once './dbConnect.php';
 
-    if (isset($_SESSION['username']) && isset($_SESSION['role'])) {
+    $listOfCustomers = array();
+    $allAuditorList = array();
+    $consultant = array();
+    $allCert = array();
+    $cbSummaryMap = array();
+    $consultingSummaryMap = array();
+    $visitSummaryMap = array();
+
+    function workingDetailsValue($row, $key)
+    {
+        return isset($row[$key]) ? $row[$key] : "";
+    }
+
+    function workingDetailsMoney($value)
+    {
+        if ($value === "" || $value === null) {
+            return "";
+        }
+        return number_format((float) $value, 2);
+    }
+
+    function workingDetailsEsc($value)
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    }
+
+    function workingDetailsDate($value)
+    {
+        if (empty($value) || $value === '0000-00-00' || $value === '0000-00-00 00:00:00') {
+            return '';
+        }
+        return simpleDateConversion($value);
+    }
+
+    function workingDetailsDraftInput($value, $draftKey, $placeholder = "")
+    {
+        return '<input type="text" class="sheet-cell-input sheet-draft-input" data-draft-key="' . workingDetailsEsc($draftKey) . '" value="' . workingDetailsEsc($value) . '" placeholder="' . workingDetailsEsc($placeholder) . '" />';
+    }
+
+    function workingDetailsDraftTextarea($value, $draftKey, $placeholder = "")
+    {
+        return '<textarea rows="3" class="sheet-cell-input sheet-draft-input" data-draft-key="' . workingDetailsEsc($draftKey) . '" placeholder="' . workingDetailsEsc($placeholder) . '">' . workingDetailsEsc($value) . '</textarea>';
+    }
+
+    if (isset($_SESSION['username'])) {
         try {
             $db->exec('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;');
 
-            // Try to call stored procedure, if it fails, use fallback query
-            try {
-                $allCustomers = "CALL usp_GetEmployeeDetailsDynamic()";
-                $statement = $db->prepare($allCustomers);
-                $statement->execute();
-                $listOfCustomers = $statement->fetchAll();
-            } catch (Exception $e) {
-                // Fallback: If stored procedure doesn't exist, try to get from customer or employee table
+            $allCustomers = "SELECT distinct 
+                                cd.customer_id, 
+                                cd.company_name, 
+                                cd.contact_no, 
+                                s.service_type, 
+                                s.cert_body, 
+                                s.consulting_firm, 
+                                s.audit_type, 
+                                s.consultant, 
+                                s.auditor, 
+                                s.audit_date, 
+                                s.service_id, 
+                                s.priorty, 
+                                s.add_service_to, 
+                                s.created_at, 
+                                cd.comments 
+                            FROM customer_details cd 
+                            JOIN services s ON cd.customer_id = s.customer_id 
+                            WHERE s.add_service_to = 'Under Working' 
+                              AND (s.service_type != 'MPCB' AND s.service_type != 'NSIC') 
+                              AND s.service_id = (SELECT MAX(tmp.service_id) FROM services tmp WHERE tmp.customer_id = cd.customer_id) 
+                              AND s.is_delete <> 'Y' 
+                            ORDER BY ISNULL(s.audit_date), s.audit_date ASC, ISNULL(s.priorty), s.priorty ASC";
+            $statement = $db->prepare($allCustomers);
+            $statement->execute();
+            $listOfCustomers = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+            // Pre-fetch related CB, consulting, and visit data for all services
+            $serviceIds = array_filter(array_unique(array_column($listOfCustomers, 'service_id')));
+
+            if (!empty($serviceIds)) {
+                $inClause = implode(',', array_map('intval', $serviceIds));
+
                 try {
-                    $allCustomers = "SELECT * FROM customer ORDER BY customer_id DESC";
-                    $statement = $db->prepare($allCustomers);
-                    $statement->execute();
-                    $listOfCustomers = $statement->fetchAll();
-                } catch (Exception $e2) {
-                    // If customer table also doesn't exist, initialize empty array
-                    $listOfCustomers = array();
+                    $cbSql = "SELECT service_id, GROUP_CONCAT(contract_details SEPARATOR ', ') AS contract_details, SUM(amount_decided) AS amount_decided, SUM(payment_received) AS payment_received, SUM(balance) AS balance FROM certification_body WHERE service_id IN ($inClause) GROUP BY service_id";
+                    $cbStmt = $db->query($cbSql);
+                    while ($cbRow = $cbStmt->fetch(PDO::FETCH_ASSOC)) {
+                        $cbSummaryMap[$cbRow['service_id']] = $cbRow;
+                    }
+                } catch (Exception $e) {
+                }
+
+                try {
+                    $cnsSql = "SELECT service_id, GROUP_CONCAT(consulting_fees SEPARATOR ', ') AS consulting_fees, SUM(consulting_amount_decided) AS consulting_amount_decided, SUM(consulting_payment_received) AS consulting_payment_received, SUM(consulting_balance) AS consulting_balance FROM consulting WHERE service_id IN ($inClause) GROUP BY service_id";
+                    $cnsStmt = $db->query($cnsSql);
+                    while ($cnsRow = $cnsStmt->fetch(PDO::FETCH_ASSOC)) {
+                        $consultingSummaryMap[$cnsRow['service_id']] = $cnsRow;
+                    }
+                } catch (Exception $e) {
+                }
+
+                try {
+                    $wsSql = "SELECT * FROM working_services WHERE service_id IN ($inClause)";
+                    $wsStmt = $db->query($wsSql);
+                    $currMonth = date('M');
+                    $currYear = date('Y');
+                    while ($wsRow = $wsStmt->fetch(PDO::FETCH_ASSOC)) {
+                        $sId = $wsRow['service_id'];
+                        if (!isset($visitSummaryMap[$sId])) {
+                            $visitSummaryMap[$sId] = array('total' => 0, 'month' => 0);
+                        }
+                        for ($d = 1; $d <= 31; $d++) {
+                            $col = sprintf('day%02d', $d);
+                            if (!empty($wsRow[$col])) {
+                                $val = trim($wsRow[$col]);
+                                if ($val !== '' && strtolower($val) !== 'w.off' && strtolower($val) !== 'woff' && strtolower($val) !== 'holiday') {
+                                    $visitSummaryMap[$sId]['total']++;
+                                    if ($wsRow['year'] == $currYear && strcasecmp($wsRow['month'], $currMonth) === 0) {
+                                        $visitSummaryMap[$sId]['month']++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception $e) {
                 }
             }
 
@@ -60,42 +163,14 @@
                 $allCert = array();
             }
         } catch (Exception $mainException) {
-            // Initialize all arrays as empty if main try block fails
             $listOfCustomers = array();
             $allAuditorList = array();
             $consultant = array();
             $allCert = array();
-            // Optional: Log error or show message
-            // echo "Error loading data: " . $mainException->getMessage();
+            $cbSummaryMap = array();
+            $consultingSummaryMap = array();
+            $visitSummaryMap = array();
         }
-        function workingDetailsValue($row, $key)
-        {
-            return isset($row[$key]) ? $row[$key] : "";
-        }
-
-        function workingDetailsMoney($value)
-        {
-            if ($value === "" || $value === null) {
-                return "";
-            }
-            return number_format((float) $value, 2);
-        }
-
-        function workingDetailsEsc($value)
-        {
-            return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-        }
-
-        function workingDetailsDraftInput($value, $draftKey, $placeholder = "")
-        {
-            return '<input type="text" class="sheet-cell-input sheet-draft-input" data-draft-key="' . workingDetailsEsc($draftKey) . '" value="' . workingDetailsEsc($value) . '" placeholder="' . workingDetailsEsc($placeholder) . '" />';
-        }
-
-        function workingDetailsDraftTextarea($value, $draftKey, $placeholder = "")
-        {
-            return '<textarea rows="3" class="sheet-cell-input sheet-draft-input" data-draft-key="' . workingDetailsEsc($draftKey) . '" placeholder="' . workingDetailsEsc($placeholder) . '">' . workingDetailsEsc($value) . '</textarea>';
-        }
-        //        print_r($listOfCustomers);
     }
     ?>
     <input type="submit" value="" />
@@ -116,6 +191,8 @@
                                 <option value="">Select Service Type</option>
                                 <option value="CA">CA</option>
                                 <option value="RC">RC</option>
+                                <option value="SA-1">SA-1</option>
+                                <option value="SA-2">SA-2</option>
                                 <option value="SA-01">SA-01</option>
                                 <option value="SA-02">SA-02</option>
                                 <option value="MPCB">MPCB</option>
@@ -165,10 +242,11 @@
                             <span class="filter-label">Project Status</span>
                             <select name="filter-status" class="form-control" id="filter-status">
                                 <option value="">Select Status</option>
+                                <option value="Under Working">Under Working</option>
+                                <option value="Working">Working</option>
                                 <option value="Completed">Completed</option>
                                 <option value="Idle">Idle</option>
                                 <option value="Pay.Pending">Pay.Pending</option>
-                                <option value="Working">Working</option>
                                 <option value="Initial PP">Initial PP</option>
                             </select>
                         </div>
@@ -1016,48 +1094,14 @@
                                 foreach ($listOfCustomers as $customer) {
                                     $count = $count + 1;
                                     $serviceId = workingDetailsValue($customer, "service_id");
-                                    $cbSummary = array("contract_details" => "", "amount_decided" => 0, "payment_received" => 0, "balance" => 0);
-                                    $consultingSummary = array("consulting_fees" => "", "consulting_amount_decided" => 0, "consulting_payment_received" => 0, "consulting_balance" => 0);
-                                    $totalVisits = 0;
-                                    $monthVisits = 0;
+                                    $cbSummary = isset($cbSummaryMap[$serviceId]) ? $cbSummaryMap[$serviceId] : array("contract_details" => "", "amount_decided" => "", "payment_received" => "", "balance" => "");
+                                    $consultingSummary = isset($consultingSummaryMap[$serviceId]) ? $consultingSummaryMap[$serviceId] : array("consulting_fees" => "", "consulting_amount_decided" => "", "consulting_payment_received" => "", "consulting_balance" => "");
+                                    $totalVisits = isset($visitSummaryMap[$serviceId]['total']) ? $visitSummaryMap[$serviceId]['total'] : 0;
+                                    $monthVisits = isset($visitSummaryMap[$serviceId]['month']) ? $visitSummaryMap[$serviceId]['month'] : 0;
 
-                                    if (!empty($serviceId)) {
-                                        try {
-                                            $sql = "SELECT GROUP_CONCAT(contract_details SEPARATOR ', ') AS contract_details, SUM(amount_decided) AS amount_decided, SUM(payment_received) AS payment_received, SUM(balance) AS balance FROM certification_body WHERE service_id = :serviceid";
-                                            $statement = $db->prepare($sql);
-                                            $statement->bindParam(':serviceid', $serviceId);
-                                            $statement->execute();
-                                            $cbData = $statement->fetch();
-                                            if ($cbData) {
-                                                $cbSummary = $cbData;
-                                            }
-                                        } catch (Exception $e) {
-                                        }
-
-                                        try {
-                                            $sql = "SELECT GROUP_CONCAT(consulting_fees SEPARATOR ', ') AS consulting_fees, SUM(consulting_amount_decided) AS consulting_amount_decided, SUM(consulting_payment_received) AS consulting_payment_received, SUM(consulting_balance) AS consulting_balance FROM consulting WHERE service_id = :serviceid";
-                                            $statement = $db->prepare($sql);
-                                            $statement->bindParam(':serviceid', $serviceId);
-                                            $statement->execute();
-                                            $consultingData = $statement->fetch();
-                                            if ($consultingData) {
-                                                $consultingSummary = $consultingData;
-                                            }
-                                        } catch (Exception $e) {
-                                        }
-                                    }
-
-                                    for ($visitCounter = 1; $visitCounter <= 31; $visitCounter++) {
-                                        $visitKey = "day" . $visitCounter;
-                                        if (!empty($customer[$visitKey])) {
-                                            $totalVisits++;
-                                            $monthVisits++;
-                                        }
-                                    }
-
-                                    $cbAmount = isset($cbSummary['amount_decided']) ? $cbSummary['amount_decided'] : 0;
-                                    $consultantAmount = isset($consultingSummary['consulting_amount_decided']) ? $consultingSummary['consulting_amount_decided'] : 0;
-                                    $contractTotal = (float) $cbAmount + (float) $consultantAmount;
+                                    $cbAmount = isset($cbSummary['amount_decided']) && $cbSummary['amount_decided'] !== "" && $cbSummary['amount_decided'] !== null ? $cbSummary['amount_decided'] : "";
+                                    $consultantAmount = isset($consultingSummary['consulting_amount_decided']) && $consultingSummary['consulting_amount_decided'] !== "" && $consultingSummary['consulting_amount_decided'] !== null ? $consultingSummary['consulting_amount_decided'] : "";
+                                    $contractTotal = ($cbAmount !== "" || $consultantAmount !== "") ? ((float) $cbAmount + (float) $consultantAmount) : "";
                                     $contractInstallments = trim(workingDetailsValue($cbSummary, "contract_details") . " " . workingDetailsValue($consultingSummary, "consulting_fees"));
                                     ?>
                                     <tr id='addr0'>
@@ -1125,7 +1169,10 @@
                                         </td>
                                         <td data-id="<?php echo workingDetailsValue($customer, 'customer_id'); ?>"
                                             data-name="company_name">
-                                            <?php echo workingDetailsDraftTextarea(workingDetailsValue($customer, 'company_name'), "existing-" . $serviceId . "-company_name", "Company Name"); ?>
+                                            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 4px;">
+                                                <?php echo workingDetailsDraftTextarea(workingDetailsValue($customer, 'company_name'), "existing-" . $serviceId . "-company_name", "Company Name"); ?>
+                                                <a href="javascript:void(0);" class="customerAccount" data-id="<?php echo workingDetailsValue($customer, 'customer_id'); ?>" title="Open Client Account" style="padding: 8px 4px 0 0; color: #3b82f6; text-decoration: none;"><i class="fa fa-external-link"></i></a>
+                                            </div>
                                         </td>
                                         <td data-name="service_firm">
                                             <div class="service-firm-selector-wrapper">
@@ -1191,7 +1238,7 @@
                                             <?php echo workingDetailsDraftInput(workingDetailsMoney(workingDetailsValue($consultingSummary, 'consulting_balance')), "existing-" . $serviceId . "-remaining_consultant", "Remaining Consultant"); ?>
                                         </td>
                                         <td data-name="project_start">
-                                            <?php echo workingDetailsDraftInput(simpleDateConversion(workingDetailsValue($customer, 'created_at')), "existing-" . $serviceId . "-project_start", "DD.MM.YYYY"); ?>
+                                            <?php echo workingDetailsDraftInput(workingDetailsDate(workingDetailsValue($customer, 'created_at')), "existing-" . $serviceId . "-project_start", "DD.MM.YYYY"); ?>
                                         </td>
                                         <td data-name="consultant">
                                             <div class="table-edit-control">
@@ -1233,7 +1280,7 @@
                                                         name="workingAuditDate"
                                                         data-custome="<?php echo workingDetailsValue($customer, "customer_id"); ?>"
                                                         data-service="<?php echo $serviceId; ?>"
-                                                        value="<?php echo simpleDateConversion(workingDetailsValue($customer, 'audit_date')); ?>"
+                                                        value="<?php echo workingDetailsDate(workingDetailsValue($customer, 'audit_date')); ?>"
                                                         placeholder=""></small>
                                             </div>
                                         </td>
@@ -1470,7 +1517,9 @@
             // 1. Service Type Filter
             if (filterServiceType !== "") {
                 var rowServiceType = $(row).find('.service-type-display').val() || "";
-                if (rowServiceType.toUpperCase().trim() !== filterServiceType.toUpperCase().trim()) {
+                var fNorm = filterServiceType.replace(/[-_0\s]/g, '').toUpperCase();
+                var rNorm = rowServiceType.replace(/[-_0\s]/g, '').toUpperCase();
+                if (rowServiceType.toUpperCase().trim() !== filterServiceType.toUpperCase().trim() && fNorm !== rNorm) {
                     return false;
                 }
             }
@@ -1501,7 +1550,9 @@
             // 4. Project Status Filter
             if (filterStatus !== "") {
                 var rowStatus = $(row).find('.project-status-display').val() || "";
-                if (rowStatus.toUpperCase().trim() !== filterStatus.toUpperCase().trim()) {
+                var fsUpper = filterStatus.toUpperCase().trim();
+                var rsUpper = rowStatus.toUpperCase().trim();
+                if (rsUpper !== fsUpper && rsUpper.indexOf(fsUpper) === -1 && fsUpper.indexOf(rsUpper) === -1) {
                     return false;
                 }
             }
@@ -1589,7 +1640,7 @@
         $(scope).find('.sheet-draft-input').each(function () {
             var draftKey = $(this).attr('data-draft-key');
             var savedValue = localStorage.getItem(workingDraftPrefix + draftKey);
-            if (savedValue !== null) {
+            if (savedValue !== null && savedValue !== '') {
                 $(this).val(savedValue).addClass('sheet-dirty');
             }
         });
