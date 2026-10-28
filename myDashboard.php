@@ -19,9 +19,9 @@ error_reporting(E_ALL);
     date_default_timezone_set('Asia/Kolkata');
 
     // 1. Identify actual logged-in user credentials
-    $actualLoggedInUserId = (int)($_SESSION['id'] ?? 0);
-    $actualLoggedInRole = (string)($_SESSION['role'] ?? '');
-    $actualLoggedInUsername = (string)($_SESSION['username'] ?? '');
+    $actualLoggedInUserId = (int)(isset($_SESSION['id']) ? $_SESSION['id'] : 0);
+    $actualLoggedInRole = (string)(isset($_SESSION['role']) ? $_SESSION['role'] : '');
+    $actualLoggedInUsername = (string)(isset($_SESSION['username']) ? $_SESSION['username'] : '');
 
     // Role and permission helpers
     if (!function_exists('aitf_is_main_admin_role')) {
@@ -92,10 +92,10 @@ error_reporting(E_ALL);
                         'key' => 'user_' . $row['user_id'],
                         'name' => $row['user_name'],
                         'clean_name' => trim($row['user_name']),
-                        'role' => $row['role'] ?? '',
-                        'email' => $row['email_id'] ?? '',
-                        'email_id' => $row['email_id'] ?? '',
-                        'abbreviation' => $row['abbreviation'] ?? ''
+                        'role' => isset($row['role']) ? $row['role'] : '',
+                        'email' => isset($row['email_id']) ? $row['email_id'] : '',
+                        'email_id' => isset($row['email_id']) ? $row['email_id'] : '',
+                        'abbreviation' => isset($row['abbreviation']) ? $row['abbreviation'] : ''
                     ];
                 }
                 return $results;
@@ -123,7 +123,7 @@ error_reporting(E_ALL);
             // Visibility rule:
             // Main Admin can view everyone.
             // Admin, BDM, Finance can view everyone EXCEPT Main Admin.
-            if (!$isMainAdmin && aitf_is_main_admin_role($su['role'] ?? '')) {
+            if (!$isMainAdmin && aitf_is_main_admin_role(isset($su['role']) ? $su['role'] : '')) {
                 continue;
             }
 
@@ -174,7 +174,7 @@ error_reporting(E_ALL);
                     $uStmt->execute([':uid' => $targetUid]);
                     $targetUserRow = $uStmt->fetch(PDO::FETCH_ASSOC);
                     if ($targetUserRow) {
-                        $targetRole = trim((string)($targetUserRow['role'] ?? ''));
+                        $targetRole = trim((string)(isset($targetUserRow['role']) ? $targetUserRow['role'] : ''));
                         // Role check: Only Main Admin can view Main Admin's dashboard
                         // Admin, BDM, and Finance can view all dashboards EXCEPT Main Admin
                         if (!$isMainAdmin && aitf_is_main_admin_role($targetRole)) {
@@ -192,22 +192,22 @@ error_reporting(E_ALL);
         }
     }
 
-    $userName = trim($userRow['user_name'] ?? ($_SESSION['username'] ?? 'User'));
+    $userName = trim(isset($userRow['user_name']) ? $userRow['user_name'] : (isset($_SESSION['username']) ? $_SESSION['username'] : 'User'));
     if (empty($userName)) {
         $userName = 'User';
     }
 
-    $designationAssigned = trim((string)($userRow['designation_assigned'] ?? ''));
-    $applicableRecords = trim((string)($userRow['applicable_records'] ?? ''));
-    $workDescription = trim((string)($userRow['work_description'] ?? ''));
-    $resourceIssueRecord = trim((string)($userRow['resource_issue_record'] ?? ''));
-    $userEmail = trim((string)($userRow['email_id'] ?? ($_SESSION['email'] ?? '')));
-    $userRole = trim((string)($userRow['role'] ?? ($_SESSION['role'] ?? 'User')));
-    $userEid = trim((string)($userRow['e_id'] ?? ''));
-    $userPcId = trim((string)($userRow['pc_id'] ?? ''));
-    $userContact = trim((string)($userRow['contact_no'] ?? ''));
-    $userStatus = trim((string)($userRow['account_status'] ?? 'active'));
-    $userAbbr = trim((string)($userRow['abbreviation'] ?? ''));
+    $designationAssigned = trim((string)(isset($userRow['designation_assigned']) ? $userRow['designation_assigned'] : ''));
+    $applicableRecords = trim((string)(isset($userRow['applicable_records']) ? $userRow['applicable_records'] : ''));
+    $workDescription = trim((string)(isset($userRow['work_description']) ? $userRow['work_description'] : ''));
+    $resourceIssueRecord = trim((string)(isset($userRow['resource_issue_record']) ? $userRow['resource_issue_record'] : ''));
+    $userEmail = trim((string)(isset($userRow['email_id']) ? $userRow['email_id'] : (isset($_SESSION['email']) ? $_SESSION['email'] : '')));
+    $userRole = trim((string)(isset($userRow['role']) ? $userRow['role'] : (isset($_SESSION['role']) ? $_SESSION['role'] : 'User')));
+    $userEid = trim((string)(isset($userRow['e_id']) ? $userRow['e_id'] : ''));
+    $userPcId = trim((string)(isset($userRow['pc_id']) ? $userRow['pc_id'] : ''));
+    $userContact = trim((string)(isset($userRow['contact_no']) ? $userRow['contact_no'] : ''));
+    $userStatus = trim((string)(isset($userRow['account_status']) ? $userRow['account_status'] : 'active'));
+    $userAbbr = trim((string)(isset($userRow['abbreviation']) ? $userRow['abbreviation'] : ''));
 
     // Safe string helpers that do not require mbstring extension
     if (!function_exists('aitf_safe_substr')) {
@@ -270,8 +270,8 @@ error_reporting(E_ALL);
                 if (is_array($decoded)) {
                     foreach ($decoded as $item) {
                         if (is_array($item)) {
-                            $header = trim($item['header'] ?? '');
-                            $descRaw = trim($item['desc'] ?? '');
+                            $header = trim(isset($item['header']) ? $item['header'] : '');
+                            $descRaw = trim(isset($item['desc']) ? $item['desc'] : '');
                             $items = [];
                             if ($descRaw !== '') {
                                 $lines = preg_split('/\r\n|\r|\n/', $descRaw);
@@ -3677,7 +3677,7 @@ error_reporting(E_ALL);
             <div class="container-fluid my-dash-container">
                 
                 <?php
-                $targetDashboardUid = (int)($userRow['user_id'] ?? $actualLoggedInUserId);
+                $targetDashboardUid = (int)(isset($userRow['user_id']) ? $userRow['user_id'] : $actualLoggedInUserId);
                 $targetDashboardName = $userName;
                 $targetDashboardRole = $userRole;
                 ?>
@@ -3748,11 +3748,11 @@ error_reporting(E_ALL);
                                     <?php endif; ?>
                                     <?php if (!empty($switcherUsers)): ?>
                                         <?php foreach ($switcherUsers as $su): 
-                                            $suKey = $su['key'] ?? ('user_' . $su['user_id']);
+                                            $suKey = isset($su['key']) ? $su['key'] : ('user_' . $su['user_id']);
                                             $isSel = ($isViewingOther && ($currentViewKey === $suKey || $currentViewKey === ('user_' . $su['user_id']) || $currentViewKey === (string)$su['user_id']));
                                         ?>
                                         <option value="<?php echo htmlspecialchars($suKey); ?>" <?php echo $isSel ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($su['clean_name']); ?> (<?php echo htmlspecialchars($su['role'] ?? 'User'); ?>)
+                                            <?php echo htmlspecialchars($su['clean_name']); ?> (<?php echo htmlspecialchars(isset($su['role']) ? $su['role'] : 'User'); ?>)
                                         </option>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
@@ -3824,11 +3824,11 @@ error_reporting(E_ALL);
 
                                         <?php if (!empty($switcherUsers)): ?>
                                             <?php foreach ($switcherUsers as $su): 
-                                                $suKey = $su['key'] ?? ('user_' . $su['user_id']);
+                                                $suKey = isset($su['key']) ? $su['key'] : ('user_' . $su['user_id']);
                                                 $isSel = ($isViewingOther && ($currentViewKey === $suKey || $currentViewKey === ('user_' . $su['user_id']) || $currentViewKey === (string)$su['user_id']));
                                                 $cleanName = $su['clean_name'];
-                                                $suEmail = $su['email_id'] ?? ($su['email'] ?? '');
-                                                $suRole = $su['role'] ?? '';
+                                                $suEmail = isset($su['email_id']) ? $su['email_id'] : (isset($su['email']) ? $su['email'] : '');
+                                                $suRole = isset($su['role']) ? $su['role'] : '';
                                                 // Dynamic initial
                                                 $subParts = preg_split('/\s+/', trim($cleanName));
                                                 $suInitial = '';
@@ -4025,8 +4025,8 @@ error_reporting(E_ALL);
                                             <?php if (!empty($recordGroups)): ?>
                                                 <?php foreach ($recordGroups as $grp): ?>
                                                     <?php 
-                                                        $grpHeader = trim($grp['header'] ?? '');
-                                                        $grpDesc = trim($grp['desc'] ?? '');
+                                                        $grpHeader = trim(isset($grp['header']) ? $grp['header'] : '');
+                                                        $grpDesc = trim(isset($grp['desc']) ? $grp['desc'] : '');
                                                         if ($grpDesc === '' && !empty($grp['items'])) {
                                                             $grpDesc = implode("\n", $grp['items']);
                                                         }
@@ -4095,8 +4095,8 @@ error_reporting(E_ALL);
                                             <?php if (!empty($resIssueGroups)): ?>
                                                 <?php foreach ($resIssueGroups as $grp): ?>
                                                     <?php 
-                                                        $grpHeader = trim($grp['header'] ?? '');
-                                                        $grpDesc = trim($grp['desc'] ?? '');
+                                                        $grpHeader = trim(isset($grp['header']) ? $grp['header'] : '');
+                                                        $grpDesc = trim(isset($grp['desc']) ? $grp['desc'] : '');
                                                         if ($grpDesc === '' && !empty($grp['items'])) {
                                                             $grpDesc = implode("\n", $grp['items']);
                                                         }
@@ -4226,7 +4226,7 @@ error_reporting(E_ALL);
                     <!-- 2. Attendance Tab Pane -->
                     <div class="dash-tab-pane" id="pane-attendance">
                         <?php
-                        $targetAttendanceUid = (int)($userRow['user_id'] ?? $actualLoggedInUserId);
+                        $targetAttendanceUid = (int)(isset($userRow['user_id']) ? $userRow['user_id'] : $actualLoggedInUserId);
                         $targetAttendanceName = $userName;
                         $targetAttendanceRole = $userRole;
                         include __DIR__ . '/include/attendance_calendar_component.php';
@@ -4236,7 +4236,7 @@ error_reporting(E_ALL);
                     <!-- 3. Task Management Tab Pane -->
                     <div class="dash-tab-pane active" id="pane-task-mgmt">
                         <?php
-                        $targetDashboardUid = (int)($userRow['user_id'] ?? $actualLoggedInUserId);
+                        $targetDashboardUid = (int)(isset($userRow['user_id']) ? $userRow['user_id'] : $actualLoggedInUserId);
                         $targetDashboardName = $userName;
                         $targetDashboardRole = $userRole;
                         include __DIR__ . '/include/task_manager_component.php';
@@ -4246,10 +4246,10 @@ error_reporting(E_ALL);
                     <!-- 4. Work Guidelines Tab Pane -->
                     <div class="dash-tab-pane" id="pane-guidelines">
                         <?php
-                        $myGuidelineUid = (int)($userRow['user_id'] ?? ($_SESSION['id'] ?? 0));
-                        $myGuidelineRole = $userRole ?? ($_SESSION['role'] ?? '');
-                        $myGuidelineEmail = $userEmail ?? ($_SESSION['email'] ?? '');
-                        $myGuidelineName = $userName ?? ($_SESSION['username'] ?? '');
+                        $myGuidelineUid = (int)(isset($userRow['user_id']) ? $userRow['user_id'] : (isset($_SESSION['id']) ? $_SESSION['id'] : 0));
+                        $myGuidelineRole = isset($userRole) ? $userRole : (isset($_SESSION['role']) ? $_SESSION['role'] : '');
+                        $myGuidelineEmail = isset($userEmail) ? $userEmail : (isset($_SESSION['email']) ? $_SESSION['email'] : '');
+                        $myGuidelineName = isset($userName) ? $userName : (isset($_SESSION['username']) ? $_SESSION['username'] : '');
 
                         $guidelinesList = aitf_get_guidelines_for_current_user($db, $myGuidelineUid, $myGuidelineRole, $myGuidelineEmail, $myGuidelineName);
                         $guidelinesCount = count($guidelinesList);
@@ -4300,9 +4300,10 @@ error_reporting(E_ALL);
                                         if (in_array(strtolower(trim($glBy)), ['main admin', 'top mgmt', 'admin', 'director'], true)) {
                                             $glBy = 'Management';
                                         }
-                                        $attachments = $gl['attachments'] ?? [];
-                                        $glDesc = trim($gl['description'] ?? '');
-                                        $searchHaystack = strtolower(($gl['title'] ?? '') . ' ' . $glDesc . ' ' . $glBy);
+                                        $attachments = isset($gl['attachments']) ? $gl['attachments'] : [];
+                                        $glDesc = trim(isset($gl['description']) ? $gl['description'] : '');
+                                        $glTitle = isset($gl['title']) ? $gl['title'] : '';
+                                        $searchHaystack = strtolower($glTitle . ' ' . $glDesc . ' ' . $glBy);
                                     ?>
                                     <div class="guideline-entry-card guideline-filter-item" data-search="<?php echo htmlspecialchars($searchHaystack); ?>">
                                         <div class="guideline-card-head" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
@@ -4372,7 +4373,7 @@ error_reporting(E_ALL);
 
 <?php if ($canEditProfileSections): 
     $effectiveAudId = !empty($targetAudId) ? (int)$targetAudId : (!empty($audId) ? (int)$audId : 0);
-    $effectiveUid = (int)($userRow['user_id'] ?? 0);
+    $effectiveUid = (int)(isset($userRow['user_id']) ? $userRow['user_id'] : 0);
     if ($effectiveUid <= 0 && $effectiveAudId <= 0) {
         $effectiveUid = $actualLoggedInUserId;
     }

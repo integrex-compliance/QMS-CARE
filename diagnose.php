@@ -77,9 +77,9 @@ header('Content-Type: text/html; charset=utf-8');
                     $q = $db->query("SELECT DATABASE() as dbname, USER() as dbuser, VERSION() as mysql_version");
                     $info = $q->fetch(PDO::FETCH_ASSOC);
                     echo "<div class='ok'>✔ Database connected successfully!</div>";
-                    echo "<div>Database Name: <strong>" . htmlspecialchars($info['dbname'] ?? '') . "</strong></div>";
-                    echo "<div>Database User: <strong>" . htmlspecialchars($info['dbuser'] ?? '') . "</strong></div>";
-                    echo "<div>MySQL Version: <strong>" . htmlspecialchars($info['mysql_version'] ?? '') . "</strong></div>";
+                    echo "<div>Database Name: <strong>" . htmlspecialchars(isset($info['dbname']) ? $info['dbname'] : '') . "</strong></div>";
+                    echo "<div>Database User: <strong>" . htmlspecialchars(isset($info['dbuser']) ? $info['dbuser'] : '') . "</strong></div>";
+                    echo "<div>MySQL Version: <strong>" . htmlspecialchars(isset($info['mysql_version']) ? $info['mysql_version'] : '') . "</strong></div>";
                 } else {
                     echo "<div class='err'>✖ \$db is not set after dbConnect.php.</div>";
                 }
@@ -124,8 +124,8 @@ header('Content-Type: text/html; charset=utf-8');
             session_start();
         }
         echo "<div>Session ID: <code>" . (session_id() ?: 'none') . "</code></div>";
-        echo "<div>Username: <strong>" . htmlspecialchars($_SESSION['username'] ?? 'Not Logged In') . "</strong></div>";
-        echo "<div>User Role: <strong>" . htmlspecialchars($_SESSION['role'] ?? 'None') . "</strong></div>";
+        echo "<div>Username: <strong>" . htmlspecialchars(isset($_SESSION['username']) ? $_SESSION['username'] : 'Not Logged In') . "</strong></div>";
+        echo "<div>User Role: <strong>" . htmlspecialchars(isset($_SESSION['role']) ? $_SESSION['role'] : 'None') . "</strong></div>";
         ?>
     </div>
 </body>

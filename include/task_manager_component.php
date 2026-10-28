@@ -37,9 +37,9 @@ if (!function_exists('aitf_can_delete_tasks')) {
 
 date_default_timezone_set('Asia/Kolkata');
 
-$currentLoggedInUid = (int)($_SESSION['id'] ?? 0);
-$currentLoggedInRole = (string)($_SESSION['role'] ?? '');
-$currentLoggedInName = (string)($_SESSION['username'] ?? 'User');
+$currentLoggedInUid = (int)(isset($_SESSION['id']) ? $_SESSION['id'] : 0);
+$currentLoggedInRole = (string)(isset($_SESSION['role']) ? $_SESSION['role'] : '');
+$currentLoggedInName = (string)(isset($_SESSION['username']) ? $_SESSION['username'] : 'User');
 
 // Target user whose tasks are currently in view
 if (!isset($targetDashboardUid)) {
@@ -54,7 +54,7 @@ if (!isset($targetDashboardRole)) {
 $isViewingSelf = ($targetDashboardUid === $currentLoggedInUid);
 
 // Check if current logged-in user is Top Mgmt / Admin / Manager
-$actualRole = (string)($_SESSION['role'] ?? '');
+$actualRole = (string)(isset($_SESSION['role']) ? $_SESSION['role'] : '');
 $isLoggedInMainAdmin = aitf_is_main_admin_role($actualRole)
     || (class_exists('Utitlity') && Utitlity::checkForMainAdmin());
 $isTopMgmtUser = $isLoggedInMainAdmin || aitf_can_manage_tasks($actualRole);
@@ -68,7 +68,7 @@ if ($canForwardTasks && function_exists('aitf_get_all_system_users') && isset($d
     foreach ($allUsers as $u) {
         // Main Admin can assign to everyone.
         // Admin, BDM, Finance can assign to everyone EXCEPT Main Admin.
-        if (!$isLoggedInMainAdmin && aitf_is_main_admin_role($u['role'] ?? '')) {
+        if (!$isLoggedInMainAdmin && aitf_is_main_admin_role(isset($u['role']) ? $u['role'] : '')) {
             continue;
         }
         $assignableUsers[] = $u;
@@ -131,17 +131,17 @@ if (isset($db) && $db instanceof PDO && $targetDashboardUid > 0) {
         $allTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($allTasks as $t) {
-            $t['title'] = $t['task'] ?? ($t['title'] ?? '');
+            $t['title'] = isset($t['task']) ? $t['task'] : (isset($t['title']) ? $t['title'] : '');
             $t['assigned_by_name'] = $t['assigned_by_display_name'];
             $t['assigned_to_user_id'] = $t['userid'];
-            $t['assigned_by_user_id'] = $t['assigned_by'] ?? null;
+            $t['assigned_by_user_id'] = isset($t['assigned_by']) ? $t['assigned_by'] : null;
             if (!empty($t['completed_at'])) {
                 // already set
             } else if (!empty($t['complete_date']) && $t['complete_date'] !== '0000-00-00') {
                 $t['completed_at'] = $t['complete_date'] . ' 12:00:00';
             }
 
-            $statusLower = strtolower(trim((string)($t['status'] ?? 'pending')));
+            $statusLower = strtolower(trim((string)(isset($t['status']) ? $t['status'] : 'pending')));
             if ($statusLower === 'completed') {
                 $t['status'] = 'completed';
                 $completedTasks[] = $t;
@@ -1414,7 +1414,7 @@ html.theme-dark .todo-forward-footer {
                     </span>
 
                     <span class="todo-meta-pill pill-assigned-by <?php echo $isSelfTask ? 'pill-self-assigned' : ''; ?>" title="<?php echo $isSelfTask ? 'Self Assigned Task' : 'Assigned by'; ?>">
-                        <i class="fa <?php echo $isSelfTask ? 'fa-user-circle-o' : 'fa-user'; ?>"></i> Assigned by: <strong><?php echo htmlspecialchars($task['assigned_by_name'] ?? 'Top Mgmt'); ?><?php echo $isSelfTask ? ' (Self)' : ''; ?></strong>
+                        <i class="fa <?php echo $isSelfTask ? 'fa-user-circle-o' : 'fa-user'; ?>"></i> Assigned by: <strong><?php echo htmlspecialchars(isset($task['assigned_by_name']) ? $task['assigned_by_name'] : 'Top Mgmt'); ?><?php echo $isSelfTask ? ' (Self)' : ''; ?></strong>
                     </span>
 
                     <?php if (!empty($dueDateStr)): ?>
@@ -1490,7 +1490,7 @@ html.theme-dark .todo-forward-footer {
                         </span>
 
                         <span class="todo-meta-pill pill-assigned-by <?php echo $isSelfTask ? 'pill-self-assigned' : ''; ?>" title="<?php echo $isSelfTask ? 'Self Assigned Task' : 'Assigned by'; ?>">
-                            <i class="fa <?php echo $isSelfTask ? 'fa-user-circle-o' : 'fa-user'; ?>"></i> Assigned by: <strong><?php echo htmlspecialchars($task['assigned_by_name'] ?? 'Top Mgmt'); ?><?php echo $isSelfTask ? ' (Self)' : ''; ?></strong>
+                            <i class="fa <?php echo $isSelfTask ? 'fa-user-circle-o' : 'fa-user'; ?>"></i> Assigned by: <strong><?php echo htmlspecialchars(isset($task['assigned_by_name']) ? $task['assigned_by_name'] : 'Top Mgmt'); ?><?php echo $isSelfTask ? ' (Self)' : ''; ?></strong>
                         </span>
 
                         <?php if (!empty($task['completed_at'])): ?>
@@ -1658,7 +1658,7 @@ html.theme-dark .todo-forward-footer {
                             <?php foreach ($assignableUsers as $u): 
                                 $uId = (int)$u['user_id'];
                                 $uName = htmlspecialchars($u['name']);
-                                $uRole = htmlspecialchars($u['role'] ?? 'Staff');
+                                $uRole = htmlspecialchars(isset($u['role']) ? $u['role'] : 'Staff');
                                 $isPrimary = ($uId === (int)$targetDashboardUid);
                             ?>
                             <label class="todo-forward-user-item <?php echo $isPrimary ? 'is-primary' : ''; ?>" data-uid="<?php echo $uId; ?>" data-name="<?php echo strtolower($u['name']); ?>" data-role="<?php echo strtolower($uRole); ?>" title="<?php echo $isPrimary ? 'Currently assigned primary user' : 'Click to select'; ?>">

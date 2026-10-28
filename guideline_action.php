@@ -9,12 +9,12 @@ if (!isset($_SESSION['id'])) {
     exit();
 }
 
-$action = $_POST['action'] ?? ($_GET['action'] ?? '');
+$action = isset($_POST['action']) ? $_POST['action'] : (isset($_GET['action']) ? $_GET['action'] : '');
 
 // 1. CREATE GUIDELINE
 if ($action === 'create_guideline') {
-    $title = trim($_POST['guideline_title'] ?? '');
-    $description = trim($_POST['guideline_description'] ?? '');
+    $title = trim(isset($_POST['guideline_title']) ? $_POST['guideline_title'] : '');
+    $description = trim(isset($_POST['guideline_description']) ? $_POST['guideline_description'] : '');
 
     if ($title === '') {
         echo json_encode(['success' => false, 'error' => 'Guideline title cannot be empty.']);
@@ -41,7 +41,7 @@ if ($action === 'create_guideline') {
                     $uploadedFiles[] = [
                         'file_name' => $safeName,
                         'original_name' => $origName,
-                        'file_size' => $sizes[$i] ?? 0,
+                        'file_size' => isset($sizes[$i]) ? $sizes[$i] : 0,
                         'file_url' => 'uploads/guidelines/' . $safeName
                     ];
                 }
@@ -76,8 +76,8 @@ if ($action === 'create_guideline') {
 
 // 2. ASSIGN GUIDELINE TO USERS
 if ($action === 'assign_guideline') {
-    $guidelineId = (int)($_POST['guideline_id'] ?? 0);
-    $userIds = $_POST['user_ids'] ?? [];
+    $guidelineId = (int)(isset($_POST['guideline_id']) ? $_POST['guideline_id'] : 0);
+    $userIds = isset($_POST['user_ids']) ? $_POST['user_ids'] : [];
 
     if ($guidelineId <= 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid guideline ID.']);
@@ -115,7 +115,7 @@ if ($action === 'assign_guideline') {
 
 // 3. DELETE GUIDELINE
 if ($action === 'delete_guideline') {
-    $guidelineId = (int)($_POST['guideline_id'] ?? 0);
+    $guidelineId = (int)(isset($_POST['guideline_id']) ? $_POST['guideline_id'] : 0);
     if ($guidelineId <= 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid guideline ID.']);
         exit();

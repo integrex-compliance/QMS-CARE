@@ -8,8 +8,8 @@ echo "<h2>Login Test & Debug</h2>";
 echo "<hr>";
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['useremail'] ?? '';
-    $password = $_POST['password'] ?? '';
+    $email = isset($_POST['useremail']) ? $_POST['useremail'] : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
     
     echo "<h3>Login Attempt Details:</h3>";
     echo "<ul>";

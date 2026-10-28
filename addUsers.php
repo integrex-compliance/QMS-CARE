@@ -53,7 +53,7 @@ $pageIdentifier = "Add User";
                             if (!empty($p[0])) {
                                 $recipients[] = [
                                     'user_id' => (int)$p[0],
-                                    'user_name' => $p[1] ?? 'User'
+                                    'user_name' => isset($p[1]) ? $p[1] : 'User'
                                 ];
                             }
                         }
@@ -405,7 +405,7 @@ $pageIdentifier = "Add User";
                                                 <?php } ?>
                                             </div>
                                             <div style="display: flex; align-items: center; gap: 4px;">
-                                                <a href="javascript:void(0)" class="resetPassword" data-id="<?php echo $user['user_id'] ?>" data-name="<?php echo htmlspecialchars($user['user_name'], ENT_QUOTES) ?>" data-email="<?php echo htmlspecialchars($user['email_id'] ?? '', ENT_QUOTES) ?>" title="Reset password" style="cursor: pointer; padding: 4px 6px; display: inline-block;"><i class="fa fa-repeat" style="color: #f59e0b; pointer-events: none;"></i></a>
+                                                <a href="javascript:void(0)" class="resetPassword" data-id="<?php echo $user['user_id'] ?>" data-name="<?php echo htmlspecialchars($user['user_name'], ENT_QUOTES) ?>" data-email="<?php echo htmlspecialchars(isset($user['email_id']) ? $user['email_id'] : '', ENT_QUOTES) ?>" title="Reset password" style="cursor: pointer; padding: 4px 6px; display: inline-block;"><i class="fa fa-repeat" style="color: #f59e0b; pointer-events: none;"></i></a>
                                                 <a href="javascript:void(0)" class="editUser" data-id="<?php echo $user['user_id'] ?>" style="cursor: pointer; padding: 4px 6px; display: inline-block;" title="Edit user"><i class="fa fa-pencil-square" style="color: #0d4d8b; pointer-events: none;"></i></a>
                                                 <?php if (isset($_SESSION['id']) && $_SESSION['id'] != $user['user_id']) { ?>
                                                     <a href="javascript:void(0)" class="deleteUser" data-id="<?php echo $user['user_id'] ?>" style="cursor: pointer; padding: 4px 6px; display: inline-block;" title="Delete user"><i class="fa fa-trash" style="color: #ef4444; pointer-events: none;"></i></a>
@@ -504,8 +504,8 @@ $pageIdentifier = "Add User";
                                         </thead>
                                         <tbody>
                                             <?php foreach ($allPostedGuidelines as $gl) { 
-                                                $glAtts = $gl['attachments'] ?? [];
-                                                $glRecipients = $gl['recipients'] ?? [];
+                                                $glAtts = isset($gl['attachments']) ? $gl['attachments'] : [];
+                                                $glRecipients = isset($gl['recipients']) ? $gl['recipients'] : [];
                                                 $recCount = count($glRecipients);
                                             ?>
                                                 <tr id="guideline-manage-card-<?php echo $gl['id']; ?>">
@@ -661,7 +661,7 @@ $pageIdentifier = "Add User";
                             <tbody id="modalUsersGrid">
                                 <?php 
                                 foreach ($allUserList as $u) { 
-                                    $roleText = $u['role'] ?? 'Staff';
+                                    $roleText = isset($u['role']) ? $u['role'] : 'Staff';
                                     $roleLower = strtolower($roleText);
                                     $categoryType = 'staff';
                                     $badgeStyle = 'background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;';
@@ -679,7 +679,7 @@ $pageIdentifier = "Add User";
                                     $initials = (count($parts) >= 2) ? strtoupper($parts[0][0] . $parts[count($parts) - 1][0]) : strtoupper(substr($cleanN, 0, 2));
                                     if (empty($initials)) $initials = 'U';
 
-                                    $searchStr = strtolower($u['user_name'] . ' ' . $roleText . ' ' . ($u['email_id'] ?? ''));
+                                    $searchStr = strtolower($u['user_name'] . ' ' . $roleText . ' ' . (isset($u['email_id']) ? $u['email_id'] : ''));
                                 ?>
                                     <tr class="user-select-row" data-category="<?php echo $categoryType; ?>" data-search="<?php echo htmlspecialchars($searchStr); ?>" style="cursor: pointer;">
                                         <td style="width: 36px; text-align: center; vertical-align: middle;">

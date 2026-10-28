@@ -1,4 +1,4 @@
-﻿# Ignore uploads directory
+# Ignore uploads directory
 /uploads/
 
 # Ignore .htaccess
@@ -18,6 +18,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+dbConnect.php
 
 # Ignore IDE specific files
 .vscode/

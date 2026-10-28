@@ -7,13 +7,13 @@
  */
 
 if (!isset($targetAttendanceUid)) {
-    $targetAttendanceUid = (int)($userRow['user_id'] ?? ($_SESSION['id'] ?? 0));
+    $targetAttendanceUid = (int)(isset($userRow['user_id']) ? $userRow['user_id'] : (isset($_SESSION['id']) ? $_SESSION['id'] : 0));
 }
 if (!isset($targetAttendanceName)) {
-    $targetAttendanceName = $userName ?? ($_SESSION['username'] ?? 'User');
+    $targetAttendanceName = isset($userName) ? $userName : (isset($_SESSION['username']) ? $_SESSION['username'] : 'User');
 }
 if (!isset($targetAttendanceRole)) {
-    $targetAttendanceRole = $userRole ?? ($_SESSION['role'] ?? 'Staff');
+    $targetAttendanceRole = isset($userRole) ? $userRole : (isset($_SESSION['role']) ? $_SESSION['role'] : 'Staff');
 }
 ?>
 
@@ -866,8 +866,8 @@ if (!isset($targetAttendanceRole)) {
                     'label' => ($r['status'] === 'late') ? 'Late Login' : (($r['status'] === 'halfday') ? 'Half Day' : ucfirst($r['status'])),
                     'inTime' => !empty($r['in_time']) ? date('h:i A', strtotime($r['in_time'])) : '--',
                     'outTime' => !empty($r['out_time']) ? date('h:i A', strtotime($r['out_time'])) : '--',
-                    'note' => $r['remarks'] ?? '',
-                    'selfieUrl' => $r['punch_in_selfie_url'] ?? ''
+                    'note' => isset($r['remarks']) ? $r['remarks'] : '',
+                    'selfieUrl' => isset($r['punch_in_selfie_url']) ? $r['punch_in_selfie_url'] : ''
                 ];
             }
         } catch (Exception $e) {

@@ -49,14 +49,14 @@ if (!function_exists('aitf_can_delete_tasks')) {
 }
 
 $currentUserId = (int)$_SESSION['id'];
-$currentUserRole = (string)($_SESSION['role'] ?? '');
-$currentUsername = (string)($_SESSION['username'] ?? 'User');
+$currentUserRole = (string)(isset($_SESSION['role']) ? $_SESSION['role'] : '');
+$currentUsername = (string)(isset($_SESSION['username']) ? $_SESSION['username'] : 'User');
 $isCurrentMainAdmin = aitf_is_main_admin_role($currentUserRole);
 
-$action = $_POST['action'] ?? '';
+$action = isset($_POST['action']) ? $_POST['action'] : '';
 
 if ($action === 'add_task') {
-    $targetUid = (int)($_POST['target_user_id'] ?? $currentUserId);
+    $targetUid = (int)(isset($_POST['target_user_id']) ? $_POST['target_user_id'] : $currentUserId);
     if ($targetUid <= 0) {
         $targetUid = $currentUserId;
     }
@@ -76,7 +76,7 @@ if ($action === 'add_task') {
             exit();
         }
 
-        $targetRole = $targetRow['role'] ?? '';
+        $targetRole = isset($targetRow['role']) ? $targetRow['role'] : '';
         // Rule: Only Main Admin can assign tasks to Main Admin.
         // Admin, BDM, and Finance can assign tasks to everyone EXCEPT Main Admin.
         if (!$isCurrentMainAdmin && aitf_is_main_admin_role($targetRole)) {
@@ -85,7 +85,7 @@ if ($action === 'add_task') {
         }
     }
 
-    $title = trim($_POST['title'] ?? '');
+    $title = trim(isset($_POST['title']) ? $_POST['title'] : '');
     if ($title === '') {
         echo json_encode(['success' => false, 'error' => 'Task title cannot be empty.']);
         exit();
@@ -95,7 +95,7 @@ if ($action === 'add_task') {
     $reminder = !empty($_POST['reminder_time']) ? trim($_POST['reminder_time']) : null;
     $isImportant = !empty($_POST['is_important']) ? 1 : 0;
     $priority = $isImportant ? 'High' : 'Normal';
-    $additionalUids = $_POST['additional_user_ids'] ?? [];
+    $additionalUids = isset($_POST['additional_user_ids']) ? $_POST['additional_user_ids'] : [];
 
     $nowStr = date('Y-m-d H:i:s');
     $curDate = date('Y-m-d');
@@ -156,7 +156,7 @@ if ($action === 'add_task') {
                         $cStmt = $db->prepare("SELECT role FROM `user` WHERE user_id = :uid LIMIT 1");
                         $cStmt->execute([':uid' => $addUid]);
                         $cRow = $cStmt->fetch(PDO::FETCH_ASSOC);
-                        if ($cRow && aitf_is_main_admin_role($cRow['role'] ?? '')) {
+                        if ($cRow && aitf_is_main_admin_role(isset($cRow['role']) ? $cRow['role'] : '')) {
                             continue; // Skip assigning to Main Admin
                         }
                     }
@@ -204,7 +204,7 @@ if ($action === 'add_task') {
 }
 
 if ($action === 'toggle_status') {
-    $taskId = (int)($_POST['task_id'] ?? 0);
+    $taskId = (int)(isset($_POST['task_id']) ? $_POST['task_id'] : 0);
     if ($taskId <= 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid task ID.']);
         exit();
@@ -270,7 +270,7 @@ if ($action === 'toggle_status') {
 }
 
 if ($action === 'toggle_star') {
-    $taskId = (int)($_POST['task_id'] ?? 0);
+    $taskId = (int)(isset($_POST['task_id']) ? $_POST['task_id'] : 0);
     if ($taskId <= 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid task ID.']);
         exit();
@@ -289,7 +289,9 @@ if ($action === 'toggle_star') {
         $hasIsImportant = isset($tmCols['is_important']);
         $hasPriority = isset($tmCols['priority']);
 
-        $isStar = ($hasIsImportant && (int)($task['is_important'] ?? 0) === 1) || (strtolower(trim((string)($task['priority'] ?? ''))) === 'high');
+        $taskIsImp = (isset($task['is_important']) ? (int)$task['is_important'] : 0);
+        $taskPrio = (isset($task['priority']) ? strtolower(trim((string)$task['priority'])) : '');
+        $isStar = ($hasIsImportant && $taskIsImp === 1) || ($taskPrio === 'high');
         $newStar = $isStar ? 0 : 1;
         $newPriority = $newStar ? 'High' : 'Normal';
 
@@ -317,7 +319,7 @@ if ($action === 'toggle_star') {
 }
 
 if ($action === 'delete_task') {
-    $taskId = (int)($_POST['task_id'] ?? 0);
+    $taskId = (int)(isset($_POST['task_id']) ? $_POST['task_id'] : 0);
     if ($taskId <= 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid task ID.']);
         exit();

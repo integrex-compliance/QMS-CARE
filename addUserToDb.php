@@ -8,16 +8,16 @@ include_once './utility.php';
 if (isset($_POST['userName']) && !empty($_POST['userName']) && isset($_POST['userEmail']) && !empty($_POST['userEmail']) && isset($_POST['userRole']) && !empty($_POST['userRole']) && isset($_POST['userPassword']) && !empty($_POST['userPassword'])) {
     try {
         $hashedpwd = password_hash($_POST['userPassword'], PASSWORD_DEFAULT);
-        $userName = trim($_POST['userName'] ?? '');
-        $userAbbr = trim($_POST['userAbbr'] ?? '');
-        $userEmail = trim($_POST['userEmail'] ?? '');
-        $userRole = trim($_POST['userRole'] ?? '');
-        $userEid = trim($_POST['userEid'] ?? '');
-        $userPcId = trim($_POST['userPcId'] ?? '');
-        $designation = trim($_POST['designationAssigned'] ?? '');
-        $applicableRecords = trim($_POST['applicableRecords'] ?? '');
-        $resourceIssueRecord = trim($_POST['resourceIssueRecord'] ?? '');
-        $workDescription = trim($_POST['workDescription'] ?? '');
+        $userName = trim(isset($_POST['userName']) ? $_POST['userName'] : '');
+        $userAbbr = trim(isset($_POST['userAbbr']) ? $_POST['userAbbr'] : '');
+        $userEmail = trim(isset($_POST['userEmail']) ? $_POST['userEmail'] : '');
+        $userRole = trim(isset($_POST['userRole']) ? $_POST['userRole'] : '');
+        $userEid = trim(isset($_POST['userEid']) ? $_POST['userEid'] : '');
+        $userPcId = trim(isset($_POST['userPcId']) ? $_POST['userPcId'] : '');
+        $designation = trim(isset($_POST['designationAssigned']) ? $_POST['designationAssigned'] : '');
+        $applicableRecords = trim(isset($_POST['applicableRecords']) ? $_POST['applicableRecords'] : '');
+        $resourceIssueRecord = trim(isset($_POST['resourceIssueRecord']) ? $_POST['resourceIssueRecord'] : '');
+        $workDescription = trim(isset($_POST['workDescription']) ? $_POST['workDescription'] : '');
 
         $addUser = "INSERT INTO user(user_name, abbreviation, email_id, password, role, e_id, pc_id, designation_assigned, applicable_records, resource_issue_record, work_description, is_deleted) 
                     VALUES (:name, :userAbbr, :email, :password, :role, :eid, :pcid, :designation, :applicableRecords, :resourceIssueRecord, :workDescription, '0')";
@@ -45,16 +45,16 @@ if (isset($_POST['userName']) && !empty($_POST['userName']) && isset($_POST['use
 else if (isset($_POST['userId']) && !empty($_POST['userId']) && isset($_POST['editUserName']) && !empty($_POST['editUserName']) && isset($_POST['editUserEmail']) && !empty($_POST['editUserEmail']) && isset($_POST['editUserRole']) && !empty($_POST['editUserRole'])) {
     try {
         $userId = (int)$_POST['userId'];
-        $userName = trim($_POST['editUserName'] ?? '');
-        $userAbbr = trim($_POST['editUserAbbr'] ?? '');
-        $userEmail = trim($_POST['editUserEmail'] ?? '');
-        $userRole = trim($_POST['editUserRole'] ?? '');
-        $userEid = trim($_POST['editUserEid'] ?? '');
-        $userPcId = trim($_POST['editUserPcId'] ?? '');
-        $designation = trim($_POST['editDesignationAssigned'] ?? '');
-        $applicableRecords = trim($_POST['editApplicableRecords'] ?? '');
-        $resourceIssueRecord = trim($_POST['editResourceIssueRecord'] ?? '');
-        $workDescription = trim($_POST['editWorkDescription'] ?? '');
+        $userName = trim(isset($_POST['editUserName']) ? $_POST['editUserName'] : '');
+        $userAbbr = trim(isset($_POST['editUserAbbr']) ? $_POST['editUserAbbr'] : '');
+        $userEmail = trim(isset($_POST['editUserEmail']) ? $_POST['editUserEmail'] : '');
+        $userRole = trim(isset($_POST['editUserRole']) ? $_POST['editUserRole'] : '');
+        $userEid = trim(isset($_POST['editUserEid']) ? $_POST['editUserEid'] : '');
+        $userPcId = trim(isset($_POST['editUserPcId']) ? $_POST['editUserPcId'] : '');
+        $designation = trim(isset($_POST['editDesignationAssigned']) ? $_POST['editDesignationAssigned'] : '');
+        $applicableRecords = trim(isset($_POST['editApplicableRecords']) ? $_POST['editApplicableRecords'] : '');
+        $resourceIssueRecord = trim(isset($_POST['editResourceIssueRecord']) ? $_POST['editResourceIssueRecord'] : '');
+        $workDescription = trim(isset($_POST['editWorkDescription']) ? $_POST['editWorkDescription'] : '');
 
         $updateUser = "UPDATE user SET 
             user_name = :name, 
