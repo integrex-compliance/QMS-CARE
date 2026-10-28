@@ -158,7 +158,7 @@ if (isset($db) && $db instanceof PDO && $targetDashboardUid > 0) {
         $pendingCount = count($pendingTasks);
         $completedCount = count($completedTasks);
         $totalCount = $pendingCount + $completedCount;
-    } catch (Throwable $e) {}
+    } catch (Exception $e) {}
 }
 ?>
 

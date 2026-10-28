@@ -81,7 +81,7 @@ if (!function_exists('aitf_sync_database_schema')) {
                     `created_at` DATETIME NULL,
                     `is_deleted` TINYINT(1) NOT NULL DEFAULT 0,
                     PRIMARY KEY (`id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8
             ");
 
             // 4. Staff Guideline Recipients table
@@ -94,7 +94,7 @@ if (!function_exists('aitf_sync_database_schema')) {
                     PRIMARY KEY (`id`),
                     KEY `idx_guideline_id` (`guideline_id`),
                     KEY `idx_user_id` (`user_id`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8
             ");
 
             // 5. AITF Attendance table
@@ -113,11 +113,11 @@ if (!function_exists('aitf_sync_database_schema')) {
                     UNIQUE KEY `idx_user_date` (`user_id`, `attendance_date`),
                     KEY `idx_user_id` (`user_id`),
                     KEY `idx_attendance_date` (`attendance_date`)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8
             ");
 
             $schemaSynced = true;
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             error_log("Schema auto-sync error: " . $e->getMessage());
         }
     }

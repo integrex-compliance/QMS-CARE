@@ -1,11 +1,19 @@
 <?php
+ob_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
+    header("Location: index.php?errorCode=101");
+    exit();
+}
+$pageIdentifier = "My Dashboard";
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 ?>
 <div id="wrapper" class="active">
     <?php
-    $pageIdentifier = "My Dashboard";
     include_once './header.php';
     include_once './dbConnect.php';
     date_default_timezone_set('Asia/Kolkata');
@@ -104,7 +112,7 @@ error_reporting(E_ALL);
                     ];
                 }
                 return $results;
-            } catch (Throwable $e) {
+            } catch (Exception $e) {
                 return [];
             }
         }
@@ -150,7 +158,7 @@ error_reporting(E_ALL);
             $uStmt = $db->prepare("SELECT * FROM user WHERE user_id = :id LIMIT 1");
             $uStmt->execute([':id' => $_SESSION['id']]);
             $userRow = $uStmt->fetch(PDO::FETCH_ASSOC);
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             $userRow = null;
         }
     }
@@ -159,7 +167,7 @@ error_reporting(E_ALL);
             $uStmt = $db->prepare("SELECT * FROM user WHERE LOWER(user_name) = :uname OR LOWER(email_id) = :uemail LIMIT 1");
             $uStmt->execute([':uname' => strtolower($_SESSION['username']), ':uemail' => strtolower($_SESSION['username'])]);
             $userRow = $uStmt->fetch(PDO::FETCH_ASSOC);
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             $userRow = null;
         }
     }
@@ -192,7 +200,7 @@ error_reporting(E_ALL);
                             $viewingTargetName = $targetUserRow['user_name'];
                         }
                     }
-                } catch (Throwable $e) {}
+                } catch (Exception $e) {}
             }
         }
     }
@@ -387,7 +395,7 @@ error_reporting(E_ALL);
                     $row['attachments'] = $atts;
                     $guidelines[] = $row;
                 }
-            } catch (Throwable $e) {}
+            } catch (Exception $e) {}
             return $guidelines;
         }
     }

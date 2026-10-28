@@ -64,7 +64,7 @@ if ($action === 'update_profile_records') {
 
         echo json_encode(['success' => true, 'message' => 'Profile records updated successfully.']);
         exit();
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit();
     }

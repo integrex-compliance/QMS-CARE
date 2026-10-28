@@ -77,7 +77,7 @@ $pageIdentifier = "Add User";
                     $allPostedGuidelines[] = $glRow;
                 }
             }
-        } catch (Throwable $e) {}
+        } catch (Exception $e) {}
     }
     ?>
     <div id="page-content-wrapper">

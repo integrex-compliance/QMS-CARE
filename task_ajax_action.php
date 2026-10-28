@@ -24,7 +24,7 @@ if (!function_exists('aitf_get_task_manager_columns')) {
             while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $cols[strtolower($r['Field'])] = true;
             }
-        } catch (Throwable $e) {}
+        } catch (Exception $e) {}
         return $cols;
     }
 }
@@ -204,7 +204,7 @@ if ($action === 'add_task') {
 
         echo json_encode(['success' => true, 'task' => $taskData, 'message' => 'Task created successfully!']);
         exit();
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit();
     }
@@ -270,7 +270,7 @@ if ($action === 'toggle_status') {
             'completed_at_formatted' => $completedAtFormatted
         ]);
         exit();
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit();
     }
@@ -317,7 +317,7 @@ if ($action === 'toggle_star') {
 
         echo json_encode(['success' => true, 'is_important' => $newStar]);
         exit();
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit();
     }
@@ -340,7 +340,7 @@ if ($action === 'delete_task') {
         $updateStmt->execute([':id' => $taskId]);
         echo json_encode(['success' => true, 'message' => 'Task deleted.']);
         exit();
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit();
     }

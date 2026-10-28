@@ -75,7 +75,7 @@ if ($action === 'create_guideline') {
             'message' => 'Staff guideline created successfully!'
         ]);
         exit();
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit();
     }
@@ -114,7 +114,7 @@ if ($action === 'assign_guideline') {
             'message' => "Guideline sent to {$assignedCount} user(s)!"
         ]);
         exit();
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit();
     }
@@ -133,7 +133,7 @@ if ($action === 'delete_guideline') {
         $stmt->execute([':id' => $guidelineId]);
         echo json_encode(['success' => true, 'message' => 'Guideline deleted.']);
         exit();
-    } catch (Throwable $e) {
+    } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit();
     }
