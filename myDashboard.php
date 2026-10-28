@@ -1,3 +1,8 @@
+<?php
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+?>
 <div id="wrapper" class="active">
     <?php
     $pageIdentifier = "My Dashboard";
@@ -209,22 +214,48 @@
     $userStatus = trim((string)($userRow['account_status'] ?? 'active'));
     $userAbbr = trim((string)($userRow['abbreviation'] ?? ''));
 
+    // Safe string helpers that do not require mbstring extension
+    if (!function_exists('aitf_safe_substr')) {
+        function aitf_safe_substr($str, $start, $length = null) {
+            if (function_exists('mb_substr')) {
+                return $length !== null ? mb_substr($str, $start, $length, 'UTF-8') : mb_substr($str, $start);
+            }
+            return $length !== null ? substr($str, $start, $length) : substr($str, $start);
+        }
+    }
+    if (!function_exists('aitf_safe_strlen')) {
+        function aitf_safe_strlen($str) {
+            if (function_exists('mb_strlen')) {
+                return mb_strlen($str, 'UTF-8');
+            }
+            return strlen($str);
+        }
+    }
+    if (!function_exists('aitf_safe_strtoupper')) {
+        function aitf_safe_strtoupper($str) {
+            if (function_exists('mb_strtoupper')) {
+                return mb_strtoupper($str, 'UTF-8');
+            }
+            return strtoupper($str);
+        }
+    }
+
     // Dynamic Initials generation
     $initials = '';
     $cleanName = preg_replace('/[^a-zA-Z0-9\s]/', '', $userName);
     $nameParts = array_values(array_filter(preg_split('/\s+/', trim($cleanName))));
     if (count($nameParts) >= 2) {
-        $initials = strtoupper(mb_substr($nameParts[0], 0, 1) . mb_substr(end($nameParts), 0, 1));
+        $initials = aitf_safe_strtoupper(aitf_safe_substr($nameParts[0], 0, 1) . aitf_safe_substr(end($nameParts), 0, 1));
     } elseif (count($nameParts) === 1) {
         $firstWord = $nameParts[0];
-        if (mb_strlen($firstWord) >= 2) {
-            $initials = strtoupper(mb_substr($firstWord, 0, 2));
+        if (aitf_safe_strlen($firstWord) >= 2) {
+            $initials = aitf_safe_strtoupper(aitf_safe_substr($firstWord, 0, 2));
         } else {
-            $initials = strtoupper(mb_substr($firstWord, 0, 1));
+            $initials = aitf_safe_strtoupper(aitf_safe_substr($firstWord, 0, 1));
         }
     }
     if (empty($initials) && !empty($userAbbr)) {
-        $initials = strtoupper(substr($userAbbr, 0, 2));
+        $initials = aitf_safe_strtoupper(substr($userAbbr, 0, 2));
     }
     if (empty($initials)) {
         $initials = 'US';
@@ -3807,9 +3838,9 @@
                                                 $subParts = preg_split('/\s+/', trim($cleanName));
                                                 $suInitial = '';
                                                 if (count($subParts) >= 2) {
-                                                    $suInitial = mb_strtoupper(mb_substr($subParts[0], 0, 1) . mb_substr(end($subParts), 0, 1));
+                                                    $suInitial = aitf_safe_strtoupper(aitf_safe_substr($subParts[0], 0, 1) . aitf_safe_substr(end($subParts), 0, 1));
                                                 } else {
-                                                    $suInitial = mb_strtoupper(mb_substr($cleanName, 0, 2));
+                                                    $suInitial = aitf_safe_strtoupper(aitf_safe_substr($cleanName, 0, 2));
                                                 }
                                             ?>
                                             <a href="myDashboard.php?view_user=<?php echo urlencode($suKey); ?>" class="dash-mobile-user-item <?php echo $isSel ? 'is-selected' : ''; ?>" data-name="<?php echo htmlspecialchars(strtolower($cleanName . ' ' . $suEmail . ' ' . $suRole)); ?>">
