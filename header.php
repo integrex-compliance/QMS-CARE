@@ -1,6 +1,8 @@
 <?php
 ob_start();
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 include './head.php';
 include 'modal_forms.php';
 include 'utility.php';

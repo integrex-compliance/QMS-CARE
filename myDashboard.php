@@ -18,19 +18,6 @@ error_reporting(E_ALL);
     include_once './dbConnect.php';
     date_default_timezone_set('Asia/Kolkata');
 
-    // =========================================================================
-    // [UI MODE ONLY] Schema auto-sync is commented out for now.
-    // Uncomment below when ready to enable full functionality.
-    // =========================================================================
-    
-    if (isset($db) && $db instanceof PDO) {
-        if (file_exists(__DIR__ . '/include/db_schema_sync.php')) {
-            require_once __DIR__ . '/include/db_schema_sync.php';
-            aitf_sync_database_schema($db);
-        }
-    }
-    
-
     // 1. Identify actual logged-in user credentials
     $actualLoggedInUserId = (int)($_SESSION['id'] ?? 0);
     $actualLoggedInRole = (string)($_SESSION['role'] ?? '');

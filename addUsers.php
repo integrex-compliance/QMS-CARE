@@ -13,13 +13,6 @@ $pageIdentifier = "Add User";
     include_once './utility.php';
     date_default_timezone_set('Asia/Kolkata');
 
-    if (isset($db) && $db instanceof PDO) {
-        if (file_exists(__DIR__ . '/include/db_schema_sync.php')) {
-            require_once __DIR__ . '/include/db_schema_sync.php';
-            aitf_sync_database_schema($db);
-        }
-    }
-
     $allUser = "SELECT * FROM user WHERE is_deleted = '0'";
     $statement = $db->prepare($allUser);
     $statement->execute();

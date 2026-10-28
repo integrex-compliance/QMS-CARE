@@ -2,13 +2,6 @@
 session_start();
 include_once __DIR__ . '/dbConnect.php';
 
-if (isset($db) && $db instanceof PDO) {
-    if (file_exists(__DIR__ . '/include/db_schema_sync.php')) {
-        require_once __DIR__ . '/include/db_schema_sync.php';
-        aitf_sync_database_schema($db);
-    }
-}
-
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['id'])) {

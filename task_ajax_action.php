@@ -5,13 +5,6 @@ if (session_status() === PHP_SESSION_NONE) {
 date_default_timezone_set('Asia/Kolkata');
 include_once __DIR__ . '/dbConnect.php';
 
-if (isset($db) && $db instanceof PDO) {
-    if (file_exists(__DIR__ . '/include/db_schema_sync.php')) {
-        require_once __DIR__ . '/include/db_schema_sync.php';
-        aitf_sync_database_schema($db);
-    }
-}
-
 if (!function_exists('aitf_get_task_manager_columns')) {
     function aitf_get_task_manager_columns(PDO $db) {
         static $cols = null;

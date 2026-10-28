@@ -85,11 +85,6 @@ $totalCount = 0;
 
 if (isset($db) && $db instanceof PDO && $targetDashboardUid > 0) {
     try {
-        if (file_exists(__DIR__ . '/db_schema_sync.php')) {
-            require_once __DIR__ . '/db_schema_sync.php';
-            aitf_sync_database_schema($db);
-        }
-
         // Check available columns in task_manager
         $tmCols = [];
         $colStmt = $db->query("SHOW COLUMNS FROM `task_manager`");
