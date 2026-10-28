@@ -11,7 +11,7 @@ include_once './dbConnect.php';
 
 if (isset($_GET['userId']) && !empty($_GET['userId'])) {
     try {
-        $userDetails = "SELECT user_id, user_name, abbreviation, email_id, role FROM user WHERE user_id = :userid";
+        $userDetails = "SELECT user_id, user_name, abbreviation, email_id, role, e_id, pc_id, designation_assigned, applicable_records, resource_issue_record, work_description, account_status, contact_no FROM user WHERE user_id = :userid";
         $statement = $db->prepare($userDetails);
         $statement->bindParam(':userid', $_GET['userId']);
         $statement->execute();

@@ -32,6 +32,15 @@ include 'utility.php';
 //        e.preventDefault();
 //    });
 
+        $(document).on('click', '#menu-toggle', function (e) {
+            e.preventDefault();
+            $("#wrapper").toggleClass("active");
+            $(".container-fluid, .container").toggleClass("active");
+            if (typeof table !== 'undefined' && table && table.draw) {
+                table.draw();
+            }
+        });
+
         $('.addAccountCss').click(function () {
             $('.newCustomerContact').empty();
             $(".customerAdd").modal("show");
@@ -297,6 +306,8 @@ if (!Utitlity::checkIfLoggedIn()) {
     if (!Utitlity::checkForMainAdmin()) {
         header("Location: invalidAccess.php?errorCode=102");
     }
+} else if (isset($pageIdentifier) && $pageIdentifier == "My Dashboard") {
+    $addMyDashboardClass = "active";
 }
 
 function simpleDateConversion($inputStr) {
@@ -327,179 +338,209 @@ function getFlatDate($inputStr) {
 ?>
 <div id="sidebar-wrapper" class="hidden-xs" >
     <ul id="sidebar_menu" class="sidebar-nav" >
-        <li class="sidebar-brand"><a class="" id="menu-toggle" href="#">QMS<span id="main_icon" class="glyphicon glyphicon-align-justify"></span></a></li>
+        <li class="sidebar-brand">
+            <a class="sidebar-brand-link" id="menu-toggle" href="javascript:void(0)" title="Toggle Menu">
+                <div class="brand-logo-wrap">
+                    <div class="brand-icon-box">
+                        <i class="fa fa-cubes"></i>
+                    </div>
+                    <div class="brand-text-wrap">
+                        <span class="brand-title">QMS</span>
+                        <span class="brand-badge">CARE</span>
+                    </div>
+                </div>
+                <div class="brand-toggle-btn">
+                    <span id="main_icon" class="fa fa-bars"></span>
+                </div>
+            </a>
+        </li>
     </ul>
     <ul class="sidebar-nav" id="sidebar">
+        <li><a href="myDashboard.php" class="animate <?php echo isset($addMyDashboardClass) ? $addMyDashboardClass : '' ?>"><i class="sub_icon fa fa-tachometer"></i><span class="menu-label">My Dashboard</span></a></li>
         <?php if ($_SESSION['username']=="Harish Ajabe") { ?>
-	<!--<li><a href="homePage_Test.php" class="animate <?php echo $addClass ?>">CUSTOMERS(Test)<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a></li>-->
+	<!--<li><a href="homePage_Test.php" class="animate <?php echo $addClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Customers (Test)</span></a></li>-->
         <?php } ?>
 		<?php if (Utitlity::checkForMainAdmin()) { ?>
-            <!--<li><a href="homePage.php" class="animate <?php echo $addClass ?>">CUSTOMERS<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a>-->
-                <li><a href="homePage_Test.php" class="animate <?php echo $addClass ?>">CUSTOMERS<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a>     
+            <!--<li><a href="homePage.php" class="animate <?php echo $addClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Customers</span></a>-->
+                <li><a href="homePage_Test.php" class="animate <?php echo $addClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Customers</span></a>     
             </li>
-            <li><a href="business_insights.php" class="animate <?php echo isset($addBusinessInsightsClass) ? $addBusinessInsightsClass : '' ?>">DASHBOARD<i class="sub_icon fa fa-line-chart fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="business_insights.php" class="animate <?php echo isset($addBusinessInsightsClass) ? $addBusinessInsightsClass : '' ?>"><i class="sub_icon fa fa-line-chart"></i><span class="menu-label">Dashboard</span></a></li>
         <?php } ?>
         <?php if ($_SESSION['username']=="Harish Ajabe") { ?>
-            <!--<li><a href="newEnquiry_Test.php" class="animate <?php echo $addClass ?>">REFERED ENQUIRY(Test)<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a></li>-->
+            <!--<li><a href="newEnquiry_Test.php" class="animate <?php echo $addClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Referred Enquiry (Test)</span></a></li>-->
         <?php } ?>
 		<?php if (Utitlity::checkForUserMarketing() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="newEnquiry_Test.php" class="animate <?php echo $addNewEnqClass ?>">REFERED ENQUIRY<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a></li>
-            <!--<li><a href="newEnquiry.php" class="animate <?php echo $addNewEnqClass ?>">REFERED ENQUIRY<i class="sub_icon fa fa-user-plus fa-2x" style="vertical-align:middle"></i></a></li>-->
-            <li><a href="justdialEnquiry.php" class="animate <?php echo $addJDClass ?>">JD ENQUIRY<i class="sub_icon fa fa-phone fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="telecallEnquiry.php" class="animate <?php echo $addTCClass ?>">TEL ENQUIRY<i class="sub_icon fa fa-phone fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="saDuePage.php" class="animate <?php echo $addSaDueClass ?>">SA DUE<i class="sub_icon fa fa-briefcase fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="rcDue.php" class="animate <?php echo $addRcDueClass ?>">RC DUE<i class="sub_icon fa fa-briefcase fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="disclient.php" class="animate <?php echo $adddisClass ?>">DISCONTINUED CLI.<i class="sub_icon fa fa-briefcase fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="newEnquiry_Test.php" class="animate <?php echo $addNewEnqClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Referred Enquiry</span></a></li>
+            <!--<li><a href="newEnquiry.php" class="animate <?php echo $addNewEnqClass ?>"><i class="sub_icon fa fa-user-plus"></i><span class="menu-label">Referred Enquiry</span></a></li>-->
+            <li><a href="justdialEnquiry.php" class="animate <?php echo $addJDClass ?>"><i class="sub_icon fa fa-phone"></i><span class="menu-label">JD Enquiry</span></a></li>
+            <li><a href="telecallEnquiry.php" class="animate <?php echo $addTCClass ?>"><i class="sub_icon fa fa-phone"></i><span class="menu-label">Tel Enquiry</span></a></li>
+            <li><a href="saDuePage.php" class="animate <?php echo $addSaDueClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">SA Due</span></a></li>
+            <li><a href="rcDue.php" class="animate <?php echo $addRcDueClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">RC Due</span></a></li>
+            <li><a href="disclient.php" class="animate <?php echo $adddisClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">Discontinued Clients</span></a></li>
         <?php } ?>
 		<?php if ($_SESSION['username']=="Harish Ajabe") { ?>
-            <!--<li><a href="workingDetails_Test.php" class="animate <?php echo $addClass ?>">WORKING PROJECTS(Test)<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a></li>-->
+            <!--<li><a href="workingDetails_Test.php" class="animate <?php echo $addClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Working Projects (Test)</span></a></li>-->
         <?php } ?>
         <?php if (Utitlity::checkForUserMarketing() || Utitlity::checkForUserConsultant() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="workingDetails_Test.php" class="animate <?php echo $addWorkingClass ?>">WORKING PROJECTS<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a></li>
-            <!--<li><a href="workingDetails.php" class="animate <?php echo $addWorkingClass ?>">WORKING PROJECTS<i class="sub_icon fa fa-tasks fa-2x" style="vertical-align:middle"></i></a></li>-->
-            <li><a href="nsicmpcb.php" class="animate <?php echo $addNsicMpcbClass ?>">NSICMPCB PROJECTS<i class="sub_icon fa fa-tasks fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="workingDetails_Test.php" class="animate <?php echo $addWorkingClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Working Projects</span></a></li>
+            <!--<li><a href="workingDetails.php" class="animate <?php echo $addWorkingClass ?>"><i class="sub_icon fa fa-tasks"></i><span class="menu-label">Working Projects</span></a></li>-->
+            <li><a href="nsicmpcb.php" class="animate <?php echo $addNsicMpcbClass ?>"><i class="sub_icon fa fa-tasks"></i><span class="menu-label">NSICMPCB Projects</span></a></li>
         <?php } ?>
         <?php if (Utitlity::checkForUserMarketing() || Utitlity::checkForUserConsultant() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="idleclient.php" class="animate <?php echo $addidleClass ?>">IDLE PROJECTS<i class="sub_icon fa fa-tasks fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="idleclient.php" class="animate <?php echo $addidleClass ?>"><i class="sub_icon fa fa-tasks"></i><span class="menu-label">Idle Projects</span></a></li>
         <?php } ?>
         <?php if (Utitlity::checkForUserFinance() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="financeDetails.php" class="animate <?php echo $addFinanceClass ?>">PAYMENT FOLLOW UP<i class="sub_icon fa fa-money fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="financeDetails.php" class="animate <?php echo $addFinanceClass ?>"><i class="sub_icon fa fa-money"></i><span class="menu-label">Payment Follow Up</span></a></li>
         <?php } if (Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="paymentLoss.php" class="animate <?php echo $payloss ?>">PAYMENT LOSS<i class="sub_icon fa fa-money fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="paymentLoss.php" class="animate <?php echo $payloss ?>"><i class="sub_icon fa fa-money"></i><span class="menu-label">Payment Loss</span></a></li>
         <?php } if (Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="tdsDetails.php" class="animate <?php echo $tdspay ?>">TDS<i class="sub_icon fa fa-money fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="tdsReceived.php" class="animate <?php echo $tdsrcv ?>">TDS RECEIVED<i class="sub_icon fa fa-money fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="tdsDetails.php" class="animate <?php echo $tdspay ?>"><i class="sub_icon fa fa-money"></i><span class="menu-label">TDS</span></a></li>
+            <li><a href="tdsReceived.php" class="animate <?php echo $tdsrcv ?>"><i class="sub_icon fa fa-money"></i><span class="menu-label">TDS Received</span></a></li>
         <?php } if (Utitlity::checkForMainAdmin()) { ?>
-            <li><a href="paymentReceived.php" class="animate <?php echo $addPayRcv ?>">PAYMENT RECEIVED<i class="sub_icon fa fa-money fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="paymentReceived.php" class="animate <?php echo $addPayRcv ?>"><i class="sub_icon fa fa-money"></i><span class="menu-label">Payment Received</span></a></li>
         <?php } if (Utitlity::checkForMainAdmin() || Utitlity::checkForUserAdmin()) { ?>
-            <li><a href="mktgSetupStatus.php" class="animate <?php echo $addmktgsetupstatusClass ?>">MKTG ANALYLIS<i class="sub_icon fa fa-briefcase fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="marketSetupDetails.php" class="animate <?php echo $addMarketingSetupClass ?>">MKTG PENDING<i class="sub_icon fa fa-briefcase fa-2x" style="vertical-align:middle"></i></a></li>            
-            <li><a href="setupReceived.php" class="animate <?php echo $addmktgsetupreceivedClass ?>">MKTG RECEIVED<i class="sub_icon fa fa-briefcase fa-2x" style="vertical-align:middle"></i></a></li>          
+            <li><a href="mktgSetupStatus.php" class="animate <?php echo $addmktgsetupstatusClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">Mktg Analysis</span></a></li>
+            <li><a href="marketSetupDetails.php" class="animate <?php echo $addMarketingSetupClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">Mktg Pending</span></a></li>            
+            <li><a href="setupReceived.php" class="animate <?php echo $addmktgsetupreceivedClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">Mktg Received</span></a></li>          
         <?php } ?>
         <?php if (Utitlity::checkForMainAdmin()) { ?>
-            <li><a href="masterData.php" class="animate <?php echo $addMasterClass ?> ">MASTER CREATOR<i class="sub_icon fa fa-wrench  fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="addUsers.php" class="animate <?php echo $addUserClass ?>">ADD USER<i class="sub_icon fa fa-user-plus fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="masterData.php" class="animate <?php echo $addMasterClass ?> "><i class="sub_icon fa fa-wrench"></i><span class="menu-label">Master Creator</span></a></li>
+            <li><a href="addUsers.php" class="animate <?php echo $addUserClass ?>"><i class="sub_icon fa fa-user-plus"></i><span class="menu-label">Add User</span></a></li>
         <?php } ?>
         <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForUserConsultant() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="invoiceList.php" class="animate <?php echo $addInvoiceClass ?>">INVOICE<i class="sub_icon fa fa-inr fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="quotationList.php" class="animate <?php echo $addQuotationClass ?>">QUOTATION<i class="sub_icon fa fa-quote-left fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="invoiceList.php" class="animate <?php echo $addInvoiceClass ?>"><i class="sub_icon fa fa-inr"></i><span class="menu-label">Invoice</span></a></li>
+            <li><a href="quotationList.php" class="animate <?php echo $addQuotationClass ?>"><i class="sub_icon fa fa-quote-left"></i><span class="menu-label">Quotation</span></a></li>
         <?php } ?>
         <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeStaff()) { ?>
-            <li><a href="auditPage.php" class="animate <?php echo $addAuditClass ?>">MONTH WISE AUDIT<i class="sub_icon fa fa-search fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="auditPage.php" class="animate <?php echo $addAuditClass ?>"><i class="sub_icon fa fa-search"></i><span class="menu-label">Month Wise Audit</span></a></li>
         <?php } if (Utitlity::checkForMainAdmin()) { ?>
-            <li><a href="recycleCustomers.php" class="animate <?php echo $addRecycleClass ?>">RECYCLE CUST<i class="sub_icon fa fa-trash fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="recycleCustomers.php" class="animate <?php echo $addRecycleClass ?>"><i class="sub_icon fa fa-trash"></i><span class="menu-label">Recycle Cust</span></a></li>
         <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin()) { ?>
-            <!--<li><a href="mktgSetupStatus.php" class="animate <?php echo $addmktgsetupstatusClass ?>">MKTG SETUP STATUS<i class="sub_icon fa fa-briefcase fa-2x" style="vertical-align:middle"></i></a></li>-->
+            <!--<li><a href="mktgSetupStatus.php" class="animate <?php echo $addmktgsetupstatusClass ?>"><span class="menu-label">Mktg Setup Status</span></a></li>-->
         <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin()) { ?>
-            <li><a href="consultantPage.php" class="animate <?php echo $addConsultantClass ?>">CONSULTANT<i class="sub_icon fa fa-user fa-2x" style="vertical-align:middle"></i></a></li>
-            <li><a href="handelbyPage.php" class="animate <?php echo $addHandelbyClass ?>">HANDLE BY<i class="sub_icon fa fa-hand-o-right fa-2x" style="vertical-align:middle"></i></a></li>        
+            <li><a href="consultantPage.php" class="animate <?php echo $addConsultantClass ?>"><i class="sub_icon fa fa-user"></i><span class="menu-label">Consultant</span></a></li>
+            <li><a href="handelbyPage.php" class="animate <?php echo $addHandelbyClass ?>"><i class="sub_icon fa fa-hand-o-right"></i><span class="menu-label">Handle By</span></a></li>        
         <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="consultantDev.php" class="animate <?php echo $addConsultantDevClass ?>">CONSOL DEV<i class="sub_icon fa fa-user fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="consultantDev.php" class="animate <?php echo $addConsultantDevClass ?>"><i class="sub_icon fa fa-user"></i><span class="menu-label">Consol Dev</span></a></li>
         <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin()) { ?>
-            <li><a href="contactinfo.php" class="animate <?php echo $addcontactinfoClass ?>">CONTACT INFO<i class="sub_icon fa fa-building fa-2x" style="vertical-align:middle"></i></a></li>
+            <li><a href="contactinfo.php" class="animate <?php echo $addcontactinfoClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Contact Info</span></a></li>
         <?php } ?>            
-        <li><a href="taskMgmt.php" class="animate <?php echo $pendingtask ?>">PENDING TASKS<i class="sub_icon fa fa-calendar-plus-o fa-2x" style="vertical-align:middle"></i></a></li>
-        <li><a href="completedTask.php" class="animate <?php echo $completetask ?>">COMPLETED TASKS<i class="sub_icon fa fa-calendar-check-o fa-2x" style="vertical-align:middle"></i></a></li>
-        <li><a href="servicedue.php" class="animate <?php echo $tomarketing ?>">SERVICE DUE<i class="sub_icon fa fa-calendar-check-o fa-2x" style="vertical-align:middle"></i></a></li>
-        <!--        <li>
-                    <div class="dropdown">
-                        <span class="animate dropdown-toggle" data-toggle="dropdown" style="color: white">dropdown menu </span>
-                        <ul class="dropdown-menu" style="background-color: #353535">
-                            <li><a href="servicedue.php" class="animate <?php echo $tomarketing ?>">SERVICE DUE<i class="sub_icon fa fa-calendar-check-o fa-2x" style="vertical-align:middle"></i></a></li>
-                            <li><a href="#">CSS</a></li>
-                            <li><a href="#">JavaScript</a></li>
-                        </ul>
-                    </div>
-                </li>
-        <li>
-                    <div class="dropdown">
-                        <span class="animate dropdown-toggle" data-toggle="dropdown" style="color: white">dropdown menu </span>
-                        <ul class="dropdown-menu" style="background-color: #353535">
-                            <li><a href="#">HTML</a></li>
-                            <li><a href="#">CSS</a></li>
-                            <li><a href="#">JavaScript</a></li>
-                        </ul>
-                    </div>
-                </li>-->
+        <li><a href="taskMgmt.php" class="animate <?php echo $pendingtask ?>"><i class="sub_icon fa fa-calendar-plus-o"></i><span class="menu-label">Pending Tasks</span></a></li>
+        <li><a href="completedTask.php" class="animate <?php echo $completetask ?>"><i class="sub_icon fa fa-calendar-check-o"></i><span class="menu-label">Completed Tasks</span></a></li>
+        <li><a href="servicedue.php" class="animate <?php echo $tomarketing ?>"><i class="sub_icon fa fa-calendar-check-o"></i><span class="menu-label">Service Due</span></a></li>
     </ul>
 </div>
 <!--vertile nav bar-->
 
-<div class="float-button-wrapper" style="">
-    <a class="addAccountCss" style="text-align:center" title="Add new client">
-        <span class=" pull-right glyphicon glyphicon-plus "></span>
-    </a>    
-</div>
-
-<nav class="navbar navbar-fixed-top navbar-bootsnipp animate " role="navigation">
-    <div class="container">
-        <!-- Brand and toggle get grouped for better mobile display -->
-        <div class="navbar-header ">
-            <button type="button" class="navbar-toggle " data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                <span class="sr-only ">Toggle navigation</span>
-                <span class="icon-bar "></span>
-                <span class="icon-bar "></span>
-                <span class="icon-bar "></span>
-            </button>            
+<nav class="navbar navbar-fixed-top navbar-bootsnipp animate" role="navigation">
+    <div class="top-header-bar">
+        <!-- Left: Quick Action Button & Mobile Toggle -->
+        <div class="top-header-left">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <?php if (isset($_SESSION['username'])) { ?>
+                <a href="javascript:void(0)" class="addAccountCss btn-header-add" title="Add New Client">
+                    <i class="fa fa-plus"></i>
+                    <span class="hidden-xs">Add Client</span>
+                </a>
+            <?php } ?>
         </div>
-        <!-- Collect the nav links, forms, and other content for toggling -->
-        <div class="collapse navbar-collapse " id="bs-example-navbar-collapse-1">
-            <!--<div class="span12">-->
 
-            <!--</div>-->
-            <ul class="nav navbar-nav navbar-right ">
+        <!-- Right: Toolbar Actions -->
+        <div class="top-header-right">
+            <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM() || Utitlity::checkForUserMarketing()) { ?>
+                <!-- General Note Button -->
+                <a href="javascript:void(0)" class="addGeneralNote btn-header-icon" title="View / Add Notes">
+                    <i class="fa fa-sticky-note-o"></i>
+                    <span class="btn-icon-label hidden-xs">Notes</span>
+                </a>
 
-                <!--Adding hidden menu items here -->
-                <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-                    <li class="visible-xs"><a href="homePage.php" class="animate //<?php echo $addClass ?>">CUSTOMERS</a></li>
-                    <?php if (Utitlity::checkForMainAdmin()) { ?>
-                    <li class="visible-xs"><a href="business_insights.php" class="animate //<?php echo isset($addBusinessInsightsClass) ? $addBusinessInsightsClass : '' ?>">DASHBOARD</a></li>
-                    <?php } ?>
-                <?php } ?>
-                <?php if (Utitlity::checkForUserMarketing() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-                    <li class="visible-xs"><a href="newEnquiry.php" class="animate //<?php echo $addWorkingClass ?>">NEW ENQUIRY</a></li>
-                    <li class="visible-xs"><a href="saDuePage.php" class="animate<?php echo $addSaDueClass ?>">SA DUE</a></li>
-                    <li class="visible-xs"><a href="rcDue.php" class="animate<?php echo $addRcDueClass ?>">RC DUE</a></li>
-                <?php } if (Utitlity::checkForUserConsultant() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-                    <li class="visible-xs"><a href="workingDetails.php" class="animate //<?php echo $addWorkingClass ?>">WORKING PROJECTS</a></li>
-                <?php } if (Utitlity::checkForUserFinance() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-                    <li class="visible-xs"><a href="financeDetails.php" class="animate //<?php echo $addFinanceClass ?>">PAYMENT FOLLOW UP</a></li>
-                <?php } if (Utitlity::checkForMainAdmin()) { ?>
-                    <li class="visible-xs"><a href="paymentReceived.php" class="animate //<?php echo $addPayRcv ?>">PAYMENT RECEIVED</a></li>
-                <?php } if (Utitlity::checkForMainAdmin() || Utitlity::checkForUserAdmin()) { ?>
-                    <li class="visible-xs"><a href="marketSetupDetails.php" class="animate //<?php echo $addMarketingSetupClass ?>">MARKETING SETUP</a></li>
-                <?php } if (Utitlity::checkForMainAdmin()) { ?>
-                    <li class="visible-xs"><a href="masterData.php" class="animate //<?php echo $addMasterClass ?> ">MASTER CREATOR</a></li>
-                    <li class="visible-xs"><a href="addUsers.php" class="animate //<?php echo $addUserClass ?>">ADD USER</a></li>
-                <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-                    <li class="visible-xs"><a href="invoiceList.php" class="animate //<?php echo $addInvoiceClass ?>">INVOICE</a></li>
-                    <li class="visible-xs"><a href="quotationList.php" class="animate //<?php echo $addQuotationClass ?>">QUOTATION</a></li>
-                    <li class="visible-xs"><a href="auditPage.php" class="animate //<?php echo $addAuditClass ?>">MONTH WISE AUDIT</a></li>                    
-                <?php } if (Utitlity::checkForMainAdmin()) { ?>
-                    <li class="visible-xs"><a href="recycleCustomers.php" class="animate //<?php echo $addUserClass ?>">RECYCLE CUST</a></li>
-                <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-                    <li class="visible-xs"><a href="consultantPage.php" class="animate //<?php echo $addConsultantClass ?>">CONSULTANT</a></li>
-                    <li class="visible-xs"><a href="handelbyPage.php" class="animate //<?php echo $addHandelbyClass ?>">HANDEL BY</a></li>
-                <?php } ?>
-                <!-- Adding ends here -->
-                <!--<li style="float: left;"><a class="addAccountCss" style="text-align:center" title="Add new client"><span class=" pull-right glyphicon glyphicon-plus "></span></a></li>-->
-                <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM() || Utitlity::checkForUserMarketing()) { ?>
-                    <li>
-                        <a class="addGeneralNote" style="margin-right: 50px;" title="Add Note">
-                            <span class="glyphicon glyphicon-list "></span>
-                        </a>
-                    </li>    
-                    <li><input class="searchcustomer" placeholder="Search Customer" style="margin-top: 10px; padding-left: 40px; z-index: 2; border: 2px solid #dadada; border-radius: 7px;" /></li>
-                <?php } ?>
-                <?php if (isset($_SESSION['username'])) { ?>                 
-                    <li><a class=" dropdown-toggle  animate " data-toggle="dropdown" href="#"><?php echo $_SESSION['username']; ?>&nbsp;</a>
-                        <ul class=" dropdown-menu " role="menu">
-                            <li><a class=" passwordChange " data-id="<?php echo $_SESSION['id']; ?>">Change Password</a></li>
-                        </ul>
-                    <li><a href="logout.php" class=" animate "><span class=" pull-right fa fa-power-off "></span></a></li>              
-                        <?php } ?>
-            </ul>
+                <!-- Customer Search Field -->
+                <div class="header-search-box">
+                    <i class="fa fa-search header-search-icon"></i>
+                    <input type="text" class="searchcustomer" placeholder="Search Customer..." autocomplete="off" />
+                </div>
+            <?php } ?>
+
+            <?php if (isset($_SESSION['username'])) { 
+                $userDisplayName = trim($_SESSION['username']);
+                $firstInitial = strtoupper(substr($userDisplayName, 0, 1));
+            ?>
+                <!-- User Profile Dropdown -->
+                <div class="dropdown header-user-dropdown">
+                    <a class="dropdown-toggle header-user-btn" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+                        <span class="header-user-avatar"><?php echo $firstInitial; ?></span>
+                        <span class="header-user-name hidden-xs"><?php echo htmlspecialchars($userDisplayName); ?></span>
+                        <i class="fa fa-angle-down header-user-caret"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-right header-user-menu" role="menu">
+                        <li class="header-user-menu-info">
+                            <div class="menu-user-name"><?php echo htmlspecialchars($userDisplayName); ?></div>
+                            <div class="menu-user-role"><?php echo htmlspecialchars(isset($_SESSION['role']) ? $_SESSION['role'] : 'Staff'); ?></div>
+                        </li>
+                        <li role="separator" class="divider"></li>
+                        <li>
+                            <a class="passwordChange" data-id="<?php echo $_SESSION['id']; ?>" href="javascript:void(0)">
+                                <i class="fa fa-key"></i> Change Password
+                            </a>
+                        </li>
+                        <li role="separator" class="divider"></li>
+                        <li>
+                            <a href="logout.php" class="menu-logout-link">
+                                <i class="fa fa-power-off"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Quick Logout Button -->
+                <a href="logout.php" class="btn-header-logout" title="Logout">
+                    <i class="fa fa-power-off"></i>
+                </a>
+            <?php } ?>
         </div>
+    </div>
+
+    <!-- Mobile collapse navigation -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav visible-xs">
+            <li><a href="myDashboard.php" class="animate <?php echo isset($addMyDashboardClass) ? $addMyDashboardClass : '' ?>">MY DASHBOARD</a></li>
+            <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
+                <li><a href="homePage.php" class="animate <?php echo isset($addClass) ? $addClass : '' ?>">CUSTOMERS</a></li>
+                <?php if (Utitlity::checkForMainAdmin()) { ?>
+                    <li><a href="business_insights.php" class="animate <?php echo isset($addBusinessInsightsClass) ? $addBusinessInsightsClass : '' ?>">DASHBOARD</a></li>
+                <?php } ?>
+            <?php } ?>
+            <?php if (Utitlity::checkForUserMarketing() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
+                <li><a href="newEnquiry.php" class="animate <?php echo isset($addWorkingClass) ? $addWorkingClass : '' ?>">NEW ENQUIRY</a></li>
+                <li><a href="saDuePage.php" class="animate <?php echo isset($addSaDueClass) ? $addSaDueClass : '' ?>">SA DUE</a></li>
+                <li><a href="rcDue.php" class="animate <?php echo isset($addRcDueClass) ? $addRcDueClass : '' ?>">RC DUE</a></li>
+            <?php } if (Utitlity::checkForUserConsultant() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
+                <li><a href="workingDetails.php" class="animate <?php echo isset($addWorkingClass) ? $addWorkingClass : '' ?>">WORKING PROJECTS</a></li>
+            <?php } if (Utitlity::checkForUserFinance() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
+                <li><a href="financeDetails.php" class="animate <?php echo isset($addFinanceClass) ? $addFinanceClass : '' ?>">PAYMENT FOLLOW UP</a></li>
+            <?php } if (Utitlity::checkForMainAdmin()) { ?>
+                <li><a href="paymentReceived.php" class="animate <?php echo isset($addPayRcv) ? $addPayRcv : '' ?>">PAYMENT RECEIVED</a></li>
+            <?php } if (Utitlity::checkForMainAdmin() || Utitlity::checkForUserAdmin()) { ?>
+                <li><a href="marketSetupDetails.php" class="animate <?php echo isset($addMarketingSetupClass) ? $addMarketingSetupClass : '' ?>">MARKETING SETUP</a></li>
+            <?php } if (Utitlity::checkForMainAdmin()) { ?>
+                <li><a href="masterData.php" class="animate <?php echo isset($addMasterClass) ? $addMasterClass : '' ?>">MASTER CREATOR</a></li>
+                <li><a href="addUsers.php" class="animate <?php echo isset($addUserClass) ? $addUserClass : '' ?>">ADD USER</a></li>
+            <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
+                <li><a href="invoiceList.php" class="animate <?php echo isset($addInvoiceClass) ? $addInvoiceClass : '' ?>">INVOICE</a></li>
+                <li><a href="quotationList.php" class="animate <?php echo isset($addQuotationClass) ? $addQuotationClass : '' ?>">QUOTATION</a></li>
+                <li><a href="auditPage.php" class="animate <?php echo isset($addAuditClass) ? $addAuditClass : '' ?>">MONTH WISE AUDIT</a></li>                    
+            <?php } if (Utitlity::checkForMainAdmin()) { ?>
+                <li><a href="recycleCustomers.php" class="animate <?php echo isset($addUserClass) ? $addUserClass : '' ?>">RECYCLE CUST</a></li>
+            <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
+                <li><a href="consultantPage.php" class="animate <?php echo isset($addConsultantClass) ? $addConsultantClass : '' ?>">CONSULTANT</a></li>
+                <li><a href="handelbyPage.php" class="animate <?php echo isset($addHandelbyClass) ? $addHandelbyClass : '' ?>">HANDEL BY</a></li>
+            <?php } ?>
+        </ul>
     </div>
 </nav>
 <!--</div>-->
