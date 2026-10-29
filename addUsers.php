@@ -18,15 +18,59 @@ $pageIdentifier = "Add User";
     $statement->execute();
     $allUserList = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-    $userRoles = "SELECT * FROM user_role";
-    $statement = $db->prepare($userRoles);
-    $statement->execute();
-    $allRoles = $statement->fetchAll(PDO::FETCH_ASSOC);
+    // Auto-sync schema and ensure Consultant role in DB
+    if (file_exists(__DIR__ . '/include/db_schema_sync.php')) {
+        require_once __DIR__ . '/include/db_schema_sync.php';
+        if (function_exists('aitf_sync_database_schema') && isset($db) && $db instanceof PDO) {
+            aitf_sync_database_schema($db);
+        }
+    }
 
-    // Fallback roles if table is empty
+    // Direct check & insert for Consultant role in user_role table
+    try {
+        if (isset($db) && $db instanceof PDO) {
+            $db->exec("CREATE TABLE IF NOT EXISTS `user_role` (
+                `role_id` INT(11) NOT NULL AUTO_INCREMENT,
+                `role` VARCHAR(255) NOT NULL,
+                PRIMARY KEY (`role_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+            $cCheck = $db->query("SELECT COUNT(*) FROM `user_role` WHERE LOWER(TRIM(`role`)) = 'consultant'");
+            if ($cCheck && (int)$cCheck->fetchColumn() === 0) {
+                $db->exec("INSERT INTO `user_role` (`role`) VALUES ('Consultant')");
+            }
+        }
+    } catch (Exception $e) {}
+
+    // Fetch all roles from user_role table
+    $allRoles = [];
+    try {
+        if (isset($db) && $db instanceof PDO) {
+            $statement = $db->query("SELECT * FROM `user_role` ORDER BY `role_id` ASC");
+            if ($statement) {
+                $allRoles = $statement->fetchAll(PDO::FETCH_ASSOC);
+            }
+        }
+    } catch (Exception $e) {
+        $allRoles = [];
+    }
+
+    // Fallback default roles if table is empty or query failed
+    $defaultRoles = ['Main Admin', 'Admin', 'Office Staff', 'Office BDM', 'task manager', 'Marketing', 'Working Project', 'Finance', 'Consultant'];
     if (empty($allRoles)) {
-        $defaultRoles = ['Main Admin', 'Admin', 'Office Staff', 'Office BDM', 'task manager', 'Marketing', 'Working Project', 'Finance', 'Consultant'];
         $allRoles = array_map(function ($r) { return ['role' => $r]; }, $defaultRoles);
+    }
+
+    // CODE-LEVEL ABSOLUTE GUARANTEE: Ensure 'Consultant' is ALWAYS present in $allRoles array
+    $hasConsultantInRoles = false;
+    foreach ($allRoles as $r) {
+        if (isset($r['role']) && strcasecmp(trim($r['role']), 'consultant') === 0) {
+            $hasConsultantInRoles = true;
+            break;
+        }
+    }
+    if (!$hasConsultantInRoles) {
+        $allRoles[] = ['role' => 'Consultant'];
     }
 
     // Fetch guidelines from database
@@ -164,8 +208,17 @@ $pageIdentifier = "Add User";
                                                         <label>User Role</label>
                                                         <select name="userRole" class="form-control" id="userRole">
                                                             <option value="">Select User Type</option>
-                                                            <?php foreach ($allRoles as $role) { ?> 
+                                                            <?php 
+                                                            $renderedConsultantOption = false;
+                                                            foreach ($allRoles as $role) { 
+                                                                if (strcasecmp(trim($role['role']), 'consultant') === 0) {
+                                                                    $renderedConsultantOption = true;
+                                                                }
+                                                            ?> 
                                                                 <option value="<?php echo htmlspecialchars($role['role']); ?>"><?php echo htmlspecialchars($role['role']); ?></option>                                                    
+                                                            <?php } 
+                                                            if (!$renderedConsultantOption) { ?>
+                                                                <option value="Consultant">Consultant</option>
                                                             <?php } ?>
                                                         </select>
                                                     </div>
@@ -299,8 +352,17 @@ $pageIdentifier = "Add User";
                                                         <label>User Role</label>
                                                         <select name="editUserRole" class="form-control editUserRole" id="editUserRole">
                                                             <option value="">Select User Type</option>
-                                                            <?php foreach ($allRoles as $role) { ?> 
+                                                            <?php 
+                                                            $renderedConsultantOptionEdit = false;
+                                                            foreach ($allRoles as $role) { 
+                                                                if (strcasecmp(trim($role['role']), 'consultant') === 0) {
+                                                                    $renderedConsultantOptionEdit = true;
+                                                                }
+                                                            ?> 
                                                                 <option value="<?php echo htmlspecialchars($role['role']); ?>"><?php echo htmlspecialchars($role['role']); ?></option>                                                    
+                                                            <?php } 
+                                                            if (!$renderedConsultantOptionEdit) { ?>
+                                                                <option value="Consultant">Consultant</option>
                                                             <?php } ?>
                                                         </select>
                                                     </div>

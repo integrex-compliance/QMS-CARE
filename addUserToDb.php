@@ -4,6 +4,14 @@ session_start();
 include_once './dbConnect.php';
 include_once './utility.php';
 
+// Auto-sync schema to ensure missing columns / tables are auto-created
+if (file_exists(__DIR__ . '/include/db_schema_sync.php')) {
+    require_once __DIR__ . '/include/db_schema_sync.php';
+    if (function_exists('aitf_sync_database_schema') && isset($db) && $db instanceof PDO) {
+        aitf_sync_database_schema($db);
+    }
+}
+
 // ADD USER
 if (isset($_POST['userName']) && !empty($_POST['userName']) && isset($_POST['userEmail']) && !empty($_POST['userEmail']) && isset($_POST['userRole']) && !empty($_POST['userRole']) && isset($_POST['userPassword']) && !empty($_POST['userPassword'])) {
     try {
@@ -12,6 +20,15 @@ if (isset($_POST['userName']) && !empty($_POST['userName']) && isset($_POST['use
         $userAbbr = trim(isset($_POST['userAbbr']) ? $_POST['userAbbr'] : '');
         $userEmail = trim(isset($_POST['userEmail']) ? $_POST['userEmail'] : '');
         $userRole = trim(isset($_POST['userRole']) ? $_POST['userRole'] : '');
+        try {
+            $db->exec("CREATE TABLE IF NOT EXISTS `user_role` (`role_id` INT(11) NOT NULL AUTO_INCREMENT, `role` VARCHAR(255) NOT NULL, PRIMARY KEY (`role_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+            $rCheck = $db->prepare("SELECT COUNT(*) FROM `user_role` WHERE LOWER(TRIM(`role`)) = LOWER(TRIM(:r))");
+            $rCheck->execute([':r' => $userRole]);
+            if ((int)$rCheck->fetchColumn() === 0) {
+                $rIns = $db->prepare("INSERT INTO `user_role` (`role`) VALUES (:r)");
+                $rIns->execute([':r' => $userRole]);
+            }
+        } catch (Exception $e) {}
         $userEid = trim(isset($_POST['userEid']) ? $_POST['userEid'] : '');
         $userPcId = trim(isset($_POST['userPcId']) ? $_POST['userPcId'] : '');
         $designation = trim(isset($_POST['designationAssigned']) ? $_POST['designationAssigned'] : '');

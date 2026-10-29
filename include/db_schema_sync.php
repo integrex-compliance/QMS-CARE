@@ -116,11 +116,26 @@ if (!function_exists('aitf_sync_database_schema')) {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
             ");
 
-            // 6. Ensure Consultant role exists in user_role table
+            // 6. Ensure user_role table exists and has Consultant role
             try {
-                $cRoleCheck = $db->query("SELECT role_id FROM `user_role` WHERE LOWER(`role`) = 'consultant' LIMIT 1")->fetch();
-                if (!$cRoleCheck) {
-                    $db->query("INSERT INTO `user_role` (`role`) VALUES ('Consultant')");
+                $db->exec("CREATE TABLE IF NOT EXISTS `user_role` (
+                    `role_id` INT(11) NOT NULL AUTO_INCREMENT,
+                    `role` VARCHAR(255) NOT NULL,
+                    PRIMARY KEY (`role_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+                $countRoles = $db->query("SELECT COUNT(*) FROM `user_role`")->fetchColumn();
+                if ((int)$countRoles === 0) {
+                    $defaultRolesList = ['Main Admin', 'Admin', 'Office Staff', 'Office BDM', 'task manager', 'Marketing', 'Working Project', 'Finance', 'Consultant'];
+                    foreach ($defaultRolesList as $dr) {
+                        $ins = $db->prepare("INSERT INTO `user_role` (`role`) VALUES (:r)");
+                        $ins->execute([':r' => $dr]);
+                    }
+                } else {
+                    $cRoleCheck = $db->query("SELECT role_id FROM `user_role` WHERE LOWER(TRIM(`role`)) = 'consultant' LIMIT 1")->fetch();
+                    if (!$cRoleCheck) {
+                        $db->query("INSERT INTO `user_role` (`role`) VALUES ('Consultant')");
+                    }
                 }
             } catch (Exception $e) {}
 
