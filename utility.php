@@ -74,6 +74,16 @@ class Utitlity {
             return 0;
     }
 
+    static function checkForConsultant() {
+        if (isset($_SESSION['username']) && !empty($_SESSION['username']) && isset($_SESSION['role'])) {
+            $r = strtolower(str_replace([' ', '_', '-'], '', (string)$_SESSION['role']));
+            if ($r === 'consultant') {
+                return 1;
+            }
+        }
+        return 0;
+    }
+
     static function compress($source, $destination, $quality) {
         $info = getimagesize($source);
         if ($info ['mime'] == 'image/jpeg')
@@ -87,6 +97,9 @@ class Utitlity {
     }
 
     static function getHomePageForUser() {
+        if (Utitlity::checkForConsultant()) {
+            return "myDashboard.php";
+        }
         if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin()) {
             return "homePage.php";
         }

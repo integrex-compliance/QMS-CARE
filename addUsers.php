@@ -25,7 +25,7 @@ $pageIdentifier = "Add User";
 
     // Fallback roles if table is empty
     if (empty($allRoles)) {
-        $defaultRoles = ['Main Admin', 'Admin', 'Office Staff', 'Office BDM', 'task manager', 'Marketing', 'Working Project', 'Finance'];
+        $defaultRoles = ['Main Admin', 'Admin', 'Office Staff', 'Office BDM', 'task manager', 'Marketing', 'Working Project', 'Finance', 'Consultant'];
         $allRoles = array_map(function ($r) { return ['role' => $r]; }, $defaultRoles);
     }
 
@@ -669,6 +669,9 @@ $pageIdentifier = "Add User";
                                     if (strpos($roleLower, 'audit') !== false) {
                                         $categoryType = 'auditor';
                                         $badgeStyle = 'background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;';
+                                    } else if (strpos($roleLower, 'consultant') !== false) {
+                                        $categoryType = 'consultant';
+                                        $badgeStyle = 'background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe;';
                                     } else if (strpos($roleLower, 'admin') !== false || strpos($roleLower, 'mgmt') !== false || strpos($roleLower, 'director') !== false) {
                                         $categoryType = 'admin';
                                         $badgeStyle = 'background: #fffbeb; color: #b45309; border: 1px solid #fde68a;';

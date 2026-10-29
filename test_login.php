@@ -65,7 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     echo "<ul>";
                     
                     $redirected = false;
-                    
+
+                    if (Utitlity::checkForConsultant()) {
+                        echo "<li style='color: green;'>✓ User is Consultant - Would redirect to: myDashboard.php</li>";
+                        $redirectUrl = "myDashboard.php";
+                        $redirected = true;
+                    }
                     if (Utitlity::checkForUserAdmin()) {
                         echo "<li style='color: green;'>✓ User is Admin - Would redirect to: servicedue.php</li>";
                         $redirectUrl = "servicedue.php";
@@ -77,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $redirected = true;
                     }
                     if (Utitlity::checkForUserConsultant()) {
-                        echo "<li style='color: green;'>✓ User is Consultant - Would redirect to: workingDetails_Test.php</li>";
+                        echo "<li style='color: green;'>✓ User is Working Project - Would redirect to: workingDetails_Test.php</li>";
                         $redirectUrl = "workingDetails_Test.php";
                         $redirected = true;
                     }

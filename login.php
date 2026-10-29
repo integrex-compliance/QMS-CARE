@@ -58,6 +58,10 @@ if (isset($_POST['useremail']) && !empty($_POST['useremail']) && isset($_POST['p
                     $_SESSION['abbrevation'] = $row['abbreviation'];
 
                     // Redirect based on role - use exit() after each redirect
+                    if (Utitlity::checkForConsultant()) {
+                        header("Location: myDashboard.php");
+                        exit();
+                    }
                     if (Utitlity::checkForUserAdmin()) {
                         header("Location: servicedue.php");
                         exit();

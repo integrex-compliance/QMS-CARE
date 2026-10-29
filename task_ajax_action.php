@@ -211,11 +211,16 @@ if ($action === 'toggle_status') {
     }
 
     try {
-        $stmt = $db->prepare("SELECT id, status FROM `task_manager` WHERE id = :id AND is_deleted = 'N' LIMIT 1");
+        $stmt = $db->prepare("SELECT id, status, userid FROM `task_manager` WHERE id = :id AND is_deleted = 'N' LIMIT 1");
         $stmt->execute([':id' => $taskId]);
         $task = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$task) {
             echo json_encode(['success' => false, 'error' => 'Task not found.']);
+            exit();
+        }
+
+        if (!aitf_can_manage_tasks($currentUserRole) && (int)$task['userid'] !== $currentUserId) {
+            echo json_encode(['success' => false, 'error' => 'Permission denied. You can only update your own tasks.']);
             exit();
         }
 
@@ -277,11 +282,16 @@ if ($action === 'toggle_star') {
     }
 
     try {
-        $stmt = $db->prepare("SELECT id, is_important, priority FROM `task_manager` WHERE id = :id AND is_deleted = 'N' LIMIT 1");
+        $stmt = $db->prepare("SELECT id, is_important, priority, userid FROM `task_manager` WHERE id = :id AND is_deleted = 'N' LIMIT 1");
         $stmt->execute([':id' => $taskId]);
         $task = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$task) {
             echo json_encode(['success' => false, 'error' => 'Task not found.']);
+            exit();
+        }
+
+        if (!aitf_can_manage_tasks($currentUserRole) && (int)$task['userid'] !== $currentUserId) {
+            echo json_encode(['success' => false, 'error' => 'Permission denied. You can only update your own tasks.']);
             exit();
         }
 

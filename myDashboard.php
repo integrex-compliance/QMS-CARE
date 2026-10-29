@@ -73,6 +73,8 @@ error_reporting(E_ALL);
     $canManageTasks = aitf_can_manage_tasks($actualLoggedInRole);
     $isManagementUser = $canViewOthers;
     $isTopMgmt = $isMainAdmin;
+    $isConsultantUser = (strcasecmp($actualLoggedInRole, 'consultant') === 0)
+        || (class_exists('Utitlity') && Utitlity::checkForConsultant());
 
     // Only Admin, Main Admin, Finance can add/edit profile sections from here
     $userRoleCleanNorm = strtolower(str_replace([' ', '_', '-'], '', (string)$actualLoggedInRole));
@@ -4225,12 +4227,9 @@ error_reporting(E_ALL);
                     </div>
                     <!-- 2. Attendance Tab Pane -->
                     <div class="dash-tab-pane" id="pane-attendance">
-                        <?php
-                        $targetAttendanceUid = (int)(isset($userRow['user_id']) ? $userRow['user_id'] : $actualLoggedInUserId);
-                        $targetAttendanceName = $userName;
-                        $targetAttendanceRole = $userRole;
-                        include __DIR__ . '/include/attendance_calendar_component.php';
-                        ?>
+                        <div style="padding: 50px 20px; text-align: center; font-size: 16px; font-weight: 600; color: #64748b;">
+                            Coming Soon
+                        </div>
                     </div>
 
                     <!-- 3. Task Management Tab Pane -->

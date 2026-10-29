@@ -166,6 +166,12 @@ include 'utility.php';
 <?php
 if (!Utitlity::checkIfLoggedIn()) {
     header("Location: index.php?errorCode=101");
+    exit();
+} else if (Utitlity::checkForConsultant()) {
+    if (!isset($pageIdentifier) || $pageIdentifier !== "My Dashboard") {
+        header("Location: myDashboard.php");
+        exit();
+    }
 } else if (isset($pageIdentifier) && $pageIdentifier == "Home Page") {
     $addClass = "active";
     if (!(Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM())) {
@@ -427,9 +433,11 @@ function getFlatDate($inputStr) {
         <?php } if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin()) { ?>
             <li><a href="contactinfo.php" class="animate <?php echo $addcontactinfoClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Contact Info</span></a></li>
         <?php } ?>            
+        <?php if (!Utitlity::checkForConsultant()) { ?>
         <li><a href="taskMgmt.php" class="animate <?php echo $pendingtask ?>"><i class="sub_icon fa fa-calendar-plus-o"></i><span class="menu-label">Pending Tasks</span></a></li>
         <li><a href="completedTask.php" class="animate <?php echo $completetask ?>"><i class="sub_icon fa fa-calendar-check-o"></i><span class="menu-label">Completed Tasks</span></a></li>
         <li><a href="servicedue.php" class="animate <?php echo $tomarketing ?>"><i class="sub_icon fa fa-calendar-check-o"></i><span class="menu-label">Service Due</span></a></li>
+        <?php } ?>
     </ul>
 </div>
 <!--vertile nav bar-->
@@ -444,7 +452,7 @@ function getFlatDate($inputStr) {
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <?php if (isset($_SESSION['username'])) { ?>
+            <?php if (isset($_SESSION['username']) && !Utitlity::checkForConsultant()) { ?>
                 <a href="javascript:void(0)" class="addAccountCss btn-header-add" title="Add New Client">
                     <i class="fa fa-plus"></i>
                     <span class="hidden-xs">Add Client</span>

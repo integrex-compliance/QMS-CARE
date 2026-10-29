@@ -116,6 +116,14 @@ if (!function_exists('aitf_sync_database_schema')) {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
             ");
 
+            // 6. Ensure Consultant role exists in user_role table
+            try {
+                $cRoleCheck = $db->query("SELECT role_id FROM `user_role` WHERE LOWER(`role`) = 'consultant' LIMIT 1")->fetch();
+                if (!$cRoleCheck) {
+                    $db->query("INSERT INTO `user_role` (`role`) VALUES ('Consultant')");
+                }
+            } catch (Exception $e) {}
+
             $schemaSynced = true;
         } catch (Exception $e) {
             error_log("Schema auto-sync error: " . $e->getMessage());
