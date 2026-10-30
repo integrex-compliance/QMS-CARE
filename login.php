@@ -37,14 +37,14 @@ if (isset($_POST['useremail']) && !empty($_POST['useremail']) && isset($_POST['p
 //        $rowIpCount = $statement->fetch();
 //////        echo $rowIpCount["ip"]; die;
 //        if ($rowIpCount["ip"] > 0) {
-            $selectUserEmail = "SELECT count(*) as user from user where email_id = :email";
+            $selectUserEmail = "SELECT count(*) as user from user where email_id = :email AND (is_deleted = '0' OR is_deleted IS NULL OR is_deleted = '' OR is_deleted = 'N') AND (is_deleted IS NULL OR (is_deleted != '1' AND is_deleted != 'Y'))";
             $statement = $db->prepare($selectUserEmail);
             $statement->bindParam(":email", $_POST['useremail']);
             $statement->execute();
             $rowUserCount = $statement->fetch();
 
             if ($rowUserCount['user'] > 0) {
-                $userLogin = "SELECT user_id, user_name, abbreviation, email_id, password, role FROM user WHERE email_id = :useremail";
+                $userLogin = "SELECT user_id, user_name, abbreviation, email_id, password, role FROM user WHERE email_id = :useremail AND (is_deleted = '0' OR is_deleted IS NULL OR is_deleted = '' OR is_deleted = 'N') AND (is_deleted IS NULL OR (is_deleted != '1' AND is_deleted != 'Y'))";
                 $statement = $db->prepare($userLogin);
                 $statement->bindParam(':useremail', $_POST['useremail']);
                 $statement->execute();

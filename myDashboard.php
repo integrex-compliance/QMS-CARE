@@ -85,7 +85,7 @@ error_reporting(E_ALL);
     if (!function_exists('aitf_get_all_system_users')) {
         function aitf_get_all_system_users(PDO $db, $includeAuditorsTable = false) {
             try {
-                $stmt = $db->query("SELECT user_id, user_name, abbreviation, email_id, role FROM user WHERE is_deleted != 'Y' OR is_deleted IS NULL ORDER BY user_name ASC");
+                $stmt = $db->query("SELECT user_id, user_name, abbreviation, email_id, role FROM user WHERE (is_deleted = '0' OR is_deleted IS NULL OR is_deleted = '' OR is_deleted = 'N') AND (is_deleted IS NULL OR (is_deleted != '1' AND is_deleted != 'Y')) ORDER BY user_name ASC");
                 $results = [];
                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                     $results[] = [
@@ -172,7 +172,7 @@ error_reporting(E_ALL);
             $targetUid = (int)preg_replace('/[^0-9]/', '', $reqUserKey);
             if ($targetUid > 0 && $targetUid !== $actualLoggedInUserId) {
                 try {
-                    $uStmt = $db->prepare("SELECT * FROM user WHERE user_id = :uid AND (is_deleted != 'Y' OR is_deleted IS NULL) LIMIT 1");
+                    $uStmt = $db->prepare("SELECT * FROM user WHERE user_id = :uid AND (is_deleted = '0' OR is_deleted IS NULL OR is_deleted = '' OR is_deleted = 'N') AND (is_deleted IS NULL OR (is_deleted != '1' AND is_deleted != 'Y')) LIMIT 1");
                     $uStmt->execute([':uid' => $targetUid]);
                     $targetUserRow = $uStmt->fetch(PDO::FETCH_ASSOC);
                     if ($targetUserRow) {

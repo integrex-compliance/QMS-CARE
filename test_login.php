@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!empty($email) && !empty($password)) {
         try {
             // Check if user exists
-            $selectUserEmail = "SELECT count(*) as user from user where email_id = :email";
+            $selectUserEmail = "SELECT count(*) as user from user where email_id = :email AND (is_deleted = '0' OR is_deleted IS NULL OR is_deleted = '' OR is_deleted = 'N') AND (is_deleted IS NULL OR (is_deleted != '1' AND is_deleted != 'Y'))";
             $statement = $db->prepare($selectUserEmail);
             $statement->bindParam(":email", $email);
             $statement->execute();
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 echo "<p style='color: green;'>✓ User found in database</p>";
                 
                 // Get user details
-                $userLogin = "SELECT user_id, user_name, abbreviation, email_id, password, role FROM user WHERE email_id = :useremail";
+                $userLogin = "SELECT user_id, user_name, abbreviation, email_id, password, role FROM user WHERE email_id = :useremail AND (is_deleted = '0' OR is_deleted IS NULL OR is_deleted = '' OR is_deleted = 'N') AND (is_deleted IS NULL OR (is_deleted != '1' AND is_deleted != 'Y'))";
                 $statement = $db->prepare($userLogin);
                 $statement->bindParam(':useremail', $email);
                 $statement->execute();
