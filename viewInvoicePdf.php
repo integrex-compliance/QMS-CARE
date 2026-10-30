@@ -1,4 +1,10 @@
 <?php
+// Start output buffering to capture any stray output/notices
+if (!ob_get_level()) {
+    ob_start();
+}
+// Prevent notices and warnings from printing to output buffer and breaking PDF header/data
+ini_set('display_errors', '0');
 
 //============================================================+
 // File name   : example_006.php
@@ -93,13 +99,26 @@ $ST="";
 $gstdec="";
 //get variables from get/post to fill the details php selection code goes here
 
-$invoiceId = isset($_POST['invoiceId']) ? $_POST['invoiceId'] : '';
-$invoiceNo = isset($_POST['invoiceNo']) ? $_POST['invoiceNo'] : '';
+$invoiceId = isset($_REQUEST['invoiceId']) ? $_REQUEST['invoiceId'] : (isset($_REQUEST['invoice_id']) ? $_REQUEST['invoice_id'] : '');
+$invoiceNo = isset($_REQUEST['invoiceNo']) ? $_REQUEST['invoiceNo'] : (isset($_REQUEST['invoice_no']) ? $_REQUEST['invoice_no'] : '');
 
-$invoice = "SELECT * FROM invoice_details WHERE invoice_id = :invoiceid and invoice_no = :invoiceno";
-$statement = $db->prepare($invoice);
-$statement->bindParam(':invoiceid', $invoiceId);
-$statement->bindParam(':invoiceno', $invoiceNo);
+if (!empty($invoiceId) && !empty($invoiceNo)) {
+    $invoice = "SELECT * FROM invoice_details WHERE invoice_id = :invoiceid and invoice_no = :invoiceno";
+    $statement = $db->prepare($invoice);
+    $statement->bindParam(':invoiceid', $invoiceId);
+    $statement->bindParam(':invoiceno', $invoiceNo);
+} elseif (!empty($invoiceId)) {
+    $invoice = "SELECT * FROM invoice_details WHERE invoice_id = :invoiceid";
+    $statement = $db->prepare($invoice);
+    $statement->bindParam(':invoiceid', $invoiceId);
+} elseif (!empty($invoiceNo)) {
+    $invoice = "SELECT * FROM invoice_details WHERE invoice_no = :invoiceno";
+    $statement = $db->prepare($invoice);
+    $statement->bindParam(':invoiceno', $invoiceNo);
+} else {
+    http_response_code(400);
+    exit('Invoice ID or Number required.');
+}
 $statement->execute();
 $invoiceDetails = $statement->fetch(PDO::FETCH_ASSOC);
 
@@ -158,43 +177,43 @@ $customName = explode("(",$customerName);
 $customerAddress = $customer['company_address'];
 $customergst = isset($customer['gst_number']) ? $customer['gst_number'] : '';
 
-$newInvoice = $invoiceDetails['invoice_no'];
-$quotation_date = date("d-m-Y", strtotime($invoiceDetails['invoice_date']));
-$net_price = $invoiceDetails['net_price'];
-$service_tax = $invoiceDetails['service_tax'];
-$tax_type = $invoiceDetails['tax_type'];
+$newInvoice = isset($invoiceDetails['invoice_no']) ? $invoiceDetails['invoice_no'] : '';
+$quotation_date = !empty($invoiceDetails['invoice_date']) ? date("d-m-Y", strtotime($invoiceDetails['invoice_date'])) : date("d-m-Y");
+$net_price = isset($invoiceDetails['net_price']) ? $invoiceDetails['net_price'] : 0;
+$service_tax = isset($invoiceDetails['service_tax']) ? $invoiceDetails['service_tax'] : 0;
+$tax_type = isset($invoiceDetails['tax_type']) ? $invoiceDetails['tax_type'] : '';
 
-$total_amt = $net_price + $service_tax;
+$total_amt = (float)$net_price + (float)$service_tax;
 
- if($service_tax==0) 
-        {
-            $ST="NA";
-        }
- else
-        {
-            $ST=$service_tax;
-        }
-$datec=date("01-07-2017");  
-$d1=strtotime($quotation_date);
-$d2=strtotime($datec);
-if($d1 > $d2)
-{
-    $gstdec="<b>GST is not applicable to ". $firmName  ." as turnover of firm is less than 20 lac.</b>";
+if (empty($service_tax) || (float)$service_tax == 0) {
+    $ST = "NA";
+} else {
+    $ST = $service_tax;
 }
- else {
-    $gstdec="<b>Service tax is not payble</b>";
+$datec = "01-07-2017";  
+$d1 = strtotime($quotation_date);
+$d2 = strtotime($datec);
+if ($d1 > $d2) {
+    $gstdec = "<b>GST is not applicable to " . $firmName . " as turnover of firm is less than 20 lac.</b>";
+} else {
+    $gstdec = "<b>Service tax is not payble</b>";
 }
-$invoiceServices = "SELECT * FROM invoice_services WHERE invoice_ids = :id";
-$statement = $db->prepare($invoiceServices);
-$statement->bindParam(':id', $invoiceId);
-$statement->execute();
-$serviceArray = $statement->fetchAll();
+try {
+    $invoiceServices = "SELECT * FROM invoice_services WHERE invoice_ids = :id";
+    $statement = $db->prepare($invoiceServices);
+    $statement->bindParam(':id', $invoiceId);
+    $statement->execute();
+    $serviceArray = $statement->fetchAll();
 
-$invoiceServicesAmt = "SELECT service_amount FROM invoice_services WHERE invoice_ids = :id";
-$statement = $db->prepare($invoiceServicesAmt);
-$statement->bindParam(':id', $invoiceId);
-$statement->execute();
-$serviceAmtArray = $statement->fetchAll();
+    $invoiceServicesAmt = "SELECT service_amount FROM invoice_services WHERE invoice_ids = :id";
+    $statement = $db->prepare($invoiceServicesAmt);
+    $statement->bindParam(':id', $invoiceId);
+    $statement->execute();
+    $serviceAmtArray = $statement->fetchAll();
+} catch (Exception $e) {
+    $serviceArray = [];
+    $serviceAmtArray = [];
+}
 
 // ---------------------------------------------------------
 // remove default header/footer
@@ -239,11 +258,11 @@ for ($i = 0; $i < count($serviceDesc); $i++) {
 
 // Tax logic
 $taxHtml = '';
-if (!empty($tax_type) && $ST > 0) {
+if (!empty($tax_type) && is_numeric($ST) && (float)$ST > 0) {
     if ($tax_type === "IGST") {
         $taxHtml = '<tr><td colspan="2" style="text-align:right">IGST @ 18%</td><td>' . convertcash($ST, "") . '/-</td></tr>';
     } elseif ($tax_type === "CGST_SGST") {
-        $halfTax = $ST / 2;
+        $halfTax = (float)$ST / 2;
         $taxHtml .= '<tr><td colspan="2" style="text-align:right">CGST @ 9%</td><td>' . convertcash($halfTax, "") . '/-</td></tr>';
         $taxHtml .= '<tr><td colspan="2" style="text-align:right">SGST @ 9%</td><td>' . convertcash($halfTax, "") . '/-</td></tr>';
     }
@@ -334,7 +353,14 @@ if ($invoiceDetails['firm_id'] == 34) {
 
 // Output
 $pdf->writeHTML($html, true, false, true, false, '');
+
+// Clean all output buffers before outputting PDF
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
+
 $pdf->Output('invoice.pdf', 'I');
+exit;
 
 
 
@@ -342,7 +368,11 @@ function convertcash($num, $currency) {
     if ($num === "" || $num === null) {
         $num = 0;
     }
-    $normalized = number_format((float) str_replace(',', '', $num), 2, '.', '');
+    $cleanNum = str_replace(',', '', (string)$num);
+    if (!is_numeric($cleanNum)) {
+        $cleanNum = 0;
+    }
+    $normalized = number_format((float) $cleanNum, 2, '.', '');
     list($intPart, $decPart) = explode('.', $normalized);
 
     $negative = strpos($intPart, '-') === 0;
@@ -381,6 +411,9 @@ function invoiceDescriptionCell($description) {
 }
 
 function convertToWord($number) {
+    if ($number === "" || $number === null || !is_numeric($number)) {
+        $number = 0;
+    }
     $words = array('0' => '', '1' => 'One', '2' => 'Two',
         '3' => 'Three', '4' => 'Four', '5' => 'Five', '6' => 'Six',
         '7' => 'Seven', '8' => 'Eight', '9' => 'Nine',
