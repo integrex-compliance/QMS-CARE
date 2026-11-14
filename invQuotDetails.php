@@ -21,9 +21,11 @@ if (isset($_GET['firmid']) && !empty($_GET['firmid'])) {
                 ind.*, 
                 ins.service_desc, 
                 ins.service_amount, 
-                cd.gst_number AS customer_gst
+                cd.gst_number AS customer_gst,
+                s.service_type AS service_type_name
             FROM 
                 invoice_details ind
+            LEFT JOIN services s ON ind.service_id = s.service_id
             LEFT JOIN invoice_services ins ON ind.invoice_id = ins.invoice_ids
             LEFT JOIN customer_details cd ON cd.customer_id = ind.customer_id
             WHERE 

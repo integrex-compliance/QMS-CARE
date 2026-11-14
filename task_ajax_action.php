@@ -4,6 +4,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 date_default_timezone_set('Asia/Kolkata');
 include_once __DIR__ . '/dbConnect.php';
+if (file_exists(__DIR__ . '/include/task_sync_helper.php')) {
+    require_once __DIR__ . '/include/task_sync_helper.php';
+}
 
 if (!function_exists('aitf_get_task_manager_columns')) {
     function aitf_get_task_manager_columns(PDO $db) {
@@ -146,6 +149,11 @@ if ($action === 'add_task') {
         $stmt->execute($params);
         $primaryTaskId = (int)$db->lastInsertId();
 
+        // Immediately sync to mobile app (aitf_tasks)
+        if (function_exists('aitf_sync_web_task_to_app')) {
+            aitf_sync_web_task_to_app($db, $primaryTaskId, 'QMS_CARE');
+        }
+
         // Also assign to additional users if specified
         if (!empty($additionalUids) && is_array($additionalUids) && aitf_can_manage_tasks($currentUserRole)) {
             foreach ($additionalUids as $addUid) {
@@ -164,6 +172,10 @@ if ($action === 'add_task') {
                     $addParams[':uid'] = $addUid;
                     $addStmt = $db->prepare($sql);
                     $addStmt->execute($addParams);
+                    $addTmId = (int)$db->lastInsertId();
+                    if (function_exists('aitf_sync_web_task_to_app')) {
+                        aitf_sync_web_task_to_app($db, $addTmId, 'QMS_CARE');
+                    }
                 }
             }
         }
@@ -261,6 +273,11 @@ if ($action === 'toggle_status') {
             $newStatusClient = 'completed';
         }
 
+        // Immediately sync to mobile app (aitf_tasks)
+        if (function_exists('aitf_sync_web_task_to_app')) {
+            aitf_sync_web_task_to_app($db, $taskId, 'QMS_CARE');
+        }
+
         echo json_encode([
             'success' => true,
             'new_status' => $newStatusClient,
@@ -318,6 +335,9 @@ if ($action === 'toggle_star') {
         if (!empty($sets)) {
             $updateStmt = $db->prepare("UPDATE `task_manager` SET " . implode(', ', $sets) . " WHERE id = :id");
             $updateStmt->execute($params);
+            if (function_exists('aitf_sync_web_task_to_app')) {
+                aitf_sync_web_task_to_app($db, $taskId, 'QMS_CARE');
+            }
         }
 
         echo json_encode(['success' => true, 'is_important' => $newStar]);
@@ -343,6 +363,9 @@ if ($action === 'delete_task') {
     try {
         $updateStmt = $db->prepare("UPDATE `task_manager` SET is_deleted = 'Y', update_date = CURDATE() WHERE id = :id");
         $updateStmt->execute([':id' => $taskId]);
+        if (function_exists('aitf_sync_web_task_to_app')) {
+            aitf_sync_web_task_to_app($db, $taskId, 'QMS_CARE');
+        }
         echo json_encode(['success' => true, 'message' => 'Task deleted.']);
         exit();
     } catch (Exception $e) {

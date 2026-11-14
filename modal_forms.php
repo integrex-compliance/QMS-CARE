@@ -208,8 +208,9 @@ $listOfUsers = $statement->fetchAll();
                 <input type="hidden" name="invoiceFirmId" class="invoiceFirmId" id="invoiceFirmId" value="" />
                 <input type="hidden" class="invoiceId" name="invoiceId" value="">
                 <input type="hidden" class="preInvDate" name="preInvDate" value="">
-
+                <input type="hidden" name="invoiceServiceId" class="invoiceServiceId" id="invoiceServiceId" value="" />
                 <div class="modal-body">
+                    <div id="serviceInvoiceBadge" style="display:none; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;"><i class="fa fa-tag" style="color: #3b82f6; margin-right: 6px;"></i><strong>Service-wise Invoice: </strong><span id="serviceInvoiceName" style="font-weight: 700; color: #1d4ed8;"></span></div>
                     <div class="row">
                         <div class="col-sm-6 form-group float-label-control">
                             <label>Consulting Firm</label>
@@ -322,6 +323,7 @@ $listOfUsers = $statement->fetchAll();
       <form action="invoice.php" method="post" target="_blank" enctype="multipart/form-data">
         <input type="hidden" name="invoiceEditCustomerId" class="invoiceEditCustomerId" id="invoiceEditCustomerId" value="" />
         <input type="hidden" name="invoiceEditFirmId" class="invoiceEditFirmId" id="invoiceEditFirmId" value="" />
+        <input type="hidden" name="invoiceEditServiceId" class="invoiceEditServiceId" id="invoiceEditServiceId" value="" />
         <div class="modal-body">
           <div class="row">
             <div class="col-sm-6 form-group float-label-control">

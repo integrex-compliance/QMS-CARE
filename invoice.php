@@ -183,10 +183,18 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
 
     $invoiceid = $_POST['invoiceEditId'];
     $newInvoice = $_POST['invoiceEditNo'];
-    $invoiceUpdate = "UPDATE invoice_details SET customer_id = :customerId, customer_name = :customerName, invoice_date = :invoicedate, net_price = :netprice, service_tax = :servicetax, total_amount = :amount, svc_desc = :invsvc, svc_amount = :svcamt,tax_type = :taxtype  WHERE invoice_id = :id";
+    $serviceId = null;
+    if (isset($_POST['invoiceEditServiceId']) && !empty($_POST['invoiceEditServiceId'])) {
+        $serviceId = (int)$_POST['invoiceEditServiceId'];
+    } else if (isset($_POST['invoiceServiceId']) && !empty($_POST['invoiceServiceId'])) {
+        $serviceId = (int)$_POST['invoiceServiceId'];
+    }
+
+    $invoiceUpdate = "UPDATE invoice_details SET customer_id = :customerId, service_id = :serviceId, customer_name = :customerName, invoice_date = :invoicedate, net_price = :netprice, service_tax = :servicetax, total_amount = :amount, svc_desc = :invsvc, svc_amount = :svcamt,tax_type = :taxtype  WHERE invoice_id = :id";
     $statement = $db->prepare($invoiceUpdate);
     $statement->bindParam(':id', $_POST['invoiceEditId']);
     $statement->bindParam(':customerId', $customerId);
+    $statement->bindParam(':serviceId', $serviceId);
     $statement->bindParam(':customerName', $customerName);
     $invoiceDate = date("Y-m-d", strtotime($quotation_date));
     $statement->bindParam(':invoicedate', $invoiceDate);
@@ -254,13 +262,19 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
         }
     }
 
-    $invoiceDetails = "INSERT INTO invoice_details (firm_id, customer_id, customer_name, invoice_no, invoice_date, net_price, service_tax, total_amount, svc_desc, svc_amount, tax_type) VALUES "
+    $serviceId = null;
+    if (isset($_POST['invoiceServiceId']) && !empty($_POST['invoiceServiceId'])) {
+        $serviceId = (int)$_POST['invoiceServiceId'];
+    }
+
+    $invoiceDetails = "INSERT INTO invoice_details (firm_id, customer_id, service_id, customer_name, invoice_no, invoice_date, net_price, service_tax, total_amount, svc_desc, svc_amount, tax_type) VALUES "
             . "(:firmid, :customer_id, :customer_name, :invoiceno, :invoicedate, :netprice, :servicetax, :amount, :invsvc, :svcamt, :taxtype)";
 //        $invoiceDetails = "INSERT INTO invoice_details (firm_id,customer_id, firm_name, firm_address, firm_logo, invoice_no, invoice_date, pan_no,bank_name, bank_address, account_no, ifsc_code, micr_no, mail_id, customer_name, customer_address, contact_no, net_price, service_tax, total_amount,firm_sign, firm_abbrevation) "
 //                . "VALUES (:firmid,:customer_id,:firmname,:firmaddress,:firmlogo,:invoiceno,:invoicedate,:panno,:bankname,:bankaddress,:accno,:ifsccode,:micrno,:mailid,:customername,:customeraddress,:contactno,:netprice,:servicetax,:amount,:sign,:abbrevation);";
     $statement = $db->prepare($invoiceDetails);
     $statement->bindParam(':firmid', $firm_id);
     $statement->bindParam(":customer_id", $_POST['invoiceCustomerId']);
+    $statement->bindParam(":service_id", $serviceId);
     $statement->bindParam(":customer_name", $customerName);
     $statement->bindParam(':invoiceno', $newInvoice);
     $statement->bindParam(':invoicedate', date("Y-m-d", strtotime($quotation_date)));

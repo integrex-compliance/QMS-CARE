@@ -9,6 +9,9 @@
 
 session_start();
 include_once './dbConnect.php';
+if (file_exists(__DIR__ . '/include/task_sync_helper.php')) {
+    require_once __DIR__ . '/include/task_sync_helper.php';
+}
 
 if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
     try {
@@ -36,6 +39,7 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
         $statement->bindParam(":id", $_GET["id"]);
         $statement->bindParam(":comment", $_GET["columnValue"]);
         $statement->execute();
+        if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["id"]);
         //        echo "execute";
         $val = "success";
         echo json_encode($val);
@@ -51,6 +55,7 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
             $statement->bindParam(":status", $_GET["status"]);
             $statement->bindParam(":date", date('Y-m-d'));
             $statement->execute();
+            if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["row"]);
             $val = "success";
             echo json_encode($val);
         } else {
@@ -59,6 +64,7 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
             $statement->bindParam(":id", $_GET["row"]);
             $statement->bindParam(":status", $_GET["status"]);
             $statement->execute();
+            if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["row"]);
             $val = "success";
             echo json_encode($val);
         }
@@ -73,6 +79,7 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
         $statement->bindParam(":date", date('Y-m-d'));
         $statement->bindParam(":task", $_GET["columnVal"]);
         $statement->execute();
+        if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["rowid"]);
         //        echo "execute";
         $val = "success";
         echo json_encode($val);
@@ -87,6 +94,7 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
         $statement->bindParam(":date", date('Y-m-d'));
         $statement->bindParam(":user", $_GET["user"]);
         $statement->execute();
+        if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["rowID"]);
         //        echo "execute";
         $val = "success";
         echo json_encode($val);
@@ -99,6 +107,7 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
         $statement = $db->prepare($sql1);
         $statement->bindParam(":id", $_POST["taskdlt"]);
         $statement->execute();
+        if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_POST["taskdlt"]);
         header("Location: taskMgmt.php");
     } catch (Exception $ex) {
 
@@ -111,6 +120,7 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
         $statement->bindParam(":id", $_GET["taskid"]);
         $statement->bindParam(":prio", $_GET["priority"]);
         $statement->execute();
+        if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["taskid"]);
         $val = $_GET["priority"];
         echo json_encode($val);
     } catch (Exception $ex) {

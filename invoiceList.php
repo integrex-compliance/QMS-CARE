@@ -193,7 +193,7 @@
                 }
 
                 rowHtml += `
-                    <td><small>${invoice['svc_desc']}</small></td>
+                    <td><small>${invoice['service_type_name'] ? '<span class="label label-primary" style="font-size:10px; margin-right:4px;">' + invoice['service_type_name'] + '</span> ' : ''}${invoice['svc_desc']}</small></td>
                     <td><small>${invoice['total_amount']}</small></td>
                     <td>
                         <a class="editInvoice" data-id="${invoice['invoice_id']}" data-firm="${invoice['firm_id']}" data-customer="${invoice['customer_id']}" title="Edit invoice"><i class="fa fa-pencil-square"></i></a>

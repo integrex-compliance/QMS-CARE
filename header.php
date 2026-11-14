@@ -136,7 +136,7 @@ include 'utility.php';
                 if (inputVal != "" && inputVal != null)
                     inputVal = $(this).val() + "\n";
 
-                var appendText = "<?php echo date("d.m.Y") . " - " . $_SESSION['abbrevation'] . " - " ?>";
+                var appendText = "<?php echo date("d.m.Y") . " - " . (isset($_SESSION['abbrevation']) ? $_SESSION['abbrevation'] : '') . " - "; ?>";
                 // Enter pressed... do anything here...
                 $(this).val(inputVal + appendText);
             }
@@ -434,9 +434,9 @@ function getFlatDate($inputStr) {
             <li><a href="contactinfo.php" class="animate <?php echo $addcontactinfoClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Contact Info</span></a></li>
         <?php } ?>            
         <?php if (!Utitlity::checkForConsultant()) { ?>
-        <li><a href="taskMgmt.php" class="animate <?php echo $pendingtask ?>"><i class="sub_icon fa fa-calendar-plus-o"></i><span class="menu-label">Pending Tasks</span></a></li>
-        <li><a href="completedTask.php" class="animate <?php echo $completetask ?>"><i class="sub_icon fa fa-calendar-check-o"></i><span class="menu-label">Completed Tasks</span></a></li>
-        <li><a href="servicedue.php" class="animate <?php echo $tomarketing ?>"><i class="sub_icon fa fa-calendar-check-o"></i><span class="menu-label">Service Due</span></a></li>
+        <li><a href="taskMgmt.php" class="animate <?php echo isset($pendingtask) ? $pendingtask : ''; ?>"><i class="sub_icon fa fa-calendar-plus-o"></i><span class="menu-label">Pending Tasks</span></a></li>
+        <li><a href="completedTask.php" class="animate <?php echo isset($completetask) ? $completetask : ''; ?>"><i class="sub_icon fa fa-calendar-check-o"></i><span class="menu-label">Completed Tasks</span></a></li>
+        <li><a href="servicedue.php" class="animate <?php echo isset($tomarketing) ? $tomarketing : ''; ?>"><i class="sub_icon fa fa-calendar-check-o"></i><span class="menu-label">Service Due</span></a></li>
         <?php } ?>
     </ul>
 </div>
@@ -494,7 +494,7 @@ function getFlatDate($inputStr) {
                         </li>
                         <li role="separator" class="divider"></li>
                         <li>
-                            <a class="passwordChange" data-id="<?php echo $_SESSION['id']; ?>" href="javascript:void(0)">
+                            <a class="passwordChange" data-id="<?php echo isset($_SESSION['id']) ? $_SESSION['id'] : ''; ?>" href="javascript:void(0)">
                                 <i class="fa fa-key"></i> Change Password
                             </a>
                         </li>

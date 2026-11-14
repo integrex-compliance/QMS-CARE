@@ -166,6 +166,7 @@ $handlerList = $statement->fetchAll();
 //                    alert(data[4]['invoice_date']);
                     $('.invoiceEditId').val(data[0]['invoice_id']);
                     $('.invoiceEditCustomerId').val(data[0]['customer_id']);
+                    $('.invoiceEditServiceId').val(data[0]['service_id'] || '');
                     $('.invoiceEditFirmId').val(data[0]['firm_id']);
                     $('.invoiceconsultingFirmName').val(data[0]['firm_name']);
                     $('.invoiceDtEdit').val(moment(data[0]['invoice_date']).format('DD.MM.YYYY'));
@@ -342,11 +343,12 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             });
         });
 
-        $('.deleteService').click(function () {
+        $(document.body).on('click', '.deleteService', function (e) {
+            e.stopPropagation();
             var serviceId = $(this).attr('data-row-id');
             var customerId = '<?php echo $_GET['customerid'] ?>';
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 var url = 'deleteCustomerService.php';
                 var form = $('<form action="' + url + '" method="post">' +
                         '<input type="hidden" name="serviceID" value="' + serviceId + '" />' +
@@ -355,7 +357,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                 $('body').append(form);
                 form.submit();
             });
-            $('.delete-cancel').click(function () {
+            $('.delete-cancel').off('click').on('click', function () {
                 $('#delete-details').hide();
             });
         });
@@ -464,12 +466,26 @@ if (data[0]['tax_type'] === "CGST_SGST") {
         });
 
         $(document.body).on('click', '.service_title', function (e) {
-            //        $('.service_title').click(function (e) {
+            // Ignore click if user clicked on action buttons inside header (delete button, auto-save pill)
+            if ($(e.target).closest('.deleteService, .auto-save-status-pill').length) {
+                return;
+            }
 
-//                    alert("da");
-            $id = $(this).data("row-id");
-//            alert($id);
-            $('#servicebox-data' + $id).toggle();
+            var $id = $(this).data("row-id");
+            var $box = $('#servicebox-data' + $id);
+            var $folderIcon = $(this).find('.service-folder-icon');
+            var $indicator = $(this).find('.service-collapse-indicator');
+
+            $box.slideToggle(200, function () {
+                if ($box.is(':visible')) {
+                    $folderIcon.removeClass('fa-folder-o').addClass('fa-folder-open-o');
+                    $indicator.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                    resizeAuditDetails($box.find('.auditDetailsText'));
+                } else {
+                    $folderIcon.removeClass('fa-folder-open-o').addClass('fa-folder-o');
+                    $indicator.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                }
+            });
         });
 
         $('.saveChanges').change(function (e) {
@@ -480,8 +496,10 @@ if (data[0]['tax_type'] === "CGST_SGST") {
         // Auto-resize for Contract Details textarea so all lines stay visible
         function resizeAuditDetails($el) {
             $el.each(function () {
-                this.style.height = 'auto';
-                this.style.height = this.scrollHeight + 'px';
+                if (this.tagName && this.tagName.toLowerCase() === 'textarea') {
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                }
             });
         }
 
@@ -576,244 +594,430 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             $selector.addClass("lookslike-label");
         }
 
-        $(document.body).on('click', '.saveService', function () {
-//                    alert("in");
-            $rowId = $(this).data("row-id");
-            if ($rowId == undefined) {
-                $rowId = "";
+        /* ==========================================================
+           TOAST NOTIFICATION HELPER
+           ========================================================== */
+        window.showToast = function (message, type, title) {
+            if (!type) type = 'success';
+            if (!title) {
+                title = (type === 'success') ? 'Saved' : (type === 'error' ? 'Error' : 'Notice');
             }
-            
+            var iconClass = (type === 'success') ? 'fa-check' : (type === 'error' ? 'fa-exclamation' : 'fa-info');
+
+            var $container = $('#qms-toast-container');
+            if (!$container.length) {
+                $container = $('<div id="qms-toast-container"></div>').appendTo('body');
+            }
+
+            var $toast = $(
+                '<div class="qms-toast qms-toast-' + type + '">' +
+                    '<div class="qms-toast-icon"><i class="fa ' + iconClass + '"></i></div>' +
+                    '<div class="qms-toast-body">' +
+                        '<div class="qms-toast-title">' + title + '</div>' +
+                        '<div class="qms-toast-msg">' + message + '</div>' +
+                    '</div>' +
+                    '<button type="button" class="qms-toast-close">&times;</button>' +
+                    '<div class="qms-toast-bar"></div>' +
+                '</div>'
+            );
+
+            $container.append($toast);
+            setTimeout(function () { $toast.addClass('show'); }, 20);
+
+            function dismissToast() {
+                $toast.removeClass('show').addClass('hiding');
+                setTimeout(function () { $toast.remove(); }, 350);
+            }
+
+            $toast.find('.qms-toast-close').on('click', dismissToast);
+            setTimeout(dismissToast, 2600);
+        };
+
+        /* ==========================================================
+           LIVE SERVICE KPI METRICS RE-CALCULATOR
+           ========================================================== */
+        window.updateServiceKpiMetrics = function (rowId) {
+            if (!rowId) return;
+            var cbDecided = 0;
+            var cbReceived = 0;
+            var consultDecided = 0;
+            var consultReceived = 0;
+
+            // Sum CB amounts for this service
+            $('.amountDecided').each(function () {
+                if ($(this).attr('data-row-id') == rowId) {
+                    cbDecided += parseFloat($(this).val()) || 0;
+                }
+            });
+            $('.paymentReceived').each(function () {
+                if ($(this).attr('data-row-id') == rowId) {
+                    cbReceived += parseFloat($(this).val()) || 0;
+                }
+            });
+
+            // Sum Consulting amounts for this service
+            $('.consultingAmountDecided').each(function () {
+                if ($(this).attr('data-row-id') == rowId) {
+                    consultDecided += parseFloat($(this).val()) || 0;
+                }
+            });
+            $('.consultingPaymentReceived').each(function () {
+                if ($(this).attr('data-row-id') == rowId) {
+                    consultReceived += parseFloat($(this).val()) || 0;
+                }
+            });
+
+            // Find the service container
+            var $serviceBox = $('#servicebox-data' + rowId);
+
+            // Update separated Consulting KPI chips
+            $serviceBox.find('.kpi-consult-decided .kpi-chip-value').text('₹ ' + consultDecided.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $serviceBox.find('.kpi-consult-received .kpi-chip-value').text('₹ ' + consultReceived.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+
+            var consultInvText = $serviceBox.find('.kpi-consult-invoiced .kpi-chip-value').text().replace(/[^0-9.-]+/g, "");
+            var consultInvoiced = parseFloat(consultInvText) || 0;
+            var consultBalDue = Math.max(0, consultInvoiced - consultReceived);
+
+            var $consultBalChip = $serviceBox.find('.kpi-consult-balance');
+            $consultBalChip.find('.kpi-chip-value').text('₹ ' + consultBalDue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            if (consultBalDue > 0) {
+                $consultBalChip.removeClass('kpi-chip-success').addClass('kpi-chip-danger');
+            } else {
+                $consultBalChip.removeClass('kpi-chip-danger').addClass('kpi-chip-success');
+            }
+
+            // Update separated CB KPI chips
+            var cbBalDue = Math.max(0, cbDecided - cbReceived);
+            $serviceBox.find('.kpi-cb-decided .kpi-chip-value').text('₹ ' + cbDecided.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $serviceBox.find('.kpi-cb-received .kpi-chip-value').text('₹ ' + cbReceived.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+
+            var $cbBalChip = $serviceBox.find('.kpi-cb-balance');
+            $cbBalChip.find('.kpi-chip-value').text('₹ ' + cbBalDue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            if (cbBalDue > 0) {
+                $cbBalChip.removeClass('kpi-chip-success').addClass('kpi-chip-danger');
+            } else {
+                $cbBalChip.removeClass('kpi-chip-danger').addClass('kpi-chip-success');
+            }
+
+            // Fallback for legacy KPI elements if present
+            var totalDecided = cbDecided + consultDecided;
+            var totalReceived = cbReceived + consultReceived;
+            $serviceBox.find('.kpi-decided .kpi-value').text('₹ ' + totalDecided.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $serviceBox.find('.kpi-received .kpi-value').text('₹ ' + totalReceived.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+        };
+
+        /* ==========================================================
+           DEBOUNCED AUTO-SAVE HANDLER
+           ========================================================== */
+        var autoSaveTimers = {};
+        window.autoSaveService = function (rowId, delay) {
+            if (!rowId) return;
+            if (delay === undefined) delay = 600;
+
+            var $pill = $('.auto-save-status-pill[data-row-id="' + rowId + '"]');
+            $pill.addClass('saving').html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+
+            if (autoSaveTimers[rowId]) {
+                clearTimeout(autoSaveTimers[rowId]);
+            }
+
+            autoSaveTimers[rowId] = setTimeout(function () {
+                executeServiceSave(rowId, null, false);
+            }, delay);
+        };
+
+        /* ==========================================================
+           EXECUTE SERVICE & PAYMENT SAVE (AJAX - NO PAGE RELOAD)
+           ========================================================== */
+        window.executeServiceSave = function (rowId, callback, silent) {
+            if (!rowId) return;
+
             var contractDetailsArray = [];
-            $(".contractDetails").each(function () {         //                        alert($(this).data("row-id"));
-                if ($rowId == $(this).data("row-id"))
+            $(".contractDetails").each(function () {
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     contractDetailsArray.push($(this).val());
             });
-            $cbContractDetails = contractDetailsArray.join("~");
-            
+            var cbContractDetails = contractDetailsArray.join("~");
+
             var amountDecidedArray = [];
             $('.amountDecided').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     amountDecidedArray.push($(this).val());
             });
-            $cbAmountDecided = amountDecidedArray.join("~");
-            
+            var cbDecidedAmount = amountDecidedArray.join("~");
+
             var paymentReceivedArray = [];
             $('.paymentReceived').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     paymentReceivedArray.push($(this).val());
             });
-            $cbPaymentReceived = paymentReceivedArray.join("~");
-            
+            var cbPaymentReceived = paymentReceivedArray.join("~");
+
             var depositDateArray = [];
             $('.depositDate').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     depositDateArray.push($(this).val());
             });
-            $cbDepositDate = depositDateArray.join("~");
-            
+            var cbDepositDate = depositDateArray.join("~");
+
             var chequeDetailsArray = [];
             $('.chequeDetails').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     chequeDetailsArray.push($(this).val());
             });
-            $cbChequeDetails = chequeDetailsArray.join("~");
-            
+            var cbChequeDetails = chequeDetailsArray.join("~");
+
             var bankAcccountNoArray = [];
             $('.bankAcccountNo').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     bankAcccountNoArray.push($(this).val());
             });
-            $cbBankAcccountNo = bankAcccountNoArray.join("~");
-            
+            var cbBankAcccountNo = bankAcccountNoArray.join("~");
+
             var balanceArray = [];
             $('.balance').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     balanceArray.push($(this).val());
             });
-            $cbBalance = balanceArray.join("~");
-            
+            var cbBalance = balanceArray.join("~");
+
             var cbRowArray = [];
             $('.cb-row-id').each(function () {
-                if ($rowId == $(this).data("row-id")) {
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id")) {
                     if (cbRowArray.indexOf($(this).val()) == -1)
                         cbRowArray.push($(this).val());
                 }
             });
-            $cbrowid = cbRowArray.join("~");
-            
+            var cbRoeIds = cbRowArray.join("~");
+
             var consultingContractDetailsArray = [];
             $('.consultingContractDetails').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     consultingContractDetailsArray.push($(this).val());
             });
-            $consultingContractDetails = consultingContractDetailsArray.join("~");
-            
+            var consultingDetails = consultingContractDetailsArray.join("~");
+
             var consultingAmountDecidedArray = [];
             $('.consultingAmountDecided').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     consultingAmountDecidedArray.push($(this).val());
             });
-            $consultingAmountDecided = consultingAmountDecidedArray.join("~");
-            
+            var consultingAmount = consultingAmountDecidedArray.join("~");
+
             var consultingPaymentReceivedArray = [];
             $('.consultingPaymentReceived').each(function () {
-                if ($rowId == $(this).data("row-id"))
-                    consultingPaymentReceivedArray.push($(this).val( ));
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
+                    consultingPaymentReceivedArray.push($(this).val());
             });
-            $consultingPaymentReceived = consultingPaymentReceivedArray.join("~");
-            
+            var consultingPayment = consultingPaymentReceivedArray.join("~");
+
             var consultingDepositDateArray = [];
             $('.consultingDepositDate').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     consultingDepositDateArray.push($(this).val());
             });
-            $consultingDepositDate = consultingDepositDateArray.join("~");
+            var consultingDepositDate = consultingDepositDateArray.join("~");
 
-
-
-        
-            
             var consultingChequeDetailsArray = [];
             $('.consultingChequeDetails').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     consultingChequeDetailsArray.push($(this).val());
             });
-            $consultingChequeDetails = consultingChequeDetailsArray.join("~");
-            
+            var consultingChequeDetails = consultingChequeDetailsArray.join("~");
+
             var consultingBankAcccountNoArray = [];
             $('.consultingBankAcccountNo').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     consultingBankAcccountNoArray.push($(this).val());
             });
-            $consultingBankAcccountNo = consultingBankAcccountNoArray.join("~");
-            
+            var consultingBankAcccountNo = consultingBankAcccountNoArray.join("~");
+
             var consultingBalanceArray = [];
             $('.consultingBalance').each(function () {
-                if ($rowId == $(this).data("row-id"))
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
                     consultingBalanceArray.push($(this).val());
             });
-            $consultingBalance = consultingBalanceArray.join("~");
-            
+            var consultingBalance = consultingBalanceArray.join("~");
+
             var consultingRowArray = [];
             $('.consulting-row-id').each(function () {
-                if ($rowId == $(this).data("row-id")) {
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id")) {
                     if (consultingRowArray.indexOf($(this).val()) == -1)
                         consultingRowArray.push($(this).val());
                 }
             });
-            $consultingrowid = consultingRowArray.join("~");
-//for delete row functionality
+            var consultingrowId = consultingRowArray.join("~");
+
             var deleteCB = [];
             $('.cbDelete').each(function () {
-                if ($rowId == $(this).data("row-id") && $(this).is(":checked"))
+                if ((rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id")) && $(this).is(":checked"))
                     deleteCB.push($(this).val());
             });
-            $deletCbRows = deleteCB.join("~");
-            
+            var deletCbRows = deleteCB.join("~");
+
             var deleteConsulting = [];
             $('.consultingDelete').each(function () {
-                if ($rowId == $(this).data("row-id") && $(this).is(":checked"))
+                if ((rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id")) && $(this).is(":checked"))
                     deleteConsulting.push($(this).val());
             });
-            $deletConsultingRows = deleteConsulting.join("~");
-            
-            var serviceid = $('.service-id[data-row-id="' + $rowId + '"]').val();
-//                    alert("serviceid" + serviceid);
-            var serviceType = $('.service-type[data-row-id="' + $rowId + '"]').val(); //$('.service-type').val();
-//                    alert(serviceType);
-            var certBody = $('.cert-body[data-row-id="' + $rowId + '"]').val();
-            var consultingFirm = $('.consulting-firm[data-row-id="' + $rowId + '"]').val();
-            var consultant = $('.consultant-list[data-row-id="' + $rowId + '"]').val();
-            var auditType = $('.audit-type[data-row-id="' + $rowId + '"]').val();
-            var auditor = $('.auditor-list[data-row-id="' + $rowId + '"]').val();
-            var auditdate = $('.audit-date[data-row-id="' + $rowId + '"]').val();
-            var serviceaddto = $('.add-to-service[data-row-id="' + $rowId + '"]').val();
-            var handelBy = $('.handel-by[data-row-id="' + $rowId + '"').val();
-            var customerId = $('.customer_id[data-row-id="' + $rowId + '"]').val();
-            
-            if ($('.issueCert[data-row-id="' + $rowId + '"]').is(':checked')) {
-                var issue_cert = "YES";
-            } else {
-                var issue_cert = "NO";
+            var deletConsultingRows = deleteConsulting.join("~");
+
+            var serviceid = $('.service-id[data-row-id="' + rowId + '"]').val() || rowId;
+            var serviceType = $('.service-type[data-row-id="' + rowId + '"]').val();
+            var certBody = $('.cert-body[data-row-id="' + rowId + '"]').val();
+            var consultingFirm = $('.consulting-firm[data-row-id="' + rowId + '"]').val();
+            var consultant = $('.consultant-list[data-row-id="' + rowId + '"]').val();
+            var auditType = $('.audit-type[data-row-id="' + rowId + '"]').val();
+            var auditor = $('.auditor-list[data-row-id="' + rowId + '"]').val();
+            var auditdate = $('.audit-date[data-row-id="' + rowId + '"]').val();
+            var serviceaddto = $('.add-to-service[data-row-id="' + rowId + '"]').val();
+            var handelBy = $('.handel-by[data-row-id="' + rowId + '"]').val();
+            var customerId = $('.customer_id[data-row-id="' + rowId + '"]').val() || "<?php echo isset($_GET['customerid']) ? $_GET['customerid'] : ''; ?>";
+
+            var issue_cert = $('.issueCert[data-row-id="' + rowId + '"]').is(':checked') ? "YES" : "NO";
+
+            if (!serviceType) {
+                return;
             }
-            //            alert(issue_cert);
-            var cbContractDetails = $cbContractDetails;
-            var cbDecidedAmount = $cbAmountDecided;
-            var cbPaymentReceived = $cbPaymentReceived;
-            var cbDepositDate = $cbDepositDate;
-            var cbChequeDetails = $cbChequeDetails;
-            var cbBankAcccountNo = $cbBankAcccountNo;
-            var cbBalance = $cbBalance;
-            var cbRoeIds = $cbrowid;
-            var consultingDetails = $consultingContractDetails;
-            //            alert(consultingDetails);   
-            var consultingAmount = $consultingAmountDecided;
-            var consultingPayment = $consultingPaymentReceived;
-            var consultingDepositDate = $consultingDepositDate;
-            var consultingChequeDetails = $consultingChequeDetails;
-            var consultingBankAcccountNo = $consultingBankAcccountNo;
-            var consultingBalance = $consultingBalance;
-            var consultingrowId = $consultingrowid;
-            //Amol - there must be extra tr getting added, lets ty to remove it
-            //            alert($deletCbRows);
-            if (serviceType == "") {
-                $('#validation-modal').modal('show');
-            } else {
-                $.ajax({
-                    url: "addService.php",
-                    dataType: "json",
-                    type: 'GET',
-                    data: {
-                        serviceId: serviceid,
-                        servicetype: serviceType,
-                        certbody: certBody,
-                        consultingfirm: consultingFirm,
-                        consultantlist: consultant,
-                        audittype: auditType,
-                        auditorlist: auditor,
-                        auditDate: auditdate,
-                        addTo: serviceaddto,
-                        handelby: handelBy,
-                        certIssue: issue_cert,
-                        customer_id: customerId,
-                        cbContractDetails: cbContractDetails,
-                        cbDecidedAmount: cbDecidedAmount,
-                        cbPaymentReceived: cbPaymentReceived,
-                        cbDepositDate: cbDepositDate,
-                        cbChequeDetails: cbChequeDetails,
-                        cbBankAcccountNo: cbBankAcccountNo,
-                        cbBalance: cbBalance,
-                        cbRows: cbRoeIds,
-                        consultingDetails: consultingDetails,
-                        consultingAmount: consultingAmount,
-                        consultingPayment: consultingPayment,
-                        consultingDepositDate: consultingDepositDate,
-                        consultingChequeDetails: consultingChequeDetails,
-                        consultingBankAcccountNo: consultingBankAcccountNo,
-                        consultingBalance: consultingBalance,
-                        consultingrows: consultingrowId,
-                        cbDeleteRows: $deletCbRows,
-                        consultingDeleteRows: $deletConsultingRows
-                    },
-                    success: function (data) {
-//                        alert(data);
-                        //                        alert("Data updated successfully"); //change to dialog
-                        if (data.error)
-                            return;
-                        //fire off other ajax calls
-                        $(document).ajaxStop(function () {
-                            location.reload(true);
-                        });
-                    },
-                    error: function (data, status, err) {
-                        alert("Error " + status + "err " + err + " data " + JSON.stringify(data));
-                        //                    alert("There was error while saving data. Please refresh page to see if values are saved or contact support team");
+
+            $.ajax({
+                url: "addService.php",
+                dataType: "json",
+                type: 'GET',
+                data: {
+                    serviceId: serviceid,
+                    servicetype: serviceType,
+                    certbody: certBody,
+                    consultingfirm: consultingFirm,
+                    consultantlist: consultant,
+                    audittype: auditType,
+                    auditorlist: auditor,
+                    auditDate: auditdate,
+                    addTo: serviceaddto,
+                    handelby: handelBy,
+                    certIssue: issue_cert,
+                    customer_id: customerId,
+                    cbContractDetails: cbContractDetails,
+                    cbDecidedAmount: cbDecidedAmount,
+                    cbPaymentReceived: cbPaymentReceived,
+                    cbDepositDate: cbDepositDate,
+                    cbChequeDetails: cbChequeDetails,
+                    cbBankAcccountNo: cbBankAcccountNo,
+                    cbBalance: cbBalance,
+                    cbRows: cbRoeIds,
+                    consultingDetails: consultingDetails,
+                    consultingAmount: consultingAmount,
+                    consultingPayment: consultingPayment,
+                    consultingDepositDate: consultingDepositDate,
+                    consultingChequeDetails: consultingChequeDetails,
+                    consultingBankAcccountNo: consultingBankAcccountNo,
+                    consultingBalance: consultingBalance,
+                    consultingrows: consultingrowId,
+                    cbDeleteRows: deletCbRows,
+                    consultingDeleteRows: deletConsultingRows
+                },
+                success: function (data) {
+                    var $pill = $('.auto-save-status-pill[data-row-id="' + rowId + '"]');
+                    $pill.removeClass('saving error').html('<i class="fa fa-check-circle" style="color: #10b981;"></i> Auto-saved');
+
+                    if (!silent) {
+                        showToast("Payment & service details saved successfully!", "success", "Payment Saved");
                     }
-                });
-            }
+
+                    // Update row IDs for new rows if returned
+                    if (data && data[1] && data[1].length > 0) {
+                        var $cbRows = $('#servicebox-data' + rowId).find('.cb_subsection');
+                        $cbRows.each(function (idx) {
+                            if (data[1][idx]) {
+                                $(this).find('.cb-row-id').val(data[1][idx]['certification_id']);
+                                $(this).find('.cbDeleteIcon').attr('data-id', data[1][idx]['certification_id']);
+                            }
+                        });
+                    }
+                    if (data && data[2] && data[2].length > 0) {
+                        var $conRows = $('#servicebox-data' + rowId).find('.consulting_subsection');
+                        $conRows.each(function (idx) {
+                            if (data[2][idx]) {
+                                $(this).find('.consulting-row-id').val(data[2][idx]['consulting_id']);
+                                $(this).find('.consultingDeleteIcon').attr('data-id', data[2][idx]['consulting_id']);
+                            }
+                        });
+                    }
+
+                    updateServiceKpiMetrics(rowId);
+
+                    if (typeof callback === 'function') {
+                        callback(data);
+                    }
+                },
+                error: function (xhr, status, err) {
+                    var $pill = $('.auto-save-status-pill[data-row-id="' + rowId + '"]');
+                    $pill.removeClass('saving').addClass('error').html('<i class="fa fa-exclamation-triangle" style="color: #ef4444;"></i> Save error');
+                    showToast("Error saving data. Please check your connection.", "error", "Save Failed");
+                }
+            });
+        };
+
+        // Legacy compatibility for .saveService click
+        $(document.body).on('click', '.saveService', function (e) {
+            e.preventDefault();
+            var rowId = $(this).data("row-id") || $(this).attr("data-row-id");
+            executeServiceSave(rowId, null, false);
         });
 
-        $('body').on('click', ".cbComment", function (e) {
+        /* ==========================================================
+           LIVE AUTO-SAVE & BALANCE CALCULATION EVENT LISTENERS
+           ========================================================== */
+        // 1. Amount Decided & Payment Received: Recalculate balance on the fly + Debounced Auto-save
+        $(document).on('input', '.amountDecided, .paymentReceived, .consultingAmountDecided, .consultingPaymentReceived', function () {
+            var $tr = $(this).closest('tr');
+            var rowId = $(this).attr('data-row-id') || $tr.find('[data-row-id]').first().attr('data-row-id');
+
+            if ($(this).hasClass('amountDecided') || $(this).hasClass('paymentReceived')) {
+                var decided = parseFloat($tr.find('.amountDecided').val()) || 0;
+                var received = parseFloat($tr.find('.paymentReceived').val()) || 0;
+                var bal = decided - received;
+                $tr.find('.balance').val(bal.toFixed(2));
+            } else {
+                var cDecided = parseFloat($tr.find('.consultingAmountDecided').val()) || 0;
+                var cReceived = parseFloat($tr.find('.consultingPaymentReceived').val()) || 0;
+                var cBal = cDecided - cReceived;
+                $tr.find('.consultingBalance').val(cBal.toFixed(2));
+            }
+
+            updateServiceKpiMetrics(rowId);
+            autoSaveService(rowId, 600);
+        });
+
+        // 2. Immediate auto-save on blur / change for amount fields
+        $(document).on('change', '.amountDecided, .paymentReceived, .consultingAmountDecided, .consultingPaymentReceived', function () {
+            var rowId = $(this).attr('data-row-id') || $(this).closest('tr').find('[data-row-id]').first().attr('data-row-id');
+            autoSaveService(rowId, 100);
+        });
+
+        // 3. Other payment table fields (deposit date, cheque, bank account, contract details)
+        $(document).on('input', '.contractDetails, .consultingContractDetails, .chequeDetails, .consultingChequeDetails', function () {
+            var rowId = $(this).attr('data-row-id') || $(this).closest('tr').find('[data-row-id]').first().attr('data-row-id');
+            autoSaveService(rowId, 800);
+        });
+
+        $(document).on('change', '.depositDate, .consultingDepositDate, .bankAcccountNo, .consultingBankAcccountNo, .contractDetails, .consultingContractDetails, .chequeDetails, .consultingChequeDetails', function () {
+            var rowId = $(this).attr('data-row-id') || $(this).closest('tr').find('[data-row-id]').first().attr('data-row-id');
+            autoSaveService(rowId, 100);
+        });
+
+        // 4. Service metadata fields (Service Type, Cert Body, Consulting Firm, Consultant, Auditor, Audit Date, Add To, Handel By, Issue Cert)
+        $(document).on('change', '.service-type, .cert-body, .consulting-firm, .consultant-list, .auditor-list, .audit-date, .add-to-service, .handel-by, .issueCert', function () {
+            var rowId = $(this).attr('data-row-id');
+            if ($(this).hasClass('service-type')) {
+                var svcVal = $(this).val();
+                $('.service_title[data-row-id="' + rowId + '"] .serviceStatus').text(svcVal);
+            }
+            autoSaveService(rowId, 100);
+        });
+
+
+                $('body').on('click', ".cbComment", function (e) {
 
             $cbid = $(this).attr("data-cbid");
             $customerId = $(this).attr('data-customer');
@@ -837,9 +1041,45 @@ if (data[0]['tax_type'] === "CGST_SGST") {
 
         $('.invoiceBtn').click(function () {
             $('.invoiceCustomerId').val($(this).attr('data-customer'));
-//            alert($('.invoiceCustomerId').val());
+            $('.invoiceServiceId').val('');
+            $('#serviceInvoiceBadge').hide();
             $('#invoiceModal').modal("show");
         });
+        $('body').on('click', '.serviceInvoiceBtn', function (e) {
+            e.preventDefault();
+            var customerId = $(this).attr('data-customer');
+            var serviceId = $(this).attr('data-service');
+            var serviceName = $(this).attr('data-servicename');
+            var firmName = $(this).attr('data-firm');
+
+            $('.invoiceCustomerId').val(customerId);
+            $('.invoiceServiceId').val(serviceId);
+
+            if (serviceName) {
+                $('#serviceInvoiceBadge').show();
+                $('#serviceInvoiceName').text(serviceName);
+
+                var $svcInput = $('.serviceAmtTd input[name="invoiceService[]"]').first();
+                if ($svcInput.length && !$svcInput.val().trim()) {
+                    $svcInput.val(serviceName + ' Professional Fees');
+                }
+            } else {
+                $('#serviceInvoiceBadge').hide();
+            }
+
+            if (firmName && firmName.trim() !== '') {
+                $('#invoiceconsultingFirmName option').each(function () {
+                    if ($(this).text().trim().toLowerCase() === firmName.trim().toLowerCase()) {
+                        $(this).prop('selected', true);
+                        $('#invoiceconsultingFirmName').trigger('change');
+                        return false;
+                    }
+                });
+            }
+
+            $('#invoiceModal').modal("show");
+        });
+
         //        auto complete for service type
 
         $('.nextService').autocomplete({
@@ -1259,13 +1499,16 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                     data: {id: cbId},
                     success: function (resp) {
                         if (resp && resp.success) {
+                            var rowId = $row.find('[data-row-id]').first().attr('data-row-id');
                             $row.remove();
+                            if (rowId) updateServiceKpiMetrics(rowId);
+                            showToast("CB payment installment removed successfully.", "info", "Row Removed");
                         } else {
-                            alert(resp && resp.message ? resp.message : 'Unable to delete row.');
+                            showToast(resp && resp.message ? resp.message : 'Unable to delete row.', 'error', 'Delete Failed');
                         }
                     },
                     error: function () {
-                        alert('Error while deleting row. Please try again.');
+                        showToast('Error while deleting row. Please try again.', 'error', 'Error');
                     }
                 });
             });
@@ -1277,7 +1520,10 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             var $row = $(this).closest('tr');
             openDeleteDialog(function (confirmed) {
                 if (confirmed) {
+                    var rowId = $row.find('[data-row-id]').first().attr('data-row-id');
                     $row.remove();
+                    if (rowId) updateServiceKpiMetrics(rowId);
+                    showToast("Unsaved row removed.", "info", "Removed");
                 }
             });
         });
@@ -1306,13 +1552,16 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                     data: {id: consultId},
                     success: function (resp) {
                         if (resp && resp.success) {
+                            var rowId = $row.find('[data-row-id]').first().attr('data-row-id');
                             $row.remove();
+                            if (rowId) updateServiceKpiMetrics(rowId);
+                            showToast("Consulting installment removed successfully.", "info", "Row Removed");
                         } else {
-                            alert(resp && resp.message ? resp.message : 'Unable to delete row.');
+                            showToast(resp && resp.message ? resp.message : 'Unable to delete row.', 'error', 'Delete Failed');
                         }
                     },
                     error: function () {
-                        alert('Error while deleting row. Please try again.');
+                        showToast('Error while deleting row. Please try again.', 'error', 'Error');
                     }
                 });
             });
@@ -1324,177 +1573,180 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             var $row = $(this).closest('tr');
             openDeleteDialog(function (confirmed) {
                 if (confirmed) {
+                    var rowId = $row.find('[data-row-id]').first().attr('data-row-id');
                     $row.remove();
+                    if (rowId) updateServiceKpiMetrics(rowId);
+                    showToast("Unsaved row removed.", "info", "Removed");
                 }
             });
         });
 
         $(document.body).on('click', '.consultingAddLink', function () {
-            $rowId = $(this).data("row-id"); //rowId
+            $rowId = $(this).data("row-id");
+            var $tbody = $('#consulting_tbody_' + $rowId);
+            if ($tbody.length > 0) {
+                var newRow = '<tr class="consulting_subsection">' +
+                    '<td><div class="table-edit-control"><input type="text" class="consultingContractDetails" name="consultingContractDetails" data-row-id="' + $rowId + '" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="consultingAmountDecided" name="consultingAmountDecided" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="consultingPaymentReceived" name="consultingPaymentReceived" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="consultingDepositDate datepicker" name="consultingDepositDate" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="consultingChequeDetails" name="consultingChequeDetails" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="consultingBankAcccountNo" name="consultingBankAcccountNo" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="consultingBalance" name="consultingBalance" placeholder="" readonly="" /></div></td>' +
+                    '<td style="text-align:center;"><a href="javascript:void(0)" class="consultingRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>' +
+                    '</tr>';
+                var $appended = $(newRow).appendTo($tbody);
+                $appended.find('.consultingDepositDate').datepicker({ dateFormat: 'dd.mm.yy' });
+                $tmpConsultCount = $tmpConsultCount + 1;
+                return;
+            }
+
+            // Fallback for legacy monolithic table
             $rowCB = $('.cbAddLink[data-row-id="' + $rowId + '"]').data("row-count");
-            if ($rowCB == "") {
-                $rowCB = 1;
-            }
-//            alert("$rowCB" + $rowCB);
+            if ($rowCB == "") { $rowCB = 1; }
             $rowConsult = $(this).data("row-count");
-            if ($rowConsult == "") {
-                $rowConsult = 1;
-            }
+            if ($rowConsult == "") { $rowConsult = 1; }
             $count = $rowCB + $topfixedRow + $rowConsult + 1;
-//            alert($count);
             var table = document.getElementById("service_details" + $rowId);
-            var row = table.insertRow($count);
-            $(this).data("row-count", ($rowConsult + 1));
-            var cell1 = row.insertCell(0);
-            var cell2 = row.insertCell(1);
-            var cell3 = row.insertCell(2);
-            var cell4 = row.insertCell(3);
-            var cell5 = row.insertCell(4);
-            var cell6 = row.insertCell(5);
-            var cell7 = row.insertCell(6);
-            var cell8 = row.insertCell(7);
-//            var cell9 = row.insertCell(7);
+            if (table) {
+                var row = table.insertRow($count);
+                $(this).data("row-count", ($rowConsult + 1));
+                var cell1 = row.insertCell(0);
+                var cell2 = row.insertCell(1);
+                var cell3 = row.insertCell(2);
+                var cell4 = row.insertCell(3);
+                var cell5 = row.insertCell(4);
+                var cell6 = row.insertCell(5);
+                var cell7 = row.insertCell(6);
+                var cell8 = row.insertCell(7);
 
-            cell1.style.padding = "0px";
-            cell2.style.padding = "0px";
-            cell3.style.padding = "0px";
-            cell4.style.padding = "0px";
-            cell5.style.padding = "0px";
-            cell6.style.padding = "0px";
-            cell7.style.padding = "0px";
-            cell8.style.padding = "0px";
-//            cell9.style.padding = "0px";
+                cell1.style.padding = "0px"; cell2.style.padding = "0px"; cell3.style.padding = "0px"; cell4.style.padding = "0px";
+                cell5.style.padding = "0px"; cell6.style.padding = "0px"; cell7.style.padding = "0px"; cell8.style.padding = "0px";
 
-            cell1.innerHTML = '<div class="table-edit-control"><label></label><input type="text" class="consultingContractDetails" id="consultingContractDetails" name="consultingContractDetails" data-row-id="' + $rowId + '" placeholder="" /></div>';
-            cell2.innerHTML = '<div class="table-edit-control"><label></label><input type="number" data-row-id="' + $rowId + '" class="consultingAmountDecided" id="consultingAmountDecided" name="consultingAmountDecided" placeholder="" /></div>';
-            cell3.innerHTML = '<div class="table-edit-control"><label></label><input type="number" data-row-id="' + $rowId + '" class="consultingPaymentReceived" id="consultingPaymentReceived" name="contractDetails" placeholder="" /></div>';
-            cell4.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="consultingDepositDate"  name="consultingDepositDate" placeholder="" /></div>';
-            cell5.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="consultingChequeDetails" id="consultingChequeDetails" name="consultingChequeDetails" placeholder="" /></div>';
-            cell6.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="consultingBankAcccountNo" id="consultingBankAcccountNo" name="consultingBankAcccountNo" placeholder="" /></div>';
-            cell7.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="consultingBalance" id="consultingBalance" name="consultingBalance" placeholder="" /></div>';
-            cell8.innerHTML = '<?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?><a href="javascript:void(0)" class="consultingRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a><?php } ?>';
-            row.className = "consulting_subsection ";
-            $tmpConsultCount = $tmpConsultCount + 1;
-
-//            alert("out");
-
+                cell1.innerHTML = '<div class="table-edit-control"><input type="text" class="consultingContractDetails" name="consultingContractDetails" data-row-id="' + $rowId + '" placeholder="" /></div>';
+                cell2.innerHTML = '<div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="consultingAmountDecided" name="consultingAmountDecided" placeholder="" /></div>';
+                cell3.innerHTML = '<div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="consultingPaymentReceived" name="consultingPaymentReceived" placeholder="" /></div>';
+                cell4.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="consultingDepositDate datepicker" name="consultingDepositDate" placeholder="" /></div>';
+                cell5.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="consultingChequeDetails" name="consultingChequeDetails" placeholder="" /></div>';
+                cell6.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="consultingBankAcccountNo" name="consultingBankAcccountNo" placeholder="" /></div>';
+                cell7.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="consultingBalance" name="consultingBalance" placeholder="" readonly="" /></div>';
+                cell8.innerHTML = '<?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?><a href="javascript:void(0)" class="consultingRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a><?php } ?>';
+                row.className = "consulting_subsection ";
+                $(row).find('.consultingDepositDate').datepicker({ dateFormat: 'dd.mm.yy' });
+                $tmpConsultCount = $tmpConsultCount + 1;
+            }
         });
 
-
         $(document.body).on('click', '.cbAddLink', function () {
+            $rowId = $(this).data("row-id");
+            var $tbody = $('#cb_tbody_' + $rowId);
+            if ($tbody.length > 0) {
+                var newRow = '<tr class="cb_subsection" id="cb_subsection_0">' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="contractDetails" name="contractDetails" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="amountDecided" name="amountDecided" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="paymentReceived" name="paymentReceived" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="depositDate datepicker" name="depositDate" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="chequeDetails" name="chequeDetails" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="bankAcccountNo" name="bankAcccountNo" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="balance" name="balance" placeholder="" readonly="" /></div></td>' +
+                    '<td style="text-align:center;"><a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>' +
+                    '</tr>';
+                var $appended = $(newRow).appendTo($tbody);
+                $appended.find('.depositDate').datepicker({ dateFormat: 'dd.mm.yy' });
+                $tmpCbCount = $tmpCbCount + 1;
+                return;
+            }
 
-//                    alert("in");
+            // Fallback for legacy monolithic table
             $newCount = 0;
             $rowCB = $(this).data("row-count");
-            if ($rowCB == "") {
-                $rowCB = 1;
-            }
-//            alert("$rowCB" + $rowCB);
-            $rowId = $(this).data("row-id");
-//                    if($rowId==""){
-//                        $newCount=1;
-//                    }
-//            alert("$rowId" + $rowId);
+            if ($rowCB == "") { $rowCB = 1; }
             $count = $rowCB + $topfixedRow;
-//            $rowConsult = $rowConsult + 1;
-//            alert("in");
             var table = document.getElementById("service_details" + $rowId);
-            var row = table.insertRow($count);
+            if (table) {
+                var row = table.insertRow($count);
+                $(this).data("row-count", $rowCB + 1);
+                $('.cbAddLinkForAdmin[data-row-id="' + $rowId + '"]').data("row-count", $rowCB + 1);
+                var cell1 = row.insertCell(0);
+                var cell2 = row.insertCell(1);
+                var cell3 = row.insertCell(2);
+                var cell4 = row.insertCell(3);
+                var cell5 = row.insertCell(4);
+                var cell6 = row.insertCell(5);
+                var cell7 = row.insertCell(6);
+                var cell8 = row.insertCell(7);
 
-            $(this).data("row-count", $rowCB + 1);
-            $('.cbAddLinkForAdmin[data-row-id="' + $rowId + '"]').data("row-count", $rowCB + 1);
+                cell1.style.padding = "0px"; cell2.style.padding = "0px"; cell3.style.padding = "0px"; cell4.style.padding = "0px";
+                cell5.style.padding = "0px"; cell6.style.padding = "0px"; cell7.style.padding = "0px"; cell8.style.padding = "0px";
 
-//                    alert($(this).data("row-count"));
-
-            var cell1 = row.insertCell(0);
-            var cell2 = row.insertCell(1);
-            var cell3 = row.insertCell(2);
-            var cell4 = row.insertCell(3);
-            var cell5 = row.insertCell(4);
-            var cell6 = row.insertCell(5);
-            var cell7 = row.insertCell(6);
-            var cell8 = row.insertCell(7);
-//            var cell9 = row.insertCell(8);
-
-            cell1.style.padding = "0px";
-            cell2.style.padding = "0px";
-            cell3.style.padding = "0px";
-            cell4.style.padding = "0px";
-            cell5.style.padding = "0px";
-            cell6.style.padding = "0px";
-            cell7.style.padding = "0px";
-            cell8.style.padding = "0px";
-//            cell9.style.padding = "0px";
-            
-            cell1.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="contractDetails" id="contractDetails" name="contractDetails" placeholder="" /></div>';
-            cell2.innerHTML = '<div class="table-edit-control"><label></label><input type="number" data-row-id="' + $rowId + '" class="amountDecided" id="amountDecided" name="amountDecided" placeholder="" /></div>';
-            cell3.innerHTML = '<div class="table-edit-control"><label></label><input type="number" data-row-id="' + $rowId + '" class="paymentReceived" id="paymentReceived" name="paymentReceived" placeholder="" /></div>';
-            cell4.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="depositDate"  name="depositDate" placeholder="" /></div>';
-            cell5.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="chequeDetails" id="chequeDetails" name="chequeDetails" placeholder="" /></div>';
-            cell6.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="bankAcccountNo" id="bankAcccountNo" name="bankAcccountNo" placeholder="" /></div>';
-            cell7.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="balance" id="balance" name="balance" placeholder="" /></div>';
-            cell8.innerHTML = '<?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?><a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a><?php } ?>';
-            row.className = "cb_subsection";
-            $tmpCbCount = $tmpCbCount + 1;
-
-//            alert("out");
-
+                cell1.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="contractDetails" name="contractDetails" placeholder="" /></div>';
+                cell2.innerHTML = '<div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="amountDecided" name="amountDecided" placeholder="" /></div>';
+                cell3.innerHTML = '<div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="paymentReceived" name="paymentReceived" placeholder="" /></div>';
+                cell4.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="depositDate datepicker" name="depositDate" placeholder="" /></div>';
+                cell5.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="chequeDetails" name="chequeDetails" placeholder="" /></div>';
+                cell6.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="bankAcccountNo" name="bankAcccountNo" placeholder="" /></div>';
+                cell7.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="balance" name="balance" placeholder="" readonly="" /></div>';
+                cell8.innerHTML = '<?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?><a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a><?php } ?>';
+                row.className = "cb_subsection";
+                $(row).find('.depositDate').datepicker({ dateFormat: 'dd.mm.yy' });
+                $tmpCbCount = $tmpCbCount + 1;
+            }
         });
 
         $(document.body).on('click', '.cbAddLinkForAdmin', function () {
+            $rowId = $(this).data("row-id");
+            var $tbody = $('#cb_tbody_' + $rowId);
+            if ($tbody.length > 0) {
+                var newRow = '<tr class="cb_subsection" id="cb_subsection_0">' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="contractDetails" name="contractDetails" placeholder="" value="Marketing Setup" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="amountDecided" name="amountDecided" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="paymentReceived" name="paymentReceived" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="depositDate datepicker" name="depositDate" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="chequeDetails" name="chequeDetails" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="bankAcccountNo" name="bankAcccountNo" placeholder="" /></div></td>' +
+                    '<td><div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="balance" name="balance" placeholder="" readonly="" /></div></td>' +
+                    '<td style="text-align:center;"><a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>' +
+                    '</tr>';
+                var $appended = $(newRow).appendTo($tbody);
+                $appended.find('.depositDate').datepicker({ dateFormat: 'dd.mm.yy' });
+                $tmpCbCount = $tmpCbCount + 1;
+                return;
+            }
 
-//                    alert("in");
+            // Fallback for legacy monolithic table
             $newCount = 0;
             $rowCB = $(this).data("row-count");
-            if ($rowCB == "") {
-                $rowCB = 1;
-            }
-//            alert("$rowCB" + $rowCB);
-            $rowId = $(this).data("row-id");
-//                    if($rowId==""){
-//                        $newCount=1;
-//                    }
-//            alert("$rowId" + $rowId);
+            if ($rowCB == "") { $rowCB = 1; }
             $count = $rowCB + $topfixedRow;
-//            $rowConsult = $rowConsult + 1;
-//            alert("in");
-
             var table = document.getElementById("service_details" + $rowId);
-            var row = table.insertRow($count);
-            $(this).data("row-count", $rowCB + 1);
-            $('.cbAddLink[data-row-id="' + $rowId + '"]').data("row-count", $rowCB + 1);
-//                    alert($(this).data("row-count"));
+            if (table) {
+                var row = table.insertRow($count);
+                $(this).data("row-count", $rowCB + 1);
+                $('.cbAddLink[data-row-id="' + $rowId + '"]').data("row-count", $rowCB + 1);
+                var cell1 = row.insertCell(0);
+                var cell2 = row.insertCell(1);
+                var cell3 = row.insertCell(2);
+                var cell4 = row.insertCell(3);
+                var cell5 = row.insertCell(4);
+                var cell6 = row.insertCell(5);
+                var cell7 = row.insertCell(6);
+                var cell8 = row.insertCell(7);
 
-            var cell1 = row.insertCell(0);
-            var cell2 = row.insertCell(1);
-            var cell3 = row.insertCell(2);
-            var cell4 = row.insertCell(3);
-            var cell5 = row.insertCell(4);
-            var cell6 = row.insertCell(5);
-            var cell7 = row.insertCell(6);
-            var cell8 = row.insertCell(7);
-//            var cell9 = row.insertCell(8);
+                cell1.style.padding = "0px"; cell2.style.padding = "0px"; cell3.style.padding = "0px"; cell4.style.padding = "0px";
+                cell5.style.padding = "0px"; cell6.style.padding = "0px"; cell7.style.padding = "0px"; cell8.style.padding = "0px";
 
-            cell1.style.padding = "0px";
-            cell2.style.padding = "0px";
-            cell3.style.padding = "0px";
-            cell4.style.padding = "0px";
-            cell5.style.padding = "0px";
-            cell6.style.padding = "0px";
-            cell7.style.padding = "0px";
-            cell8.style.padding = "0px";
-//            cell9.style.padding = "0px";
-
-            cell1.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="contractDetails" id="contractDetails" name="contractDetails" placeholder="" value="Marketing Setup" /></div>';
-            cell2.innerHTML = '<div class="table-edit-control"><label></label><input type="number" data-row-id="' + $rowId + '" class="amountDecided" id="amountDecided" name="amountDecided" placeholder="" /></div>';
-            cell3.innerHTML = '<div class="table-edit-control"><label></label><input type="number" data-row-id="' + $rowId + '" class="paymentReceived" id="paymentReceived" name="paymentReceived" placeholder="" /></div>';
-            cell4.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="depositDate"  name="depositDate" placeholder="" /></div>';
-            cell5.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="chequeDetails" id="chequeDetails" name="chequeDetails" placeholder="" /></div>';
-            cell6.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="bankAcccountNo" id="bankAcccountNo" name="bankAcccountNo" placeholder="" /></div>';
-            cell7.innerHTML = '<div class="table-edit-control"><label></label><input type="text" data-row-id="' + $rowId + '" class="balance" id="balance" name="balance" placeholder="" /></div>';
-//            cell8.innerHTML = '<a class="cbComment" data-row-id="' + $rowId + '"><i class="fa fa-comment-o" aria-hidden="true"></i></a><input type="hidden" class="cb-row-id" id="cb-row-id" name="cb-row-id" data-row-id="' + $rowId + '" value="">';
-            row.className = "cb_subsection";
-            $tmpCbCount = $tmpCbCount + 1;
+                cell1.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="contractDetails" name="contractDetails" placeholder="" value="Marketing Setup" /></div>';
+                cell2.innerHTML = '<div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="amountDecided" name="amountDecided" placeholder="" /></div>';
+                cell3.innerHTML = '<div class="table-edit-control"><input type="number" data-row-id="' + $rowId + '" class="paymentReceived" name="paymentReceived" placeholder="" /></div>';
+                cell4.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="depositDate datepicker" name="depositDate" placeholder="" /></div>';
+                cell5.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="chequeDetails" name="chequeDetails" placeholder="" /></div>';
+                cell6.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="bankAcccountNo" name="bankAcccountNo" placeholder="" /></div>';
+                cell7.innerHTML = '<div class="table-edit-control"><input type="text" data-row-id="' + $rowId + '" class="balance" name="balance" placeholder="" readonly="" /></div>';
+                cell8.innerHTML = '<?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?><a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a><?php } ?>';
+                row.className = "cb_subsection";
+                $(row).find('.depositDate').datepicker({ dateFormat: 'dd.mm.yy' });
+                $tmpCbCount = $tmpCbCount + 1;
+            }
         });
 
         $('.addNewService').click(function () {
@@ -1553,7 +1805,11 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             
             $serviceStr = '<div class="servicebox">\n\
                             <div class="row" id="service-row" class="service-row">\n\
-                                <div class="col-xs-12 qms_customer_name service_title" data-row-id="" style="text-align: center">Service - <span class="serviceStatus"></span><a class="saveService" data-row-id=""><i class="fa fa-floppy-o pull-right " style="color:white; padding-right:10px"></i></a></div>\n\
+                                <div class="col-xs-12 qms_customer_name service_title" data-row-id="" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 12px 18px;">\n\
+                                    <div class="service-title-left" style="display: flex; align-items: center; gap: 8px; min-width: 80px;"><i class="fa fa-folder-open-o service-folder-icon" style="color: #ffffff; font-size: 16px;"></i></div>\n\
+                                    <div class="service-title-center" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="font-weight: 800; font-size: 16px; letter-spacing: 0.6px; color: #ffffff; text-transform: uppercase;">SERVICE &mdash; <span class="serviceStatus" style="color: #ffd166; font-weight: 900; font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);"></span></span></div>\n\
+                                    <div class="service-title-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 80px;"><a class="saveService" data-row-id="" style="display:none !important;"></a><i class="fa fa-chevron-up service-collapse-indicator" style="color: #ffffff; font-size: 14px; margin-left: 4px;" title="Click to collapse / expand"></i></div>\n\
+                                </div>\n\
                                 </div>\n\
                                 <div class="servicebox-data" id="servicebox-data">\n\
                                 <div class="row" style="padding-top:10px">\n\
@@ -1596,54 +1852,111 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                                         </div>\n\
                                         <input type="hidden" class="customer_id" id="customer_id" data-row-id="" name="customer_id" value="<?php echo $_GET['customerid'] ?>"/>\n\
                                     </div>\n\
-                                    <div class="row">\n\
-                                        <div class="col-xs-12 table-responsive">\n\
-                                            <table class="table table-bordered table-hover table-sortable service_details" id="service_details">\n\
-                                                <thead>\n\
-                                                    <tr>\n\
-                                                        <th class="" width="18%" style="padding:2px"><small>Contract Details</small></th>\n\
-                                                        <th class="" width="13%" style="padding:2px"><small>Amount Decided</small></th>\n\
-                                                        <th class="" width="13%" style="padding:2px"><small>Payment received</small></th>\n\
-                                                        <th class="" width="13%" style="padding:2px"><small>Date of Deposit</small></th>\n\
-                                                        <th class="" width="13%" style="padding:2px"><small>Instrument No</small></th>\n\
-                                                        <th class="" width="13%" style="padding:2px"><small>Bank A/c </small></th>\n\
-                                                        <th class="" width="13%" style="padding:2px"><small>Balance</small></th>\n\
-                                                        <th class="" width="4%" style="padding:2px"><i class="fa fa-comment-o" aria-hidden="true"></i></th>\n\
-                                                    </tr>\n\
-                                                </thead>\n\
-                                                <tbody class = "" >\n\
-                                                    <tr class = "cb_section" >\n\
-                            <td colspan = 8 style="padding:0px;">CB <a class = "btn btn-success btn-xs cbAddLink pull-right" data-row-id="" data-row-count="" ><i class = "fa fa-plus-circle fa-lg pull-right"  style="padding:3px"></i></a ><?php if (Utitlity::checkForUserAdmin()) { ?><a class = "cbAddLinkForAdmin pull-right btn btn-success btn-xs " data-row-id="" data-row-count="" title="addCB" style="padding: 1px 5px;">MS </a ><?php } ?></td>\n\
-                        </tr>\n\
-                        <tr class = "cb_subsection previousCBData" id = "cb_subsection_0" >\n\
-                            <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input type = "text" data-row-id="" class = "contractDetails" id = "contractDetails" name = "contractDetails" value = "" placeholder = ""></div></td >\n\
-                            <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input type = "number" data-row-id="" class = "amountDecided" id = "amountDecided" name = "amountDecided"  value = "" placeholder = ""></div></td >\n\
-                            <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input type = "number" data-row-id="" class = "paymentReceived" id = "paymentReceived" name = "paymentReceived" value = "" placeholder = ""></div></td >\n\
-                            <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text" class = "depositDate"  name = "depositDate" value = "" placeholder = ""></div></td >\n\
-                            <td class = "" style="padding:0px;" ><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text" class = "chequeDetails" id = "chequeDetails" name = "chequeDetails" value = "" placeholder = "" ></div></td >\n\
-                            <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text" class = "bankAcccountNo"  id = "bankAcccountNo"  name = "bankAcccountNo" value = "" placeholder = ""></div></td >\n\
-                            <td class = "" style="padding:0px;" ><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text" class = "balance" id = "balance" name = "balance" value = "" placeholder = ""  readonly = ""></div></td >\n\
-                            <td class = "" style="padding:0px;" ></td>\n\
-                        </tr >\n\
-                    <input data-row-id="" type = "hidden" class = "cb-row-id" id = "cb-row-id"  name = "cb-row-id" value = "" >\n\
-                    <tr class = "consulting_section" >\n\
-                        <td colspan = 8 style="padding:0px">Consulting <a class = "consultingAddLink btn btn-warning btn-xs pull-right" data-row-count="" data-row-id=""><i class = "fa fa-plus-circle fa-lg pull-right" style="padding:3px"></i></a ></td>\n\
-                    </tr >\n\
-                    <tr class = "consulting_subsection previousConsultingData" >\n\
-                        <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text" class = "consultingContractDetails" id = "consultingContractDetails" name = "consultingContractDetails" value = "" placeholder = ""></div></td >\n\
-                        <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "number" class = "consultingAmountDecided" id = "consultingAmountDecided" name = "consultingAmountDecided" style="text-align: center" value = "" placeholder = ""></div></td >\n\
-                        <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "number" class = "consultingPaymentReceived" id = "consultingPaymentReceived" name = "consultingPaymentReceived" value = "" placeholder = ""></div></td >\n\
-                        <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text" class = "consultingDepositDate" id = "consultingDepositDate" name = "consultingDepositDate" value = "" placeholder = ""></div></td >\n\
-                        <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text"class = "consultingChequeDetails" id = "consultingChequeDetails" name = "consultingChequeDetails" value = "" placeholder = ""></div></td >\n\
-                        <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text" class = "consultingBankAcccountNo" id = "consultingBankAcccountNo" name = "consultingBankAcccountNo" value = "" placeholder = ""></div></td >\n\
-                        <td class = "" style="padding:0px;"><div class = "table-edit-control" ><label ></label><input data-row-id="" type = "text"class = "consultingBalance" id = "consultingBalance" name = "consultingBalance" value = "" placeholder = "" readonly = ""></div></td >\n\
-                        <td class = "" style="padding:0px;"></td>\n\
-                    </tr >\n\
-                    <input data-row-id="" type = "hidden"  class = "consulting-row-id " id = "consulting-row-id" name = "consulting-row-id" value = "" >\n\
-                    </tbody>\n\
-                </table >\n\
-            </div>\n\
-        </div>\n\
+                                    <div class="row" style="margin-bottom: 4px; padding: 0 10px;">\n\
+                                        <div class="col-xs-12">\n\
+                                            <div class="compact-payment-block consulting-payment-block">\n\
+                                                <div class="compact-table-card">\n\
+                                                    <div class="compact-table-header consulting-header">\n\
+                                                        <div class="header-title"><i class="fa fa-handshake-o"></i> Consulting Fees & Installments</div>\n\
+                                                        <div class="header-actions">\n\
+                                                            <button type="button" class="btn btn-xs serviceInvoiceBtn header-invoice-btn" data-customer="<?php echo htmlspecialchars($_GET['customerid']); ?>" data-service="" data-servicename="" data-firm=""><i class="fa fa-plus-circle"></i> Issue Invoice</button>\n\
+                                                            <a class="consultingAddLink btn btn-xs btn-compact-add" data-row-id="" data-row-count="1"><i class="fa fa-plus-circle"></i> Add Consulting Row</a>\n\
+                                                        </div>\n\
+                                                    </div>\n\
+                                                    <div class="table-responsive">\n\
+                                                        <table class="table table-bordered table-hover compact-payment-table service_details" id="consulting_table_">\n\
+                                                            <thead><tr>\n\
+                                                                <th width="24%">Installment Details</th>\n\
+                                                                <th width="13%" style="text-align: right;">Amount Decided</th>\n\
+                                                                <th width="13%" style="text-align: right;">Payment Received</th>\n\
+                                                                <th width="13%" style="text-align: center;">Date of Deposit</th>\n\
+                                                                <th width="13%">Instrument No</th>\n\
+                                                                <th width="10%">Bank A/c</th>\n\
+                                                                <th width="10%" style="text-align: right;">Balance</th>\n\
+                                                                <th width="4%" style="text-align: center;"><i class="fa fa-close"></i></th>\n\
+                                                            </tr></thead>\n\
+                                                            <tbody id="consulting_tbody_">\n\
+                                                                <tr class="consulting_subsection">\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingContractDetails" name="consultingContractDetails" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="number" data-row-id="" class="consultingAmountDecided" name="consultingAmountDecided" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="number" data-row-id="" class="consultingPaymentReceived" name="consultingPaymentReceived" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingDepositDate datepicker" name="consultingDepositDate" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingChequeDetails" name="consultingChequeDetails" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingBankAcccountNo" name="consultingBankAcccountNo" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="text" class="consultingBalance" data-row-id="" name="consultingBalance" value="" placeholder="" readonly="" /></div></td>\n\
+                                                                    <td style="text-align:center;"><a href="javascript:void(0)" class="consultingRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>\n\
+                                                                </tr>\n\
+                                                                <input data-row-id="" type="hidden" class="consulting-row-id" name="consulting-row-id" value="">\n\
+                                                            </tbody>\n\
+                                                        </table>\n\
+                                                    </div>\n\
+                                                </div>\n\
+                                                <div class="compact-summary-panel consulting-summary-panel">\n\
+                                                    <div class="summary-top-bar">\n\
+                                                        <div class="summary-title"><i class="fa fa-file-text-o" style="color: #0891b2; margin-right: 4px;"></i> Consulting Financial Summary</div>\n\
+                                                    </div>\n\
+                                                    <div class="compact-kpi-row">\n\
+                                                        <div class="kpi-chip kpi-consult-decided"><span class="kpi-chip-label">Consulting Decided</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                        <div class="kpi-chip kpi-consult-invoiced"><span class="kpi-chip-label">Total Invoiced</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                        <div class="kpi-chip kpi-consult-received"><span class="kpi-chip-label">Payment Received</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                        <div class="kpi-chip kpi-consult-balance kpi-chip-success"><span class="kpi-chip-label">Invoice Balance Due</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                    </div>\n\
+                                                </div>\n\
+                                            </div>\n\
+                                            <div class="payment-dotted-divider">\n\
+                                                <span class="divider-label"><i class="fa fa-university" style="color: #1e293b;"></i> Certification Body (CB) Payments</span>\n\
+                                            </div>\n\
+                                            <div class="compact-payment-block cb-payment-block">\n\
+                                                <div class="compact-table-card">\n\
+                                                    <div class="compact-table-header cb-header">\n\
+                                                        <div class="header-title"><i class="fa fa-university"></i> Certification Body (CB) Payments</div>\n\
+                                                        <div class="header-actions">\n\
+                                                            <a class="cbAddLinkForAdmin btn btn-xs btn-compact-ms" data-row-id="" data-row-count="1" title="Add Marketing Setup">MS</a>\n\
+                                                            <a class="btn btn-xs cbAddLink btn-compact-add" data-row-id="" data-row-count="1"><i class="fa fa-plus-circle"></i> Add CB Row</a>\n\
+                                                        </div>\n\
+                                                    </div>\n\
+                                                    <div class="table-responsive">\n\
+                                                        <table class="table table-bordered table-hover compact-payment-table service_details" id="cb_table_">\n\
+                                                            <thead><tr>\n\
+                                                                <th width="24%">Installment Details</th>\n\
+                                                                <th width="13%" style="text-align: right;">Amount Decided</th>\n\
+                                                                <th width="13%" style="text-align: right;">Payment Received</th>\n\
+                                                                <th width="13%" style="text-align: center;">Date of Deposit</th>\n\
+                                                                <th width="13%">Instrument No</th>\n\
+                                                                <th width="10%">Bank A/c</th>\n\
+                                                                <th width="10%" style="text-align: right;">Balance</th>\n\
+                                                                <th width="4%" style="text-align: center;"><i class="fa fa-close"></i></th>\n\
+                                                            </tr></thead>\n\
+                                                            <tbody id="cb_tbody_">\n\
+                                                                <tr class="cb_subsection" id="cb_subsection_0">\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="contractDetails" name="contractDetails" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="number" data-row-id="" class="amountDecided" name="amountDecided" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="number" data-row-id="" class="paymentReceived" name="paymentReceived" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="depositDate datepicker" name="depositDate" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="chequeDetails" name="chequeDetails" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="bankAcccountNo" name="bankAcccountNo" value="" placeholder="" /></div></td>\n\
+                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="balance" name="balance" value="" placeholder="" readonly="" /></div></td>\n\
+                                                                    <td style="text-align:center;"><a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>\n\
+                                                                </tr>\n\
+                                                                <input data-row-id="" type="hidden" class="cb-row-id" name="cb-row-id" value="">\n\
+                                                            </tbody>\n\
+                                                        </table>\n\
+                                                    </div>\n\
+                                                </div>\n\
+                                                <div class="compact-summary-panel cb-summary-panel">\n\
+                                                    <div class="summary-top-bar">\n\
+                                                        <div class="summary-title"><i class="fa fa-calculator" style="color: #1e293b; margin-right: 4px;"></i> Certification Body (CB) Financial Summary</div>\n\
+                                                    </div>\n\
+                                                    <div class="compact-kpi-row">\n\
+                                                        <div class="kpi-chip kpi-cb-decided"><span class="kpi-chip-label">CB Decided</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                        <div class="kpi-chip kpi-cb-received"><span class="kpi-chip-label">CB Payment Received</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                        <div class="kpi-chip kpi-cb-balance kpi-chip-success"><span class="kpi-chip-label">CB Balance Due</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                    </div>\n\
+                                                </div>\n\
+                                            </div>\n\
+                                        </div>\n\
+                                    </div>\n\
+                                </div></div>\n\
     </div>\n\
 </div>';
             $(".servicebox-bunch").append($serviceStr);

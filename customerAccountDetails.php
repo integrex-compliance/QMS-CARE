@@ -49,6 +49,49 @@
             $statement->bindParam(':serviceid', $serviceId);
             $statement->execute();
             $consultingList = $statement->fetchAll();
+                // Service-wise Invoices and Financials
+                $svcInvSql = "SELECT inv.*, cf.firm_name, cf.firm_abbrevation FROM invoice_details inv LEFT JOIN consulting_firm cf ON inv.firm_id = cf.consulting_firm_id WHERE inv.customer_id = :customer_id AND inv.service_id = :service_id AND inv.is_deleted = 'No' ORDER BY inv.invoice_date DESC, inv.invoice_id DESC";
+                $svcInvStmt = $db->prepare($svcInvSql);
+                $svcInvStmt->bindParam(':customer_id', $_GET['customerid']);
+                $svcInvStmt->bindParam(':service_id', $serviceId);
+                $svcInvStmt->execute();
+                $currentServiceInvoices = $svcInvStmt->fetchAll(PDO::FETCH_ASSOC);
+                $svcTotalInvoiced = 0;
+                foreach ($currentServiceInvoices as $invItem) {
+                    $svcTotalInvoiced += (float)$invItem['total_amount'];
+                }
+                // Separate CB Totals
+                $cbTotalDecided = 0;
+                $cbTotalReceived = 0;
+                if (!empty($certList)) {
+                    foreach ($certList as $cbItem) {
+                        if (isset($cbItem['amount_decided']) && is_numeric($cbItem['amount_decided'])) {
+                            $cbTotalDecided += (float)$cbItem['amount_decided'];
+                        }
+                        if (isset($cbItem['payment_received']) && is_numeric($cbItem['payment_received'])) {
+                            $cbTotalReceived += (float)$cbItem['payment_received'];
+                        }
+                    }
+                }
+                $cbTotalBalance = max(0, $cbTotalDecided - $cbTotalReceived);
+
+                // Separate Consulting Totals
+                $consultTotalDecided = 0;
+                $consultTotalReceived = 0;
+                if (!empty($consultingList)) {
+                    foreach ($consultingList as $conItem) {
+                        if (isset($conItem['consulting_amount_decided']) && is_numeric($conItem['consulting_amount_decided'])) {
+                            $consultTotalDecided += (float)$conItem['consulting_amount_decided'];
+                        }
+                        if (isset($conItem['consulting_payment_received']) && is_numeric($conItem['consulting_payment_received'])) {
+                            $consultTotalReceived += (float)$conItem['consulting_payment_received'];
+                        }
+                    }
+                }
+                $consultInvoiceBalance = max(0, $svcTotalInvoiced - $consultTotalReceived);
+
+                $svcTotalDecided = $cbTotalDecided + $consultTotalDecided;
+                $svcTotalReceived = $cbTotalReceived + $consultTotalReceived;
 
             $addServicesTo = "SELECT * FROM add_to_service";
             $statement = $db->prepare($addServicesTo);
@@ -91,7 +134,7 @@
             $statement->execute();
             $attachemntsList = $statement->fetchAll();
 
-            $invoices = "SELECT inv.invoice_id, firm_id, customer_id, customer_name, inv.invoice_no, invoice_date, total_amount, svc_desc, cf.firm_name, firm_abbrevation FROM invoice_details inv LEFT JOIN consulting_firm cf ON inv.firm_id = cf.consulting_firm_id WHERE `customer_id` = :customer";
+            $invoices = "SELECT inv.invoice_id, inv.firm_id, inv.customer_id, inv.service_id, inv.customer_name, inv.invoice_no, inv.invoice_date, inv.total_amount, inv.svc_desc, cf.firm_name, cf.firm_abbrevation, s.service_type AS linked_service_type FROM invoice_details inv LEFT JOIN consulting_firm cf ON inv.firm_id = cf.consulting_firm_id LEFT JOIN services s ON inv.service_id = s.service_id WHERE inv.customer_id = :customer AND inv.is_deleted = 'No' ORDER BY inv.invoice_date DESC, inv.invoice_id DESC";
             $statement = $db->prepare($invoices);
             $statement->bindParam(':customer', $_GET["customerid"]);
             $statement->execute();
@@ -415,6 +458,9 @@
                                                     <?php echo $invoice["total_amount"] ?>
                                                 </td>
                                                 <td class="" style="padding: 0px;">
+                                                    <?php if (!empty($invoice["linked_service_type"])) { ?>
+                                                        <span class="label label-primary" style="font-size:10px; margin-right:4px;"><?php echo htmlspecialchars($invoice["linked_service_type"]); ?></span>
+                                                    <?php } ?>
                                                     <?php echo $invoice["svc_desc"] ?>
                                                 </td>
                                                 <td class="" style="padding: 0px;">
@@ -524,6 +570,49 @@
                 $statement->bindParam(':serviceid', $serviceId);
                 $statement->execute();
                 $consultingList = $statement->fetchAll();
+                // Service-wise Invoices and Financials
+                $svcInvSql = "SELECT inv.*, cf.firm_name, cf.firm_abbrevation FROM invoice_details inv LEFT JOIN consulting_firm cf ON inv.firm_id = cf.consulting_firm_id WHERE inv.customer_id = :customer_id AND inv.service_id = :service_id AND inv.is_deleted = 'No' ORDER BY inv.invoice_date DESC, inv.invoice_id DESC";
+                $svcInvStmt = $db->prepare($svcInvSql);
+                $svcInvStmt->bindParam(':customer_id', $_GET['customerid']);
+                $svcInvStmt->bindParam(':service_id', $serviceId);
+                $svcInvStmt->execute();
+                $currentServiceInvoices = $svcInvStmt->fetchAll(PDO::FETCH_ASSOC);
+                $svcTotalInvoiced = 0;
+                foreach ($currentServiceInvoices as $invItem) {
+                    $svcTotalInvoiced += (float)$invItem['total_amount'];
+                }
+                // Separate CB Totals
+                $cbTotalDecided = 0;
+                $cbTotalReceived = 0;
+                if (!empty($certList)) {
+                    foreach ($certList as $cbItem) {
+                        if (isset($cbItem['amount_decided']) && is_numeric($cbItem['amount_decided'])) {
+                            $cbTotalDecided += (float)$cbItem['amount_decided'];
+                        }
+                        if (isset($cbItem['payment_received']) && is_numeric($cbItem['payment_received'])) {
+                            $cbTotalReceived += (float)$cbItem['payment_received'];
+                        }
+                    }
+                }
+                $cbTotalBalance = max(0, $cbTotalDecided - $cbTotalReceived);
+
+                // Separate Consulting Totals
+                $consultTotalDecided = 0;
+                $consultTotalReceived = 0;
+                if (!empty($consultingList)) {
+                    foreach ($consultingList as $conItem) {
+                        if (isset($conItem['consulting_amount_decided']) && is_numeric($conItem['consulting_amount_decided'])) {
+                            $consultTotalDecided += (float)$conItem['consulting_amount_decided'];
+                        }
+                        if (isset($conItem['consulting_payment_received']) && is_numeric($conItem['consulting_payment_received'])) {
+                            $consultTotalReceived += (float)$conItem['consulting_payment_received'];
+                        }
+                    }
+                }
+                $consultInvoiceBalance = max(0, $svcTotalInvoiced - $consultTotalReceived);
+
+                $svcTotalDecided = $cbTotalDecided + $consultTotalDecided;
+                $svcTotalReceived = $cbTotalReceived + $consultTotalReceived;
                 ?>
                 <?php
                 if (Utitlity::checkForUserConsultant() && $service1['add_service_to'] == 'Under Working') {
@@ -543,11 +632,30 @@
                 ?>
                 <div class="servicebox" style="display:<?php echo $saveButton ?> <?php //echo $srvcDisplay       ?>">
                     <div class="row" id="service-row<?php echo $serviceId; ?>" class="service-row"> 
-                        <div class="col-xs-12 qms_customer_name service_title" style="text-align: center" data-row-id="<?php echo $serviceId; ?>">Service - <span class="serviceStatus"><?php if (isset($service1['service_type'])) echo $service1['service_type']; ?></span>
-                            <a class="saveService" id="saveService" data-row-id="<?php echo $serviceId; ?>" title="Save Service"><i class="fa fa-floppy-o pull-right " style="color:white; padding-right:10px; display: <?php echo $saveButton; ?>"></i></a>
-                            <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin()) { ?>
-                                <a class="deleteService" id="deleteService" data-row-id="<?php echo $serviceId; ?>" title="Delete Service"><i class="fa fa-trash-o pull-right " style="color:white; padding-right:10px;"></i></a>
-                            <?php } ?>
+                        <div class="col-xs-12 qms_customer_name service_title" data-row-id="<?php echo $serviceId; ?>" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 12px 18px;">
+                            <div class="service-title-left" style="display: flex; align-items: center; gap: 8px; min-width: 80px;">
+                                <i class="fa <?php echo ($displayHtmlStr == '') ? 'fa-folder-open-o' : 'fa-folder-o'; ?> service-folder-icon" style="color: #ffffff; font-size: 16px;"></i>
+                                <?php if (count($currentServiceInvoices) > 0) { ?>
+                                    <span class="badge badge-inv-count" title="Total Invoices for this Service" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.35); color: #ffffff; font-size: 11px; vertical-align: middle;">
+                                        <i class="fa fa-file-text-o"></i> <?php echo count($currentServiceInvoices); ?> Inv
+                                    </span>
+                                <?php } ?>
+                            </div>
+
+                            <div class="service-title-center" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <span style="font-weight: 800; font-size: 16px; letter-spacing: 0.6px; color: #ffffff; text-transform: uppercase;">
+                                    SERVICE &mdash; <span class="serviceStatus" style="color: #ffd166; font-weight: 900; font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);"><?php if (isset($service1['service_type'])) echo $service1['service_type']; ?></span>
+                                </span>
+                            </div>
+
+                            <div class="service-title-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 80px;">
+                                <a class="saveService" data-row-id="<?php echo $serviceId; ?>" style="display:none !important;"></a>
+
+                                <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin()) { ?>
+                                    <a class="deleteService" id="deleteService" data-row-id="<?php echo $serviceId; ?>" title="Delete Service" style="color: #dc3545; background: #ffffff; width: 26px; height: 26px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; text-decoration: none; transition: all 0.15s ease;"><i class="fa fa-trash-o"></i></a>
+                                <?php } ?>
+                                <i class="fa <?php echo ($displayHtmlStr == '') ? 'fa-chevron-up' : 'fa-chevron-down'; ?> service-collapse-indicator" style="color: #ffffff; font-size: 14px; margin-left: 4px; transition: transform 0.2s;" title="Click to collapse / expand"></i>
+                            </div>
                         </div>
                     </div>
                     <div class="servicebox-data" id="servicebox-data<?php if (isset($serviceId)) echo $serviceId; ?>" <?php echo $displayHtmlStr ?>>
@@ -692,336 +800,474 @@
                                     </div>
                                 </div>
                             <?php } ?>
-                            <input type="hidden" class="customer_id" data-row-id="<?php echo $serviceId; ?>" id="customer_id" name="customer_id" value="<?php echo $_GET['customerid'] ?>" 
+                            <input type="hidden" class="customer_id" data-row-id="<?php echo $serviceId; ?>" id="customer_id" name="customer_id" value="<?php echo htmlspecialchars($_GET['customerid']); ?>" />
+                        </div>
+
+                    <div class="row" style="margin-top: 2px; margin-bottom: 4px; padding: 0 10px;">
+                        <div class="col-xs-12">
+                            <div class="compact-scope-bar" style="display: flex; align-items: center; gap: 6px; background: #ffffff; border: 1px solid #dce4ec; border-radius: 4px; padding: 2px 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                <span style="font-size: 10px; font-weight: 700; color: #1e3a8a; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fa fa-pencil-square-o" style="color: #2563eb;"></i> Scope / Contract:
+                                </span>
+                                <input type="text" name="audit-details" class="saveChanges auditDetailsText form-control" data-column="marketing_audit_type" id="audit-details" placeholder="Enter contract details, audit scope, or terms..." value="<?php if (isset($customer['marketing_audit_type']) && $customer['marketing_audit_type'] != '') echo htmlspecialchars($customer['marketing_audit_type']); ?>" style="flex: 1; height: 23px; min-height: 23px; max-height: 23px; border: 1px solid #cbd5e1; border-radius: 3px; padding: 1px 6px; font-size: 11px; line-height: 21px; background: #f8fafc; color: #0f172a; box-shadow: none;" />
+                            </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-xs-12 table-responsive">
-                            <table class="table table-bordered table-hover table-sortable" style="margin-bottom:2px;">
-                                <thead>
-                                    <tr style="background-color:#f5f5f5;">
-                                        <th colspan="8" style="padding:2px 8px; vertical-align:middle;">
-                                            <small style="font-size:12px; font-weight:bold; color:#003399;">Contract Details - </small>
-                                            <textarea name="audit-details" class="saveChanges auditDetailsText" data-column="marketing_audit_type" id="audit-details" rows="2" style="border:0; background:transparent; width:75%; outline:none; font-size:12px; line-height:16px; resize:none; overflow:hidden; padding:0; margin:0; box-shadow:none; border-radius:0; vertical-align:middle;"><?php
-                                                if (isset($customer['marketing_audit_type']) && $customer['marketing_audit_type'] != "") {
-                                                    echo $customer['marketing_audit_type'];
-                                                }
-                                                ?></textarea>
-                                        </th>
-                                    </tr>
-                                </thead>
-                            </table>
-                        </div>
-                    </div>
+                                        <!-- ========================================================
+                         SEPARATED & COMPACT PAYMENT SYSTEM (CONSULTING & CB)
+                         ======================================================== -->
+                    <div class="row" style="margin-bottom: 4px; padding: 0 10px;">
+                        <div class="col-xs-12">
 
-                    <div class="row">
-                        <div class="col-xs-12 table-responsive">
-                            <table class="table table-bordered table-hover table-sortable service_details" id="service_details<?php echo $serviceId; ?>">
-                                <thead>
-                                    <tr>
-                                        <th class="" width="20%" style="padding:2px">
-                                            <small>Installment Details</small>
-                                        </th>
-                                        <th class="" width="13%" style="padding:2px">
-                                            <small>Amount Decided</small>
-                                        </th>
-                                        <th class="" width="13%" style="padding:2px">
-                                            <small>Payment received</small>
-                                        </th>
-                                        <th class="" width="14%" style="padding:2px">
-                                            <small>Date of Deposit</small>
-                                        </th>
-                                        <th class="" width="13%" style="padding:2px">
-                                            <small>Instrument No</small>
-                                        </th>
-                                        <th class="" width="8%" style="padding:2px">
-                                            <small>Bank A/c </small>
-                                        </th>
-                                        <th class="" width="11%" style="padding:2px">
-                                            <small>Balance</small>
-                                        </th>
-                                        <th class="" width="4%" style="padding:2px">
-                                            <i class="fa fa-close" aria-hidden="true"></i>
-                                        </th>
-                                    </tr>
-                                </thead>
-
-                                <tbody class="">
-                                    <tr class="cb_section">
-                                        <td colspan=9 style="padding:0px;">CB  <?php if (!Utitlity::checkForUserConsultant()) { ?><a class="btn btn-xs btn-success cbAddLink pull-right" data-row-id="<?php echo $serviceId; ?>" data-row-count="<?php echo $cbCount['totalcb'] ?>" title="Add new cb row" style="padding: 1px 5px; "><i class="fa fa-plus-circle fa-lg " style="padding:3px"></i></a> <?php } ?> <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin()) { ?><a class = "cbAddLinkForAdmin pull-right btn btn-success btn-xs" data-row-id="<?php echo $serviceId; ?>" data-row-count="<?php echo $cbCount['totalcb'] ?>" title="Add Marketing Setup" style="padding: 1px 5px;"> MS </a > <?php } ?></td>
-                                    </tr>
-                                    <?php
-                                    if ($cbCount['totalcb'] > 0) {
-                                        foreach ($certList as $cert) {
-                                            $a = strtoupper($cert['contract_details']);
-                                            if ((startsWith($a, 'MARKETING SETUP') || startsWith($a, 'MARKETING-SETUP') || startsWith($a, 'MARKETING') || startsWith($a, 'SETUP') || startsWith($a, 'MARK') || startsWith($a, 'MARKE')) && !(Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin())) {
-                                                $display = 'none';
-                                            } else {
-                                                $display = '';
-                                            }
-                                            ?>
-                                            <tr class="cb_subsection previousCBData" id="cb_subsection_0" style="display: <?php echo $display ?>">
-                                                <td class="" style="padding:0px;">
-                                                    <div class="table-edit-control">
-                                                        <label></label>
-                                                        <input type="text" data-row-id="<?php echo $serviceId; ?>" class="contractDetails" id="contractDetails" name="contractDetails" value="<?php if (isset($cert['contract_details'])) echo $cert['contract_details']; ?>" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
-                                                    </div>
-                                                </td>
-                                                <td class="" style="padding:0px;">
-                                                    <div class="table-edit-control">
-                                                        <label></label>
-                                                        <input type="number" data-row-id="<?php echo $serviceId; ?>" class="amountDecided" id="amountDecided" name="amountDecided" style="text-align: center" value="<?php if (isset($cert['amount_decided'])) echo $cert['amount_decided']; ?>" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
-                                                    </div>
-                                                </td>
-                                                <td class="" style="padding:0px;">
-                                                    <div class="table-edit-control">
-                                                        <label></label>
-                                                        <input type="number" data-row-id="<?php echo $serviceId; ?>" class="paymentReceived" id="paymentReceived" name="paymentReceived" style="text-align: center" value="<?php if (isset($cert['payment_received'])) echo $cert['payment_received']; ?>" placeholder="" <?php echo $fieldAccess ?> />
-                                                    </div>
-                                                </td>
-                                                <td class="" style="padding:0px;">
-                                                    <div class="table-edit-control">
-                                                        <label></label>
-                                                        <input type="text" data-row-id="<?php echo $serviceId; ?>" class="<?php echo $addClassTo ?>"  name="depositDate" style="text-align: center" value="<?php if (isset($cert['deposit_date'])) echo simpleDateConversion($cert['deposit_date']); ?>" placeholder="" <?php echo $fieldAccess ?>>
-                                                    </div>
-                                                </td>
-                                                <td class="" style="padding:0px;">
-                                                    <div class="table-edit-control">
-                                                        <label></label>
-                                                        <input type="text" data-row-id="<?php echo $serviceId; ?>" class="chequeDetails" id="chequeDetails" name="chequeDetails" value="<?php if (isset($cert['check_details'])) echo $cert['check_details']; ?>" placeholder="" <?php echo $fieldAccess ?> />
-                                                    </div>
-                                                </td>
-                                                <td class="" style="padding:0px;">                                                    
-                                                    <div class="table-edit-control">
-                                                        <?php
-                                                        $cbBank = "SELECT * FROM consulting_abbrevation order by id desc";
-                                                        $statement = $db->prepare($cbBank);
-                                                        $statement->execute();
-                                                        $certAbbr = $statement->fetchAll();
-                                                        ?>
-                                                        <label></label>
-                                                        <select class="bankAcccountNo" id="bankAcccountNo" name="bankAcccountNo" data-row-id="<?php echo $serviceId; ?>" value="<?php if (isset($cert['bank_account'])) echo $cert['bank_account']; ?>" placeholder="" <?php echo $fieldAccess ?>>
-                                                            <option value="<?php if (isset($cert['bank_account'])) echo $cert['bank_account'] ?>" ><?php
-                                                                if (isset($cert['bank_account']) && !empty($cert['bank_account'])) {
-                                                                    echo $cert['bank_account'];
-                                                                } else {
-                                                                    echo "Select";
-                                                                }
-                                                                ?>
-                                                            </option>
-                                                            <?php foreach ($certAbbr as $bankAb) { ?>
-                                                                <option value="<?php if (isset($bankAb['bank_abbr'])) echo $bankAb['bank_abbr'] ?>" ><?php if (isset($bankAb['bank_abbr'])) echo $bankAb['bank_abbr'] ?></option>
-                                                            <?php } ?>
-                                                        </select>
-                                                        <!--<input type="text" class="bankAcccountNo" data-row-id="<?php echo $serviceId; ?>" id="bankAcccountNo" name="bankAcccountNo" value="<?php if (isset($cert['bank_account'])) echo $cert['bank_account']; ?>" placeholder="" <?php echo $fieldAccess ?> />-->
-                                                    </div>
-                                                </td>
-                                                <td class="" style="padding:0px;">
-                                                    <div class="table-edit-control">
-                                                        <label></label>
-                                                        <input type="text" data-row-id="<?php echo $serviceId; ?>" class="balance" id="balance" name="balance" style="text-align: center" value="<?php if (isset($cert['balance'])) echo $cert['balance']; ?>" placeholder="" readonly="" <?php echo $fieldAccess ?> />
-                                                    </div>
-                                                </td>
-                                                <td class="" style="padding:0px; text-align:center;">
-                                                    <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?>
-                                                        <input type="checkbox" class="cbDelete" data-row-id="<?php echo $serviceId; ?>" value="<?php echo $cert['certification_id'] ?>" style="display:none;">
-                                                        <a href="javascript:void(0)" class="cbDeleteIcon" data-row-id="<?php echo $serviceId; ?>" data-id="<?php echo $cert['certification_id']; ?>"><i class="fa fa-close" aria-hidden="true"></i></a>
-                                                    <?php } ?>
-                                                </td>
-                                            </tr>
-                                        <input type="hidden" data-row-id="<?php echo $serviceId; ?>" class="cb-row-comment <?php echo $cert['certification_id'] ?>" id="cb-row-comment" name="cb-row-comment" value="">
-                                        <input type="hidden" data-row-id="<?php echo $serviceId; ?>" class="cb-row-id <?php echo $cert['certification_id'] ?>" id="cb-row-id" name="cb-row-id" value="<?php if (isset($cert['certification_id'])) echo $cert['certification_id']; ?>">
-                                    <?php }
-                                    ?>
-
-                                <?php } else {
-                                    ?>
-                                    <tr class="cb_subsection" id="cb_subsection_0" style="padding:0px;">
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="contractDetails" id="contractDetails" name="contractDetails" value="" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="number" data-row-id="<?php echo $serviceId; ?>" class="amountDecided" id="amountDecided" name="amountDecided" style="text-align: center" value="" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="number" data-row-id="<?php echo $serviceId; ?>" class="paymentReceived" id="paymentReceived" name="paymentReceived" style="text-align: center" value="" placeholder="" <?php echo $fieldAccess ?> />
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="<?php echo $addClassTo ?>"  name="depositDate" value="" style="text-align: center" placeholder="" <?php echo $fieldAccess ?> />
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="chequeDetails" id="chequeDetails" name="chequeDetails" value="" placeholder="" <?php echo $fieldAccess ?> />
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="bankAcccountNo" id="bankAcccountNo" name="bankAcccountNo" value="" placeholder="" <?php echo $fieldAccess ?> />
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" class="balance" data-row-id="<?php echo $serviceId; ?>" id="balance" name="balance" style="text-align: center" value="" placeholder="" readonly="" />
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px; text-align:center;">
-                                            <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?>
-                                                <a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a>
+                            <!-- SECTION 1: CONSULTING FEES & INSTALLMENTS -->
+                            <div class="compact-payment-block consulting-payment-block">
+                                <div class="compact-table-card">
+                                    <div class="compact-table-header consulting-header">
+                                        <div class="header-title">
+                                            <i class="fa fa-handshake-o"></i> Consulting Fees & Installments
+                                        </div>
+                                        <div class="header-actions">
+                                            <?php if (!Utitlity::checkForUserConsultant()) { ?>
+                                                <button type="button" class="btn btn-xs serviceInvoiceBtn header-invoice-btn" 
+                                                        data-customer="<?php echo htmlspecialchars($_GET['customerid']); ?>" 
+                                                        data-service="<?php echo $serviceId; ?>" 
+                                                        data-servicename="<?php echo htmlspecialchars($service1['service_type'] ?: ''); ?>"
+                                                        data-firm="<?php echo htmlspecialchars($service1['consulting_firm'] ?: ''); ?>"
+                                                        title="Issue Invoice for <?php echo htmlspecialchars($service1['service_type'] ?: 'Service'); ?>">
+                                                    <i class="fa fa-plus-circle"></i> Issue Invoice for <?php echo htmlspecialchars($service1['service_type'] ?: 'Service'); ?>
+                                                </button>
+                                                <a class="consultingAddLink btn btn-xs btn-compact-add" title="Add new consulting installment row" data-row-id="<?php echo $serviceId; ?>" data-row-count="<?php echo $consultingsListCount['totalconsulting'] ?>">
+                                                    <i class="fa fa-plus-circle"></i> Add Consulting Row
+                                                </a>
                                             <?php } ?>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-                                <input type="hidden" class="contractDetailsHidden" id="contractDetailsHidden" name="contractDetailsHidden" value="">
-                                <tr class="consulting_section">
-                                    <td colspan=9 style="padding:0px">Consulting <?php if (!Utitlity::checkForUserConsultant()) { ?><a class="consultingAddLink btn btn-warning btn-xs pull-right" title="Add new consulting row" data-row-id="<?php echo $serviceId; ?>" data-row-count="<?php echo $consultingsListCount['totalconsulting'] ?>"><i class="fa fa-plus-circle fa-lg pull-right" style="padding:3px; "></i></a><?php } ?></td>
-                                </tr>
-                                <?php
-                                if ($consultingsListCount['totalconsulting'] > 0) {
-                                    foreach ($consultingList as $consult) {
-                                        ?>
-                                        <tr class="consulting_subsection previousConsultingData">
-                                            <td class="" style="padding:0px;">
-                                                <div class="table-edit-control">
-                                                    <label></label>
-                                                    <input data-row-id="<?php echo $serviceId; ?>" type="text" class="consultingContractDetails" id="consultingContractDetails" name="consultingContractDetails" value="<?php if (isset($consult['consulting_fees'])) echo $consult['consulting_fees']; ?>" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
-                                                </div>
-                                            </td>
-                                            <td class="" style="padding:0px;">
-                                                <div class="table-edit-control">
-                                                    <label></label>
-                                                    <input type="number" data-row-id="<?php echo $serviceId; ?>" class="consultingAmountDecided" id="consultingAmountDecided" name="consultingAmountDecided" style="text-align: center" value="<?php if (isset($consult['consulting_amount_decided'])) echo $consult['consulting_amount_decided']; ?>" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
-                                                </div>
-                                            </td>
-                                            <td class="" style="padding:0px;">
-                                                <div class="table-edit-control">
-                                                    <label></label>
-                                                    <input type="number" data-row-id="<?php echo $serviceId; ?>" class="consultingPaymentReceived" id="consultingPaymentReceived" name="consultingPaymentReceived" style="text-align: center" value="<?php if (isset($consult['consulting_payment_received'])) echo $consult['consulting_payment_received']; ?>" placeholder="" <?php echo $fieldAccess ?> />
-                                                </div>
-                                            </td>
-                                            <td class="" style="padding:0px;">
-                                                <div class="table-edit-control">
-                                                    <label></label>
-                                                    <input type="text" data-row-id="<?php echo $serviceId; ?>" class="<?php echo $addClassToConsulting ?>"  name="consultingDepositDate" style="text-align: center" value="<?php if (isset($consult['consulting_deposit_date'])) echo simpleDateConversion($consult['consulting_deposit_date']); ?>" placeholder="" <?php echo $fieldAccess ?> />
-                                                </div>
-                                            </td>
-                                            <td class="" style="padding:0px;">
-                                                <div class="table-edit-control">
-                                                    <label></label>
-                                                    <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingChequeDetails" id="consultingChequeDetails" name="consultingChequeDetails" value="<?php if (isset($consult['consulting_chque_details'])) echo $consult['consulting_chque_details']; ?>" placeholder="" <?php echo $fieldAccess ?> />
-                                                </div>
-                                            </td>
-                                            <td class="" style="padding:0px;">
-                                                <div class="table-edit-control">
-                                                    <?php
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover compact-payment-table service_details" id="consulting_table_<?php echo $serviceId; ?>">
+                                            <thead>
+                                                <tr>
+                                                    <th width="24%">Installment Details</th>
+                                                    <th width="13%" style="text-align: right;">Amount Decided</th>
+                                                    <th width="13%" style="text-align: right;">Payment Received</th>
+                                                    <th width="13%" style="text-align: center;">Date of Deposit</th>
+                                                    <th width="13%">Instrument No</th>
+                                                    <th width="10%">Bank A/c</th>
+                                                    <th width="10%" style="text-align: right;">Balance</th>
+                                                    <th width="4%" style="text-align: center;"><i class="fa fa-close"></i></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="consulting_tbody_<?php echo $serviceId; ?>">
+                                                <?php
+                                                if ($consultingsListCount['totalconsulting'] > 0) {
                                                     $cfrmAbr = "SELECT * FROM consulting_abbrevation ";
                                                     $statement = $db->prepare($cfrmAbr);
                                                     $statement->execute();
                                                     $abList = $statement->fetchAll();
-                                                    ?>
-                                                    <label></label>
-                                                    <select class="consultingBankAcccountNo" id="consultingBankAcccountNo" name="consultingBankAcccountNo" data-row-id="<?php echo $serviceId; ?>" value="<?php if (isset($consult['bank_ac'])) echo $consult['bank_ac']; ?>" placeholder="" <?php echo $fieldAccess ?>>
-                                                        <option value="<?php if (isset($consult['bank_ac'])) echo $consult['bank_ac'] ?>" ><?php
-                                                            if (isset($consult['bank_ac']) && !empty($consult['bank_ac'])) {
-                                                                echo $consult['bank_ac'];
-                                                            } else {
-                                                                echo "Select";
-                                                            }
-                                                            ?>
-                                                        </option>
-                                                        <?php foreach ($abList as $bankAb) { ?>
-                                                            <option value="<?php if (isset($bankAb['bank_abbr'])) echo $bankAb['bank_abbr'] ?>" ><?php if (isset($bankAb['bank_abbr'])) echo $bankAb['bank_abbr'] ?></option>
-                                                        <?php } ?>
-                                                    </select>
-                                                <!--<input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingBankAcccountNo" id="consultingBankAcccountNo" name="consultingBankAcccountNo" value="<?php if (isset($consult['bank_ac'])) echo $consult['bank_ac']; ?>" placeholder="" <?php echo $fieldAccess ?> />-->
-                                                </div>
-                                            </td>
-                                            <td class="" style="padding:0px;">
-                                                <div class="table-edit-control">
-                                                    <label></label>
-                                                    <input type="text" class="consultingBalance" data-row-id="<?php echo $serviceId; ?>" id="consultingBalance" name="consultingBalance" style="text-align: center" value="<?php if (isset($consult['consulting_balance'])) echo $consult['consulting_balance']; ?>" placeholder="" readonly="" />
-                                                </div>
-                                            </td>
-                                            <td class="" style="padding:0px; text-align:center;">
-                                                <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?>
-                                                    <input type="checkbox" class="consultingDelete" data-row-id="<?php echo $serviceId; ?>" value="<?php if (isset($consult['consulting_id'])) echo $consult['consulting_id']; ?>" style="display:none;"/>
-                                                    <a href="javascript:void(0)" class="consultingDeleteIcon" data-row-id="<?php echo $serviceId; ?>" data-id="<?php if (isset($consult['consulting_id'])) echo $consult['consulting_id']; ?>"><i class="fa fa-close" aria-hidden="true"></i></a>
-                                                <?php } ?>
-                                            </td>
-                                        </tr>
-                                        <input type="hidden" data-row-id="<?php echo $serviceId; ?>" class="consulting-row-id <?php echo $consult['consulting_id'] ?>" id="consulting-row-id" name="consulting-row-id" value="<?php if (isset($consult['consulting_id'])) echo $consult['consulting_id']; ?>">
-                                    <?php }
-                                    ?>
 
-                                <?php } else {
-                                    ?>
-                                    <tr class="consulting_subsection">
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingContractDetails" id="consultingContractDetails" name="consultingContractDetails" value="" placeholder="" <?php echo $fieldAccess ?><?php echo $financeAccess ?>/>
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="number" data-row-id="<?php echo $serviceId; ?>" class="consultingAmountDecided" id="consultingAmountDecided" style="text-align: center" name="consultingAmountDecided" value="" placeholder="" <?php echo $fieldAccess ?><?php echo $financeAccess ?>/>
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="number" data-row-id="<?php echo $serviceId; ?>" class="consultingPaymentReceived" id="consultingPaymentReceived" style="text-align: center" name="consultingPaymentReceived" value="" placeholder="" <?php echo $fieldAccess ?>/>
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="<?php echo $addClassToConsulting ?>" name="consultingDepositDate" style="text-align: center" value="" placeholder="" <?php echo $fieldAccess ?>/>
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingChequeDetails" id="consultingChequeDetails" name="consultingChequeDetails" value="" placeholder="" <?php echo $fieldAccess ?>/>
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingBankAcccountNo" id="consultingBankAcccountNo" name="consultingBankAcccountNo" value="" placeholder="" <?php echo $fieldAccess ?>/>
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px;">
-                                            <div class="table-edit-control">
-                                                <label></label>
-                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingBalance" id="consultingBalance" name="consultingBalance" style="text-align: center" value="" placeholder="" readonly="" />
-                                            </div>
-                                        </td>
-                                        <td class="" style="padding:0px; text-align:center;">
-                                            <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?>
-                                                <a href="javascript:void(0)" class="consultingRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a>
+                                                    foreach ($consultingList as $consult) {
+                                                        ?>
+                                                        <tr class="consulting_subsection previousConsultingData">
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input data-row-id="<?php echo $serviceId; ?>" type="text" class="consultingContractDetails" id="consultingContractDetails" name="consultingContractDetails" value="<?php if (isset($consult['consulting_fees'])) echo htmlspecialchars($consult['consulting_fees']); ?>" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="number" data-row-id="<?php echo $serviceId; ?>" class="consultingAmountDecided" id="consultingAmountDecided" name="consultingAmountDecided" value="<?php if (isset($consult['consulting_amount_decided'])) echo $consult['consulting_amount_decided']; ?>" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="number" data-row-id="<?php echo $serviceId; ?>" class="consultingPaymentReceived" id="consultingPaymentReceived" name="consultingPaymentReceived" value="<?php if (isset($consult['consulting_payment_received'])) echo $consult['consulting_payment_received']; ?>" placeholder="" <?php echo $fieldAccess ?> />
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="text" data-row-id="<?php echo $serviceId; ?>" class="<?php echo $addClassToConsulting ?>" name="consultingDepositDate" value="<?php if (isset($consult['consulting_deposit_date'])) echo simpleDateConversion($consult['consulting_deposit_date']); ?>" placeholder="" <?php echo $fieldAccess ?> />
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingChequeDetails" id="consultingChequeDetails" name="consultingChequeDetails" value="<?php if (isset($consult['consulting_chque_details'])) echo htmlspecialchars($consult['consulting_chque_details']); ?>" placeholder="" <?php echo $fieldAccess ?> />
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <select class="consultingBankAcccountNo" id="consultingBankAcccountNo" name="consultingBankAcccountNo" data-row-id="<?php echo $serviceId; ?>" <?php echo $fieldAccess ?>>
+                                                                        <option value="<?php if (isset($consult['bank_ac'])) echo htmlspecialchars($consult['bank_ac']); ?>">
+                                                                            <?php echo (isset($consult['bank_ac']) && !empty($consult['bank_ac'])) ? htmlspecialchars($consult['bank_ac']) : 'Select'; ?>
+                                                                        </option>
+                                                                        <?php foreach ($abList as $bankAb) { ?>
+                                                                            <option value="<?php if (isset($bankAb['bank_abbr'])) echo htmlspecialchars($bankAb['bank_abbr']); ?>">
+                                                                                <?php if (isset($bankAb['bank_abbr'])) echo htmlspecialchars($bankAb['bank_abbr']); ?>
+                                                                            </option>
+                                                                        <?php } ?>
+                                                                    </select>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="text" class="consultingBalance" data-row-id="<?php echo $serviceId; ?>" id="consultingBalance" name="consultingBalance" value="<?php if (isset($consult['consulting_balance'])) echo $consult['consulting_balance']; ?>" placeholder="" readonly="" />
+                                                                </div>
+                                                            </td>
+                                                            <td style="text-align:center;">
+                                                                <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?>
+                                                                    <input type="checkbox" class="consultingDelete" data-row-id="<?php echo $serviceId; ?>" value="<?php if (isset($consult['consulting_id'])) echo $consult['consulting_id']; ?>" style="display:none;"/>
+                                                                    <a href="javascript:void(0)" class="consultingDeleteIcon" data-row-id="<?php echo $serviceId; ?>" data-id="<?php if (isset($consult['consulting_id'])) echo $consult['consulting_id']; ?>"><i class="fa fa-close" aria-hidden="true"></i></a>
+                                                                <?php } ?>
+                                                            </td>
+                                                        </tr>
+                                                        <input type="hidden" data-row-id="<?php echo $serviceId; ?>" class="consulting-row-id <?php echo $consult['consulting_id'] ?>" id="consulting-row-id" name="consulting-row-id" value="<?php if (isset($consult['consulting_id'])) echo $consult['consulting_id']; ?>">
+                                                    <?php }
+                                                } else { ?>
+                                                    <tr class="consulting_subsection">
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingContractDetails" id="consultingContractDetails" name="consultingContractDetails" value="" placeholder="" <?php echo $fieldAccess ?><?php echo $financeAccess ?>/>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="number" data-row-id="<?php echo $serviceId; ?>" class="consultingAmountDecided" id="consultingAmountDecided" name="consultingAmountDecided" value="" placeholder="" <?php echo $fieldAccess ?><?php echo $financeAccess ?>/>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="number" data-row-id="<?php echo $serviceId; ?>" class="consultingPaymentReceived" id="consultingPaymentReceived" name="consultingPaymentReceived" value="" placeholder="" <?php echo $fieldAccess ?>/>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="<?php echo $addClassToConsulting ?>" name="consultingDepositDate" value="" placeholder="" <?php echo $fieldAccess ?>/>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingChequeDetails" id="consultingChequeDetails" name="consultingChequeDetails" value="" placeholder="" <?php echo $fieldAccess ?>/>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingBankAcccountNo" id="consultingBankAcccountNo" name="consultingBankAcccountNo" value="" placeholder="" <?php echo $fieldAccess ?>/>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="consultingBalance" id="consultingBalance" name="consultingBalance" value="" placeholder="" readonly="" />
+                                                            </div>
+                                                        </td>
+                                                        <td style="text-align:center;">
+                                                            <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?>
+                                                                <a href="javascript:void(0)" class="consultingRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a>
+                                                            <?php } ?>
+                                                        </td>
+                                                    </tr>
+                                                <?php } ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Compact Consulting Financial Summary & Invoices -->
+                                <div class="compact-summary-panel consulting-summary-panel">
+                                    <div class="summary-top-bar">
+                                        <div class="summary-title">
+                                            <i class="fa fa-file-text-o" style="color: #0891b2; margin-right: 4px;"></i> 
+                                            Consulting Financial Summary & Invoices &mdash; <span style="color: #0891b2;"><?php echo htmlspecialchars($service1['service_type'] ?: 'Service #' . $serviceId); ?></span>
+                                        </div>
+                                        <div class="summary-actions">
+                                            <?php if (!Utitlity::checkForUserConsultant()) { ?>
+                                                <button type="button" class="btn btn-xs btn-primary serviceInvoiceBtn compact-invoice-btn" 
+                                                        data-customer="<?php echo htmlspecialchars($_GET['customerid']); ?>" 
+                                                        data-service="<?php echo $serviceId; ?>" 
+                                                        data-servicename="<?php echo htmlspecialchars($service1['service_type'] ?: ''); ?>"
+                                                        data-firm="<?php echo htmlspecialchars($service1['consulting_firm'] ?: ''); ?>">
+                                                    <i class="fa fa-plus-circle"></i> Issue Invoice for <?php echo htmlspecialchars($service1['service_type'] ?: 'Service'); ?>
+                                                </button>
                                             <?php } ?>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-                                </tbody>
-                            </table>
+                                        </div>
+                                    </div>
+
+                                    <!-- 4 Compact KPI chips for Consulting -->
+                                    <div class="compact-kpi-row">
+                                        <div class="kpi-chip kpi-consult-decided">
+                                            <span class="kpi-chip-label">Consulting Decided</span>
+                                            <span class="kpi-chip-value">₹ <?php echo number_format($consultTotalDecided, 2); ?></span>
+                                        </div>
+                                        <div class="kpi-chip kpi-consult-invoiced">
+                                            <span class="kpi-chip-label">Total Invoiced</span>
+                                            <span class="kpi-chip-value">₹ <?php echo number_format($svcTotalInvoiced, 2); ?></span>
+                                        </div>
+                                        <div class="kpi-chip kpi-consult-received">
+                                            <span class="kpi-chip-label">Payment Received</span>
+                                            <span class="kpi-chip-value">₹ <?php echo number_format($consultTotalReceived, 2); ?></span>
+                                        </div>
+                                        <?php 
+                                            $kpiConsultBalClass = ($consultInvoiceBalance > 0) ? 'kpi-chip-danger' : 'kpi-chip-success';
+                                        ?>
+                                        <div class="kpi-chip kpi-consult-balance <?php echo $kpiConsultBalClass; ?>">
+                                            <span class="kpi-chip-label">Invoice Balance Due</span>
+                                            <span class="kpi-chip-value">₹ <?php echo number_format($consultInvoiceBalance, 2); ?></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Invoices List for this Service (if any) -->
+                                    <?php if (count($currentServiceInvoices) > 0) { ?>
+                                        <div class="table-responsive" style="margin-top: 6px; border-radius: 4px; overflow: hidden; border: 1px solid #e2e8f0; background: #fff;">
+                                            <table class="table table-hover table-condensed table-striped" style="margin-bottom: 0; font-size: 11.5px;">
+                                                <thead style="background: #f8fafc; color: #475569;">
+                                                    <tr>
+                                                        <th style="padding: 5px 8px;">Invoice No.</th>
+                                                        <th style="padding: 5px 8px;">Date</th>
+                                                        <th style="padding: 5px 8px;">Consulting Firm</th>
+                                                        <th style="padding: 5px 8px;">Service Desc</th>
+                                                        <th style="padding: 5px 8px; text-align: right;">Total Amount</th>
+                                                        <th style="padding: 5px 8px; text-align: center;">Status</th>
+                                                        <th style="padding: 5px 8px; text-align: center;">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php 
+                                                    $cumPaid = $consultTotalReceived;
+                                                    foreach ($currentServiceInvoices as $sInv) { 
+                                                        $curAmt = (float)$sInv['total_amount'];
+                                                        if ($cumPaid >= $curAmt && $curAmt > 0) {
+                                                            $payStatus = '<span class="label label-success" style="font-size:9.5px; padding:2px 6px; border-radius:10px;"><i class="fa fa-check"></i> Paid</span>';
+                                                            $cumPaid -= $curAmt;
+                                                        } elseif ($cumPaid > 0 && $curAmt > 0) {
+                                                            $payStatus = '<span class="label label-warning" style="font-size:9.5px; padding:2px 6px; border-radius:10px;"><i class="fa fa-clock-o"></i> Partial</span>';
+                                                            $cumPaid = 0;
+                                                        } else {
+                                                            $payStatus = '<span class="label label-danger" style="font-size:9.5px; padding:2px 6px; border-radius:10px;"><i class="fa fa-exclamation-circle"></i> Unpaid</span>';
+                                                        }
+                                                    ?>
+                                                        <tr>
+                                                            <td style="padding: 5px 8px; font-weight: 600; color: #1e40af;">
+                                                                <?php echo htmlspecialchars($sInv['firm_abbrevation'] . '/' . $sInv['invoice_no']); ?>
+                                                            </td>
+                                                            <td style="padding: 5px 8px; color: #64748b;">
+                                                                <?php echo simpleDateConversion($sInv['invoice_date']); ?>
+                                                            </td>
+                                                            <td style="padding: 5px 8px; color: #334155;">
+                                                                <?php echo htmlspecialchars($sInv['firm_name']); ?>
+                                                            </td>
+                                                            <td style="padding: 5px 8px; color: #475569;">
+                                                                <?php echo htmlspecialchars($sInv['svc_desc']); ?>
+                                                            </td>
+                                                            <td style="padding: 5px 8px; text-align: right; font-weight: 700; color: #0f172a;">
+                                                                ₹ <?php echo number_format($curAmt, 2); ?>
+                                                            </td>
+                                                            <td style="padding: 5px 8px; text-align: center;">
+                                                                <?php echo $payStatus; ?>
+                                                            </td>
+                                                            <td style="padding: 5px 8px; text-align: center;">
+                                                                <a class="viewInvoice btn btn-default btn-xs" data-id="<?php echo $sInv['invoice_id']; ?>" data-invoice="<?php echo $sInv['invoice_no']; ?>" data-customer="<?php echo $sInv['customer_id']; ?>" title="View / Print PDF" style="margin-right: 3px; color: #dc2626; padding: 1px 5px; font-size: 10.5px;">
+                                                                    <i class="fa fa-file-pdf-o"></i> PDF
+                                                                </a>
+                                                                <a class="editInvoice btn btn-default btn-xs" data-id="<?php echo $sInv['invoice_id']; ?>" data-firm="<?php echo $sInv['firm_id']; ?>" data-customer="<?php echo $sInv['customer_id']; ?>" title="Edit Invoice" style="color: #2563eb; padding: 1px 5px; font-size: 10.5px;">
+                                                                    <i class="fa fa-pencil"></i> Edit
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                    <?php } ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    <?php } ?>
+                                </div>
+                            </div>
+
+                            <!-- DOTTED SEPARATOR LINE BETWEEN CONSULTING AND CB -->
+                            <div class="payment-dotted-divider">
+                                <span class="divider-label"><i class="fa fa-university" style="color: #1e293b;"></i> Certification Body (CB) Payments</span>
+                            </div>
+
+                            <!-- SECTION 2: CERTIFICATION BODY (CB) PAYMENTS -->
+                            <div class="compact-payment-block cb-payment-block">
+                                <div class="compact-table-card">
+                                    <div class="compact-table-header cb-header">
+                                        <div class="header-title">
+                                            <i class="fa fa-university"></i> Certification Body (CB) Payments
+                                        </div>
+                                        <div class="header-actions">
+                                            <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin()) { ?>
+                                                <a class="cbAddLinkForAdmin btn btn-xs btn-compact-ms" data-row-id="<?php echo $serviceId; ?>" data-row-count="<?php echo $cbCount['totalcb'] ?>" title="Add Marketing Setup">
+                                                    MS
+                                                </a>
+                                            <?php } ?>
+                                            <?php if (!Utitlity::checkForUserConsultant()) { ?>
+                                                <a class="btn btn-xs cbAddLink btn-compact-add" data-row-id="<?php echo $serviceId; ?>" data-row-count="<?php echo $cbCount['totalcb'] ?>" title="Add new CB payment installment row">
+                                                    <i class="fa fa-plus-circle"></i> Add CB Row
+                                                </a>
+                                            <?php } ?>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover compact-payment-table service_details" id="cb_table_<?php echo $serviceId; ?>">
+                                            <thead>
+                                                <tr>
+                                                    <th width="24%">Installment Details</th>
+                                                    <th width="13%" style="text-align: right;">Amount Decided</th>
+                                                    <th width="13%" style="text-align: right;">Payment Received</th>
+                                                    <th width="13%" style="text-align: center;">Date of Deposit</th>
+                                                    <th width="13%">Instrument No</th>
+                                                    <th width="10%">Bank A/c</th>
+                                                    <th width="10%" style="text-align: right;">Balance</th>
+                                                    <th width="4%" style="text-align: center;"><i class="fa fa-close"></i></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cb_tbody_<?php echo $serviceId; ?>">
+                                                <?php
+                                                if ($cbCount['totalcb'] > 0) {
+                                                    $cbBank = "SELECT * FROM consulting_abbrevation order by id desc";
+                                                    $statement = $db->prepare($cbBank);
+                                                    $statement->execute();
+                                                    $certAbbr = $statement->fetchAll();
+
+                                                    foreach ($certList as $cert) {
+                                                        $a = strtoupper($cert['contract_details']);
+                                                        if ((startsWith($a, 'MARKETING SETUP') || startsWith($a, 'MARKETING-SETUP') || startsWith($a, 'MARKETING') || startsWith($a, 'SETUP') || startsWith($a, 'MARK') || startsWith($a, 'MARKE')) && !(Utitlity::checkForUserAdmin() || Utitlity::checkForMainAdmin())) {
+                                                            $display = 'none';
+                                                        } else {
+                                                            $display = '';
+                                                        }
+                                                        ?>
+                                                        <tr class="cb_subsection previousCBData" id="cb_subsection_0" style="display: <?php echo $display ?>">
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="text" data-row-id="<?php echo $serviceId; ?>" class="contractDetails" id="contractDetails" name="contractDetails" value="<?php if (isset($cert['contract_details'])) echo htmlspecialchars($cert['contract_details']); ?>" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="number" data-row-id="<?php echo $serviceId; ?>" class="amountDecided" id="amountDecided" name="amountDecided" value="<?php if (isset($cert['amount_decided'])) echo $cert['amount_decided']; ?>" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="number" data-row-id="<?php echo $serviceId; ?>" class="paymentReceived" id="paymentReceived" name="paymentReceived" value="<?php if (isset($cert['payment_received'])) echo $cert['payment_received']; ?>" placeholder="" <?php echo $fieldAccess ?> />
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="text" data-row-id="<?php echo $serviceId; ?>" class="<?php echo $addClassTo ?>" name="depositDate" value="<?php if (isset($cert['deposit_date'])) echo simpleDateConversion($cert['deposit_date']); ?>" placeholder="" <?php echo $fieldAccess ?>>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="text" data-row-id="<?php echo $serviceId; ?>" class="chequeDetails" id="chequeDetails" name="chequeDetails" value="<?php if (isset($cert['check_details'])) echo htmlspecialchars($cert['check_details']); ?>" placeholder="" <?php echo $fieldAccess ?> />
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <select class="bankAcccountNo" id="bankAcccountNo" name="bankAcccountNo" data-row-id="<?php echo $serviceId; ?>" <?php echo $fieldAccess ?>>
+                                                                        <option value="<?php if (isset($cert['bank_account'])) echo htmlspecialchars($cert['bank_account']); ?>">
+                                                                            <?php echo (isset($cert['bank_account']) && !empty($cert['bank_account'])) ? htmlspecialchars($cert['bank_account']) : 'Select'; ?>
+                                                                        </option>
+                                                                        <?php foreach ($certAbbr as $bankAb) { ?>
+                                                                            <option value="<?php if (isset($bankAb['bank_abbr'])) echo htmlspecialchars($bankAb['bank_abbr']); ?>">
+                                                                                <?php if (isset($bankAb['bank_abbr'])) echo htmlspecialchars($bankAb['bank_abbr']); ?>
+                                                                            </option>
+                                                                        <?php } ?>
+                                                                    </select>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <div class="table-edit-control">
+                                                                    <input type="text" data-row-id="<?php echo $serviceId; ?>" class="balance" id="balance" name="balance" value="<?php if (isset($cert['balance'])) echo $cert['balance']; ?>" placeholder="" readonly="" <?php echo $fieldAccess ?> />
+                                                                </div>
+                                                            </td>
+                                                            <td style="text-align:center;">
+                                                                <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?>
+                                                                    <input type="checkbox" class="cbDelete" data-row-id="<?php echo $serviceId; ?>" value="<?php echo $cert['certification_id'] ?>" style="display:none;">
+                                                                    <a href="javascript:void(0)" class="cbDeleteIcon" data-row-id="<?php echo $serviceId; ?>" data-id="<?php echo $cert['certification_id']; ?>"><i class="fa fa-close" aria-hidden="true"></i></a>
+                                                                <?php } ?>
+                                                            </td>
+                                                        </tr>
+                                                        <input type="hidden" data-row-id="<?php echo $serviceId; ?>" class="cb-row-comment <?php echo $cert['certification_id'] ?>" id="cb-row-comment" name="cb-row-comment" value="">
+                                                        <input type="hidden" data-row-id="<?php echo $serviceId; ?>" class="cb-row-id <?php echo $cert['certification_id'] ?>" id="cb-row-id" name="cb-row-id" value="<?php if (isset($cert['certification_id'])) echo $cert['certification_id']; ?>">
+                                                    <?php }
+                                                } else { ?>
+                                                    <tr class="cb_subsection" id="cb_subsection_0">
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="contractDetails" id="contractDetails" name="contractDetails" value="" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="number" data-row-id="<?php echo $serviceId; ?>" class="amountDecided" id="amountDecided" name="amountDecided" value="" placeholder="" <?php echo $fieldAccess ?> <?php echo $financeAccess ?>/>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="number" data-row-id="<?php echo $serviceId; ?>" class="paymentReceived" id="paymentReceived" name="paymentReceived" value="" placeholder="" <?php echo $fieldAccess ?> />
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="<?php echo $addClassTo ?>" name="depositDate" value="" placeholder="" <?php echo $fieldAccess ?> />
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="chequeDetails" id="chequeDetails" name="chequeDetails" value="" placeholder="" <?php echo $fieldAccess ?> />
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" data-row-id="<?php echo $serviceId; ?>" class="bankAcccountNo" id="bankAcccountNo" name="bankAcccountNo" value="" placeholder="" <?php echo $fieldAccess ?> />
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="table-edit-control">
+                                                                <input type="text" class="balance" data-row-id="<?php echo $serviceId; ?>" id="balance" name="balance" value="" placeholder="" readonly="" />
+                                                            </div>
+                                                        </td>
+                                                        <td style="text-align:center;">
+                                                            <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForUserMarketing() || Utitlity::checkForMainAdmin()) { ?>
+                                                                <a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a>
+                                                            <?php } ?>
+                                                        </td>
+                                                    </tr>
+                                                <?php } ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Compact CB Financial Summary -->
+                                <div class="compact-summary-panel cb-summary-panel">
+                                    <div class="summary-top-bar">
+                                        <div class="summary-title">
+                                            <i class="fa fa-calculator" style="color: #1e293b; margin-right: 4px;"></i> 
+                                            Certification Body (CB) Financial Summary
+                                        </div>
+                                    </div>
+                                    <div class="compact-kpi-row">
+                                        <div class="kpi-chip kpi-cb-decided">
+                                            <span class="kpi-chip-label">CB Decided</span>
+                                            <span class="kpi-chip-value">₹ <?php echo number_format($cbTotalDecided, 2); ?></span>
+                                        </div>
+                                        <div class="kpi-chip kpi-cb-received">
+                                            <span class="kpi-chip-label">CB Payment Received</span>
+                                            <span class="kpi-chip-value">₹ <?php echo number_format($cbTotalReceived, 2); ?></span>
+                                        </div>
+                                        <?php 
+                                            $kpiCbBalClass = ($cbTotalBalance > 0) ? 'kpi-chip-danger' : 'kpi-chip-success';
+                                        ?>
+                                        <div class="kpi-chip kpi-cb-balance <?php echo $kpiCbBalClass; ?>">
+                                            <span class="kpi-chip-label">CB Balance Due</span>
+                                            <span class="kpi-chip-value">₹ <?php echo number_format($cbTotalBalance, 2); ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -1170,3 +1416,888 @@
         });
     });
 </script>
+
+<style>
+/* ========================================================
+   CLEAN DEMO THEME (Royal Blue Headers + Crisp White Cards)
+   ======================================================== */
+body, #page-content-wrapper {
+    background-color: #eef3f8 !important;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    color: #1e293b;
+}
+
+/* ========================================================
+   TOP CUSTOMER OVERVIEW CARD (COMPACT - EXACT MATCH IMAGE 2)
+   ======================================================== */
+.top_qms_page {
+    background: #e3eaf3 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    margin-top: 6px !important;
+    margin-bottom: 8px !important;
+    overflow: hidden !important;
+    color: #193048 !important;
+}
+
+/* Customer Title Bar (Dark Navy matching Image 2) */
+.top_qms_page .qms_customer_name {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: 10 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    background: #193048 !important;
+    color: #ffffff !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 6px 14px !important;
+    border-radius: 3px 3px 0 0 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: none !important;
+}
+.top_qms_page .qms_customer_name > span:first-child i {
+    color: #ffffff !important;
+    font-size: 15px !important;
+    margin-right: 6px !important;
+}
+.top_qms_page .qms_customer_name img {
+    margin-left: 6px !important;
+    vertical-align: middle !important;
+}
+
+/* Action Icons inside Customer Header Bar */
+.top_qms_page .qms_customer_name .editCustomerDetails {
+    margin-left: auto !important;
+    padding-left: 0 !important;
+}
+.top_qms_page .qms_customer_name a {
+    color: #ffffff !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    padding: 2px 6px !important;
+    margin-left: 6px !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    opacity: 0.85;
+    transition: opacity 0.15s ease !important;
+}
+.top_qms_page .qms_customer_name a:hover {
+    color: #ffffff !important;
+    background: transparent !important;
+    opacity: 1 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+.top_qms_page .qms_customer_name .deleteCustomerDetails {
+    color: #ffffff !important;
+}
+
+/* Customer Info Columns (Compact Layout) */
+.top_qms_page > div > .row:nth-child(2) {
+    padding-top: 6px !important;
+    padding-bottom: 4px !important;
+}
+.top_qms_page .col-sm-6:first-child .row {
+    padding: 2px 8px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+.top_qms_page .col-sm-6:first-child .row:hover {
+    background: transparent !important;
+}
+.top_qms_page .col-sm-6:first-child .col-xs-1 {
+    width: 24px !important;
+    padding: 0 !important;
+    text-align: center !important;
+}
+.top_qms_page .col-sm-6:first-child .col-xs-1 span {
+    background: transparent !important;
+    color: #428bca !important;
+    border: none !important;
+    width: auto !important;
+    height: auto !important;
+    display: inline !important;
+    font-size: 13px !important;
+}
+.top_qms_page .col-sm-6:first-child .col-xs-11,
+.top_qms_page .col-sm-6:first-child .col-xs-5 {
+    padding-left: 6px !important;
+    padding-right: 4px !important;
+}
+.top_qms_page .col-sm-6:first-child .col-xs-11 span,
+.top_qms_page .col-sm-6:first-child .col-xs-5 span {
+    color: #193048 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1.3 !important;
+}
+
+/* Customer Notes Textarea (Compact borderless) */
+.top_qms_page #add-notes {
+    background: transparent !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border-radius: 4px !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    color: #193048 !important;
+    width: 100% !important;
+    height: 90px !important;
+    min-height: 80px !important;
+    line-height: 1.4 !important;
+    box-shadow: none !important;
+    resize: none !important;
+}
+.top_qms_page #add-notes:focus {
+    background: #ffffff !important;
+    border-color: #428bca !important;
+    box-shadow: 0 0 0 2px rgba(66, 139, 202, 0.2) !important;
+    outline: none !important;
+}
+
+/* Divider & Milestone Dates Row (Image 2 Match) */
+.top_qms_page hr {
+    border: 0 !important;
+    border-top: 1px solid #94a3b8 !important;
+    margin: 4px 8px !important;
+}
+.top_qms_page .text-right {
+    color: #428bca !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    line-height: 24px !important;
+}
+.top_qms_page input.lookslike-label {
+    background: transparent !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    border-radius: 3px !important;
+    height: 24px !important;
+    padding: 2px 6px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    transition: all 0.15s ease !important;
+}
+.top_qms_page input.lookslike-label:focus {
+    background: #ffffff !important;
+    border-color: #428bca !important;
+    box-shadow: 0 0 0 2px rgba(66, 139, 202, 0.2) !important;
+    outline: none !important;
+}
+
+/* Action Buttons Connected Segmented Bar (Image 2 Match) */
+.qms_complete_btn {
+    border-radius: 0px !important;
+    padding: 5px 14px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid #193048 !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    margin-bottom: 8px !important;
+    height: 30px !important;
+    line-height: 20px !important;
+    transition: all 0.15s ease !important;
+}
+.qms_complete_btn:hover {
+    opacity: 0.9 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+.qms_complete_btn.invoiceBtn {
+    background: #428bca !important;
+    color: #ffffff !important;
+}
+.qms_complete_btn.quotationBtn {
+    background: #193048 !important;
+    color: #ffffff !important;
+}
+.qms_complete_btn.addNewService {
+    background: #47a447 !important;
+    color: #ffffff !important;
+}
+.qms_complete_btn.show-all-invoices {
+    background: #428bca !important;
+    color: #ffffff !important;
+}
+/* ========================================================
+   MODERN SERVICE CARD & PAYMENT SYSTEM STYLING
+   ======================================================== */
+.servicebox {
+    background: #ffffff !important;
+    border: 1px solid #dce4ec !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 14px rgba(15, 35, 70, 0.06) !important;
+    margin-bottom: 24px !important;
+    overflow: hidden !important;
+    transition: all 0.2s ease-in-out !important;
+}
+.servicebox:hover {
+    box-shadow: 0 6px 18px rgba(15, 35, 70, 0.09) !important;
+    border-color: #b8c9dc !important;
+}
+
+/* Service Title Header - Royal Blue Matching Demo */
+.service_title {
+    background: #0d52b3 !important;
+    color: #ffffff !important;
+    padding: 12px 18px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+    user-select: none;
+    box-shadow: 0 2px 4px rgba(13, 82, 179, 0.15);
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+.service_title:hover {
+    background: #0b4596 !important;
+}
+.service-title-center {
+    flex: 1 !important;
+    text-align: center !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+}
+.service_title .serviceStatus {
+    color: #ffd166 !important;
+    font-weight: 900 !important;
+    font-size: 18px !important;
+    letter-spacing: 0.5px !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+    text-transform: uppercase !important;
+}
+.service-collapse-indicator {
+    color: #ffffff !important;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+/* Auto-Save Live Status Pill - Hidden per user request */
+.auto-save-status-pill {
+    display: none !important;
+}
+
+/* Service Box Data Section */
+.servicebox-data {
+    padding: 16px 18px 12px 18px !important;
+}
+.servicebox-data .float-label-control {
+    margin-bottom: 12px !important;
+}
+.servicebox-data .float-label-control label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: #475569 !important;
+    margin-bottom: 4px !important;
+    display: block !important;
+    position: static !important;
+    opacity: 1 !important;
+}
+.servicebox-data select,
+.servicebox-data input[type="text"] {
+    height: 38px !important;
+    border: 1px solid #dce4ec !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    width: 100% !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.02) !important;
+    transition: all 0.18s ease-in-out !important;
+}
+.servicebox-data select:focus,
+.servicebox-data input[type="text"]:focus {
+    border-color: #0b57cf !important;
+    box-shadow: 0 0 0 3px rgba(11, 87, 207, 0.15) !important;
+    outline: none !important;
+}
+.servicebox-data .issueCert {
+    width: 16px !important;
+    height: 16px !important;
+    accent-color: #0d52b3 !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+}
+
+/* Service Contract Panel */
+.service-contract-panel {
+    background: #f8fafc !important;
+    border: 1px solid #dce4ec !important;
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+}
+.service-contract-panel textarea#audit-details {
+    background: #ffffff !important;
+    border: 1px solid #dce4ec !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    color: #0f172a !important;
+    line-height: 1.5 !important;
+    padding: 8px 12px !important;
+    transition: all 0.2s ease !important;
+}
+.service-contract-panel textarea#audit-details:focus {
+    border-color: #0b57cf !important;
+    box-shadow: 0 0 0 3px rgba(11, 87, 207, 0.15) !important;
+    outline: none !important;
+}
+
+/* ========================================================
+   ULTRA-COMPACT & SEPARATED PAYMENT SYSTEM (CONSULTING & CB)
+   ======================================================== */
+.compact-payment-block {
+    margin-bottom: 3px !important;
+}
+.compact-table-card {
+    border: 1px solid #dce4ec !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(15, 35, 70, 0.03) !important;
+    overflow: hidden !important;
+    margin-bottom: 2px !important;
+}
+.compact-table-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 2px 8px !important;
+    min-height: 24px !important;
+    height: 24px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.3px !important;
+}
+.compact-table-header.consulting-header {
+    background: #0891b2 !important;
+    color: #ffffff !important;
+}
+.compact-table-header.cb-header {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    color: #ffffff !important;
+}
+.compact-table-header .header-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    line-height: 1 !important;
+}
+.compact-table-header .header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+.btn-compact-add,
+a.consultingAddLink.btn-compact-add,
+a.cbAddLink.btn-compact-add {
+    background: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 10px !important;
+    padding: 0 7px !important;
+    height: 19px !important;
+    line-height: 17px !important;
+    border-radius: 3px !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12) !important;
+    transition: all 0.15s ease !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+}
+.consulting-header .btn-compact-add,
+a.consultingAddLink.btn-compact-add {
+    color: #0891b2 !important;
+}
+.cb-header .btn-compact-add,
+a.cbAddLink.btn-compact-add {
+    color: #1e293b !important;
+}
+.btn-compact-add:hover,
+a.consultingAddLink.btn-compact-add:hover,
+a.cbAddLink.btn-compact-add:hover {
+    background: #f8fafc !important;
+    transform: translateY(-1px);
+}
+.btn-compact-ms,
+a.cbAddLinkForAdmin.btn-compact-ms {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 9.5px !important;
+    padding: 0 6px !important;
+    height: 19px !important;
+    line-height: 17px !important;
+    border-radius: 3px !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    transition: all 0.15s ease !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+.btn-compact-ms:hover,
+a.cbAddLinkForAdmin.btn-compact-ms:hover {
+    background: #ffffff !important;
+    color: #1e293b !important;
+}
+
+/* Table Dimensions & Input Controls */
+.compact-payment-table,
+table.compact-payment-table.service_details {
+    margin-bottom: 0 !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+}
+.compact-payment-table thead th,
+table.compact-payment-table.service_details thead th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    padding: 2px 4px !important;
+    height: 20px !important;
+    line-height: 1.1 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-top: none !important;
+    vertical-align: middle !important;
+}
+.compact-payment-table tbody td,
+table.compact-payment-table.service_details tbody td {
+    padding: 1px 2px !important;
+    height: 24px !important;
+    border: 1px solid #e2e8f0 !important;
+    vertical-align: middle !important;
+    line-height: 1 !important;
+    background: #ffffff;
+}
+.table-edit-control,
+.compact-payment-table .table-edit-control {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.table-edit-control input, 
+.table-edit-control select,
+.compact-payment-table .table-edit-control input,
+.compact-payment-table .table-edit-control select {
+    height: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    padding: 0 5px !important;
+    font-size: 11px !important;
+    line-height: 20px !important;
+    border-radius: 3px !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    background: #ffffff;
+    color: #0f172a;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+.table-edit-control input:focus,
+.table-edit-control select:focus,
+.compact-payment-table .table-edit-control input:focus,
+.compact-payment-table .table-edit-control select:focus {
+    border-color: #0b57cf !important;
+    box-shadow: 0 0 0 2px rgba(11, 87, 207, 0.15) !important;
+    outline: none !important;
+}
+.table-edit-control input.amountDecided,
+.table-edit-control input.consultingAmountDecided,
+.compact-payment-table .table-edit-control input.amountDecided,
+.compact-payment-table .table-edit-control input.consultingAmountDecided {
+    font-weight: 700 !important;
+    text-align: right !important;
+    color: #0f172a !important;
+}
+.table-edit-control input.paymentReceived,
+.table-edit-control input.consultingPaymentReceived,
+.compact-payment-table .table-edit-control input.paymentReceived,
+.compact-payment-table .table-edit-control input.consultingPaymentReceived {
+    font-weight: 700 !important;
+    text-align: right !important;
+    color: #15803d !important;
+    background: #f0fdf4 !important;
+    border-color: #86efac !important;
+}
+.table-edit-control input.balance,
+.table-edit-control input.consultingBalance,
+.compact-payment-table .table-edit-control input.balance,
+.compact-payment-table .table-edit-control input.consultingBalance {
+    font-weight: 800 !important;
+    text-align: right !important;
+    color: #b91c1c !important;
+    background: #fef2f2 !important;
+    border-color: #fca5a5 !important;
+    cursor: default !important;
+}
+.cbDeleteIcon,
+.consultingDeleteIcon,
+.cbRowDelete,
+.consultingRowDelete,
+.compact-payment-table .cbDeleteIcon,
+.compact-payment-table .consultingDeleteIcon,
+.compact-payment-table .cbRowDelete,
+.compact-payment-table .consultingRowDelete {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    font-size: 9px !important;
+    line-height: 16px !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 3px !important;
+    color: #dc3545 !important;
+    background: #fff5f5 !important;
+    border: 1px solid #fed7d7 !important;
+    transition: all 0.15s ease !important;
+    cursor: pointer !important;
+}
+.cbDeleteIcon:hover,
+.consultingDeleteIcon:hover,
+.cbRowDelete:hover,
+.consultingRowDelete:hover {
+    background: #dc3545 !important;
+    color: #ffffff !important;
+    border-color: #dc3545 !important;
+}
+
+/* DOTTED SEPARATOR LINE BETWEEN CONSULTING AND CB */
+.payment-dotted-divider {
+    display: flex !important;
+    align-items: center !important;
+    text-align: center !important;
+    margin: 5px 0 4px 0 !important;
+    position: relative !important;
+}
+.payment-dotted-divider::before,
+.payment-dotted-divider::after {
+    content: '' !important;
+    flex: 1 !important;
+    border-bottom: 1.5px dashed #94a3b8 !important;
+}
+.payment-dotted-divider .divider-label {
+    padding: 1px 8px !important;
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border-radius: 10px !important;
+    border: 1px dashed #cbd5e1 !important;
+    margin: 0 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    line-height: 15px !important;
+}
+
+/* ULTRA-COMPACT SUMMARY PANELS & HORIZONTAL MINI KPI STRIPS */
+.compact-summary-panel {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 4px !important;
+    padding: 3px 6px !important;
+    margin-top: 2px !important;
+}
+.compact-summary-panel .summary-top-bar {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 2px !important;
+}
+.compact-summary-panel .summary-title {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1 !important;
+}
+.header-invoice-btn,
+.serviceInvoiceBtn.header-invoice-btn {
+    background: #ffffff !important;
+    color: #0891b2 !important;
+    font-weight: 800 !important;
+    font-size: 11px !important;
+    padding: 1px 10px !important;
+    height: 21px !important;
+    line-height: 19px !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    transition: all 0.18s ease !important;
+    cursor: pointer !important;
+}
+.header-invoice-btn:hover,
+.serviceInvoiceBtn.header-invoice-btn:hover {
+    background: #f0fdf4 !important;
+    color: #15803d !important;
+    border-color: #86efac !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+    transform: translateY(-1px) !important;
+}
+.compact-invoice-btn,
+.serviceInvoiceBtn.compact-invoice-btn {
+    background: #0891b2 !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 11px !important;
+    padding: 1px 9px !important;
+    height: 21px !important;
+    line-height: 19px !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 3px rgba(8, 145, 178, 0.3) !important;
+    transition: all 0.15s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    cursor: pointer !important;
+}
+.compact-invoice-btn:hover,
+.serviceInvoiceBtn.compact-invoice-btn:hover {
+    background: #0e7490 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+/* Horizontal Mini KPI Chips */
+.compact-kpi-row {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 4px !important;
+}
+.cb-summary-panel .compact-kpi-row {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+.kpi-chip {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 3px !important;
+    padding: 1px 6px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    max-height: 22px !important;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.02) !important;
+    overflow: hidden !important;
+}
+.kpi-chip-label {
+    font-size: 8.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.2px !important;
+    color: #64748b !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+.kpi-chip-value {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    margin-left: 4px !important;
+    white-space: nowrap !important;
+}
+.kpi-consult-decided { border-left: 3px solid #64748b !important; }
+.kpi-consult-invoiced { border-left: 3px solid #0891b2 !important; background: #ecfeff !important; }
+.kpi-consult-invoiced .kpi-chip-value { color: #0891b2 !important; }
+.kpi-consult-received { border-left: 3px solid #16a34a !important; background: #f0fdf4 !important; }
+.kpi-consult-received .kpi-chip-value { color: #15803d !important; }
+.kpi-consult-balance.kpi-chip-danger { border-left: 3px solid #dc2626 !important; background: #fef2f2 !important; }
+.kpi-consult-balance.kpi-chip-danger .kpi-chip-value { color: #b91c1c !important; }
+.kpi-consult-balance.kpi-chip-success { border-left: 3px solid #16a34a !important; background: #f0fdf4 !important; }
+.kpi-consult-balance.kpi-chip-success .kpi-chip-value { color: #15803d !important; }
+
+.kpi-cb-decided { border-left: 3px solid #475569 !important; }
+.kpi-cb-received { border-left: 3px solid #16a34a !important; background: #f0fdf4 !important; }
+.kpi-cb-received .kpi-chip-value { color: #15803d !important; }
+.kpi-cb-balance.kpi-chip-danger { border-left: 3px solid #dc2626 !important; background: #fef2f2 !important; }
+.kpi-cb-balance.kpi-chip-danger .kpi-chip-value { color: #b91c1c !important; }
+.kpi-cb-balance.kpi-chip-success { border-left: 3px solid #16a34a !important; background: #f0fdf4 !important; }
+.kpi-cb-balance.kpi-chip-success .kpi-chip-value { color: #15803d !important; }
+
+/* ========================================================
+   MODAL DIALOG THEME ENHANCEMENTS
+   ======================================================== */
+.modal-content {
+    border-radius: 12px !important;
+    border: 1px solid #dce4ec !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08) !important;
+    overflow: hidden !important;
+}
+.modal-header {
+    background: #0d52b3 !important;
+    color: #ffffff !important;
+    padding: 14px 20px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+.modal-header .close {
+    color: #ffffff !important;
+    opacity: 0.8 !important;
+    text-shadow: none !important;
+}
+.modal-header .close:hover {
+    opacity: 1 !important;
+}
+.modal-footer {
+    background: #f8fafc !important;
+    border-top: 1px solid #dce4ec !important;
+    padding: 12px 20px !important;
+}
+
+/* ========================================================
+   TOAST NOTIFICATION SYSTEM (TOASTER)
+   ======================================================== */
+#qms-toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+.qms-toast {
+    pointer-events: auto;
+    min-width: 300px;
+    max-width: 400px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px -5px rgba(15, 35, 70, 0.15), 0 8px 10px -6px rgba(15, 35, 70, 0.08);
+    border: 1px solid #dce4ec;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    transform: translateX(120%);
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.qms-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+.qms-toast.hiding {
+    transform: translateX(120%);
+    opacity: 0;
+}
+.qms-toast-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 15px;
+}
+.qms-toast-success .qms-toast-icon {
+    background: #ecfdf5;
+    color: #10b981;
+    border: 1px solid #a7f3d0;
+}
+.qms-toast-error .qms-toast-icon {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+}
+.qms-toast-info .qms-toast-icon {
+    background: #eff6ff;
+    color: #0d52b3;
+    border: 1px solid #bfdbfe;
+}
+.qms-toast-body {
+    flex: 1;
+}
+.qms-toast-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+.qms-toast-msg {
+    font-size: 11px;
+    color: #64748b;
+    line-height: 1.3;
+}
+.qms-toast-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: color 0.15s;
+}
+.qms-toast-close:hover {
+    color: #0f172a;
+}
+.qms-toast-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: #10b981;
+    width: 100%;
+    animation: qmsToastProgress 2.5s linear forwards;
+}
+.qms-toast-error .qms-toast-bar { background: #ef4444; }
+.qms-toast-info .qms-toast-bar { background: #0d52b3; }
+@keyframes qmsToastProgress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+</style>
+<div id="qms-toast-container"></div>
