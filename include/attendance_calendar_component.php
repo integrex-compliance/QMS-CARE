@@ -6,14 +6,20 @@
  * Clean typography without box widgets or nested card clutter.
  */
 
+if (!isset($db) || !($db instanceof PDO)) {
+    if (file_exists(__DIR__ . '/../dbConnect.php')) {
+        require_once __DIR__ . '/../dbConnect.php';
+    }
+}
+
 if (!isset($targetAttendanceUid)) {
-    $targetAttendanceUid = (int)(isset($userRow['user_id']) ? $userRow['user_id'] : (isset($_SESSION['id']) ? $_SESSION['id'] : 0));
+    $targetAttendanceUid = (int)(isset($targetDashboardUid) ? $targetDashboardUid : (isset($userRow['user_id']) ? $userRow['user_id'] : (isset($_SESSION['id']) ? $_SESSION['id'] : 0)));
 }
 if (!isset($targetAttendanceName)) {
-    $targetAttendanceName = isset($userName) ? $userName : (isset($_SESSION['username']) ? $_SESSION['username'] : 'User');
+    $targetAttendanceName = isset($targetDashboardName) ? $targetDashboardName : (isset($userName) ? $userName : (isset($_SESSION['username']) ? $_SESSION['username'] : 'User'));
 }
 if (!isset($targetAttendanceRole)) {
-    $targetAttendanceRole = isset($userRole) ? $userRole : (isset($_SESSION['role']) ? $_SESSION['role'] : 'Staff');
+    $targetAttendanceRole = isset($targetDashboardRole) ? $targetDashboardRole : (isset($userRole) ? $userRole : (isset($_SESSION['role']) ? $_SESSION['role'] : 'Staff'));
 }
 ?>
 
@@ -577,7 +583,7 @@ if (!isset($targetAttendanceRole)) {
         <div class="att-title-group">
             <h3>
                 <i class="fa fa-calendar-check-o" style="color: #6366f1;"></i>
-                <span id="attMonthYearDisplay">October 2026</span>
+                <span id="attMonthYearDisplay"><?php echo date('F Y'); ?></span>
             </h3>
             <p class="att-subtitle">
                 <span>Attendance of <strong><?php echo htmlspecialchars($targetAttendanceName); ?></strong></span>
@@ -667,10 +673,10 @@ if (!isset($targetAttendanceRole)) {
         <div class="att-summary-header-row">
             <h4 class="att-summary-title-text">
                 <i class="fa fa-file-text-o" style="color: #2563eb;"></i>
-                Monthly Attendance Summary &mdash; <span id="attSummaryMonthTitle" style="color: #2563eb;">October 2026</span>
+                Monthly Attendance Summary &mdash; <span id="attSummaryMonthTitle" style="color: #2563eb;"><?php echo date('F Y'); ?></span>
             </h4>
             <span class="att-summary-subtext">
-                <i class="fa fa-info-circle" style="color: #6366f1;"></i> Click any date on the calendar above to mark status
+                <i class="fa fa-info-circle" style="color: #6366f1;"></i> Click any date on the calendar above to view details & marks
             </span>
         </div>
 
@@ -770,11 +776,17 @@ if (!isset($targetAttendanceRole)) {
                         <div>
                             <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600;">Punch In</div>
                             <div id="modalPunchInVal" style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin-top: 2px;">--:--</div>
+                            <div id="modalInAddressVal" style="font-size: 11px; color: #64748b; margin-top: 3px; display: none; word-break: break-word;"><i class="fa fa-map-marker" style="color: #ef4444;"></i> <span></span></div>
                         </div>
                         <div>
                             <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600;">Punch Out</div>
                             <div id="modalPunchOutVal" style="font-size: 14.5px; font-weight: 700; color: #0f172a; margin-top: 2px;">--:--</div>
+                            <div id="modalOutAddressVal" style="font-size: 11px; color: #64748b; margin-top: 3px; display: none; word-break: break-word;"><i class="fa fa-map-marker" style="color: #ef4444;"></i> <span></span></div>
                         </div>
+                    </div>
+                    <div id="modalWorkingHoursRow" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; display: none; justify-content: space-between; font-size: 12px;">
+                        <span style="color: #64748b;"><i class="fa fa-hourglass-end"></i> Total Working Hours:</span>
+                        <strong id="modalWorkingHoursVal" style="color: #2563eb; font-weight: 700;">--</strong>
                     </div>
                     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; font-size: 12px;">
                         <span style="color: #64748b;">Note / Shift Status:</span>
@@ -851,23 +863,45 @@ if (!isset($targetAttendanceRole)) {
     if (isset($db) && $db instanceof PDO && !empty($targetAttendanceUid)) {
         try {
             $attStmt = $db->prepare("
-                SELECT attendance_date, status, in_time, out_time, remarks, punch_in_selfie_url 
+                SELECT attendance_date, status, in_time, out_time, total_working_hours, remarks, 
+                       punch_in_selfie_url, punch_out_selfie_url, 
+                       in_latitude, in_longitude, in_address, 
+                       out_latitude, out_longitude, out_address
                 FROM aitf_attendance 
                 WHERE user_id = :uid 
-                  AND attendance_date >= DATE_SUB(CURDATE(), INTERVAL 120 DAY)
                 ORDER BY attendance_date ASC
             ");
             $attStmt->execute([':uid' => $targetAttendanceUid]);
             $rawRecords = $attStmt->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rawRecords as $r) {
                 $d = $r['attendance_date'];
+                $statusVal = strtolower($r['status'] ?? 'present');
+                $statusLabel = 'Present';
+                if ($statusVal === 'late') $statusLabel = 'Late Login';
+                elseif ($statusVal === 'halfday') $statusLabel = 'Half Day';
+                elseif ($statusVal === 'leave') $statusLabel = 'Leave';
+                elseif ($statusVal === 'holiday') $statusLabel = 'Holiday';
+
+                $inAddr = trim($r['in_address'] ?? '');
+                if ($inAddr === '' && !empty($r['in_latitude']) && !empty($r['in_longitude'])) {
+                    $inAddr = $r['in_latitude'] . ', ' . $r['in_longitude'];
+                }
+                $outAddr = trim($r['out_address'] ?? '');
+                if ($outAddr === '' && !empty($r['out_latitude']) && !empty($r['out_longitude'])) {
+                    $outAddr = $r['out_latitude'] . ', ' . $r['out_longitude'];
+                }
+
                 $dbAttendanceMap[$d] = [
-                    'status' => $r['status'],
-                    'label' => ($r['status'] === 'late') ? 'Late Login' : (($r['status'] === 'halfday') ? 'Half Day' : ucfirst($r['status'])),
+                    'status' => $statusVal,
+                    'label' => $statusLabel,
                     'inTime' => !empty($r['in_time']) ? date('h:i A', strtotime($r['in_time'])) : '--',
                     'outTime' => !empty($r['out_time']) ? date('h:i A', strtotime($r['out_time'])) : '--',
+                    'workingHours' => !empty($r['total_working_hours']) ? (float)$r['total_working_hours'] : null,
+                    'inAddress' => $inAddr ?: null,
+                    'outAddress' => $outAddr ?: null,
                     'note' => isset($r['remarks']) ? $r['remarks'] : '',
-                    'selfieUrl' => isset($r['punch_in_selfie_url']) ? $r['punch_in_selfie_url'] : ''
+                    'selfieUrl' => isset($r['punch_in_selfie_url']) ? $r['punch_in_selfie_url'] : '',
+                    'outSelfieUrl' => isset($r['punch_out_selfie_url']) ? $r['punch_out_selfie_url'] : ''
                 ];
             }
         } catch (Exception $e) {
@@ -876,6 +910,7 @@ if (!isset($targetAttendanceRole)) {
     }
 ?>
     window.AITF_ATTENDANCE_CACHE = <?php echo json_encode($dbAttendanceMap, JSON_UNESCAPED_SLASHES); ?> || {};
+    var targetAttendanceUid = <?php echo (int)$targetAttendanceUid; ?>;
 
     // Render Calendar Grid
     function renderCalendar(year, month) {
@@ -1082,21 +1117,52 @@ if (!isset($targetAttendanceRole)) {
                 $('#modalAttStatusBadge').html('<span class="att-pill-status att-pill-halfday" style="font-size: 12px; padding: 4px 10px;"><i class="fa fa-hourglass-half"></i> Half Day</span>');
             } else if (rec.status === 'leave') {
                 $('#modalAttStatusBadge').html('<span class="att-pill-status att-pill-leave" style="font-size: 12px; padding: 4px 10px;"><i class="fa fa-calendar-minus-o"></i> Leave</span>');
+            } else if (rec.status === 'holiday') {
+                $('#modalAttStatusBadge').html('<span class="att-pill-status att-pill-off" style="font-size: 12px; padding: 4px 10px;"><i class="fa fa-star"></i> Holiday</span>');
             }
             $('#modalPunchInVal').text(rec.inTime || '--:--');
             $('#modalPunchOutVal').text(rec.outTime || '--:--');
             $('#modalPunchNoteVal').text(rec.note || rec.label);
+
+            if (rec.inAddress) {
+                $('#modalInAddressVal').show().find('span').text(rec.inAddress);
+            } else {
+                $('#modalInAddressVal').hide();
+            }
+
+            if (rec.outAddress) {
+                $('#modalOutAddressVal').show().find('span').text(rec.outAddress);
+            } else {
+                $('#modalOutAddressVal').hide();
+            }
+
+            if (rec.workingHours) {
+                $('#modalWorkingHoursRow').css('display', 'flex');
+                $('#modalWorkingHoursVal').text(rec.workingHours + ' hrs');
+            } else {
+                $('#modalWorkingHoursRow').hide();
+            }
         } else {
             $('#modalAttStatusBadge').html('<span class="att-pill-status att-pill-empty" style="font-size: 12px; padding: 4px 10px;"><i class="fa fa-circle-o"></i> Not Marked</span>');
             $('#modalPunchInVal').text('--:--');
             $('#modalPunchOutVal').text('--:--');
             $('#modalPunchNoteVal').text('--');
+            $('#modalInAddressVal').hide();
+            $('#modalOutAddressVal').hide();
+            $('#modalWorkingHoursRow').hide();
         }
     }
 
     // Initialize calendar on page load
     $(document).ready(function() {
         renderCalendar(viewedYear, viewedMonth);
+
+        // Re-render when switching to attendance tab to ensure perfect sizing
+        $(document).on('click', '.dash-tab-btn[data-target="#pane-attendance"]', function() {
+            setTimeout(function() {
+                renderCalendar(viewedYear, viewedMonth);
+            }, 100);
+        });
 
         // Previous Month
         $('#attBtnPrev').on('click', function(e) {
@@ -1178,51 +1244,59 @@ if (!isset($targetAttendanceRole)) {
         // Mark Attendance Action (Late Login, Half Day, Leave, Present, Clear)
         $(document).on('click', '.btn-mark-att', function(e) {
             e.preventDefault();
-            var markType = $(this).data('mark');
+            var $btn = $(this);
+            var markType = $btn.data('mark');
             var activeDateStr = $('#attDayDetailModal').data('active-date');
             if (!activeDateStr) return;
 
-            if (markType === 'clear') {
-                delete window.AITF_ATTENDANCE_CACHE[activeDateStr];
-            } else {
-                var label = 'Present';
-                var inTime = '09:30 AM';
-                var outTime = '06:30 PM';
-                var note = 'Full day attendance';
+            var origHtml = $btn.html();
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
 
-                if (markType === 'late') {
-                    label = 'Late Login';
-                    inTime = '10:15 AM';
-                    outTime = '06:30 PM';
-                    note = '15 mins late login';
-                } else if (markType === 'halfday') {
-                    label = 'Half Day';
-                    inTime = '09:30 AM';
-                    outTime = '02:00 PM';
-                    note = 'First half shift';
-                } else if (markType === 'leave') {
-                    label = 'Leave';
-                    inTime = '--';
-                    outTime = '--';
-                    note = 'Casual / Sick Leave';
+            $.ajax({
+                url: 'attendance_action.php',
+                type: 'POST',
+                dataType: 'json',
+                data: {
+                    action: markType === 'clear' ? 'clear' : 'mark',
+                    user_id: targetAttendanceUid,
+                    date: activeDateStr,
+                    status: markType
+                },
+                success: function(resp) {
+                    $btn.prop('disabled', false).html(origHtml);
+                    if (resp && resp.success) {
+                        if (markType === 'clear') {
+                            delete window.AITF_ATTENDANCE_CACHE[activeDateStr];
+                        } else {
+                            var d = resp.data || {};
+                            window.AITF_ATTENDANCE_CACHE[activeDateStr] = {
+                                status: markType,
+                                label: d.label || (markType === 'late' ? 'Late Login' : (markType === 'halfday' ? 'Half Day' : ucfirst(markType))),
+                                inTime: d.inTime || (markType === 'leave' ? '--' : '09:30 AM'),
+                                outTime: d.outTime || (markType === 'leave' ? '--' : (markType === 'halfday' ? '02:00 PM' : '06:30 PM')),
+                                workingHours: d.workingHours || null,
+                                inAddress: null,
+                                outAddress: null,
+                                note: d.note || (markType === 'leave' ? 'Casual / Sick Leave' : (markType === 'late' ? 'Late login' : 'Full day attendance'))
+                            };
+                        }
+
+                        // Re-render calendar and update summary
+                        renderCalendar(viewedYear, viewedMonth);
+
+                        // Update modal state
+                        updateModalStatusBadge(activeDateStr);
+
+                        $('#markFeedbackMsg').text('Status updated and saved successfully!').stop(true, true).fadeIn().delay(1600).fadeOut();
+                    } else {
+                        alert(resp && resp.error ? resp.error : 'Failed to save attendance.');
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).html(origHtml);
+                    alert('Error connecting to server. Please check your network.');
                 }
-
-                window.AITF_ATTENDANCE_CACHE[activeDateStr] = {
-                    status: markType,
-                    label: label,
-                    inTime: inTime,
-                    outTime: outTime,
-                    note: note
-                };
-            }
-
-            // Re-render calendar and update summary
-            renderCalendar(viewedYear, viewedMonth);
-
-            // Update modal state
-            updateModalStatusBadge(activeDateStr);
-
-            $('#markFeedbackMsg').stop(true, true).fadeIn().delay(1400).fadeOut();
+            });
         });
     });
 })();
