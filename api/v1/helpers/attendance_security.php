@@ -293,10 +293,24 @@ function attendanceBaselinePath(string $stored): string {
 
 function saveAttendancePhoto(string $tempPath): string {
     $config = attendanceConfig();
-    $directory = $config['storage'];
-    if (!is_dir($directory) && !@mkdir($directory, 0755, true)) {
-        $directory = dirname(__DIR__, 3) . '/uploads/biometrics';
-        if (!is_dir($directory)) @mkdir($directory, 0755, true);
+    $publicRoot = dirname(__DIR__, 3);
+    $candidates = [
+        $config['storage'] ?? null,
+        $publicRoot . '/uploads/biometrics',
+        $publicRoot . '/uploads',
+        sys_get_temp_dir()
+    ];
+    $directory = null;
+    foreach ($candidates as $cand) {
+        if (!$cand) continue;
+        if (!is_dir($cand)) @mkdir($cand, 0777, true);
+        if (is_dir($cand) && is_writable($cand)) {
+            $directory = $cand;
+            break;
+        }
+    }
+    if (!$directory) {
+        $directory = sys_get_temp_dir();
     }
     $name = bin2hex(random_bytes(24)) . '.jpg';
     // Decode and re-encode: strips EXIF, appended payloads and untrusted filenames.
@@ -316,7 +330,7 @@ function saveAttendancePhoto(string $tempPath): string {
             }
         }
     }
-    $saved = imagejpeg($image, $directory . '/' . $name, 92);
+    $saved = @imagejpeg($image, $directory . '/' . $name, 92);
     imagedestroy($image);
     if (!$saved) throw new AttendanceRejected('Cannot store attendance photo.', 503);
     @chmod($directory . '/' . $name, 0644);
@@ -334,8 +348,12 @@ function saveAttendanceEvidence(PDO $db, array $user, string $purpose, array $ch
         $location ? $location['captured_at']->format('Y-m-d H:i:s') : null,
         $captureTime->format('Y-m-d H:i:s'), $photo, $verified['similarity_score'], $verified['model']]);
     $id = (int)$db->lastInsertId();
-    $hashStmt = $db->prepare('INSERT IGNORE INTO aitf_selfie_hashes (image_hash, evidence_id, created_at) VALUES (?, ?, UTC_TIMESTAMP())');
-    foreach (array_unique($verified['image_hashes']) as $hash) $hashStmt->execute([$hash, $id]);
+    try {
+        $hashStmt = $db->prepare('INSERT IGNORE INTO aitf_selfie_hashes (image_hash, evidence_id, created_at) VALUES (?, ?, UTC_TIMESTAMP())');
+        foreach (array_unique($verified['image_hashes']) as $hash) $hashStmt->execute([$hash, $id]);
+    } catch (Throwable $he) {
+        error_log('Warning: could not insert selfie hashes: ' . $he->getMessage());
+    }
     return $id;
 }
 
