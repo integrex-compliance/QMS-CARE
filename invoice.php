@@ -100,6 +100,7 @@ if (isset($_POST['invoiceNo'])) {
 
 $net_price = "";
 $service_tax = "";
+$tax_type = "";
 $total_amt = 0;
 
 if (isset($_POST['netPrice'])) {
@@ -203,12 +204,12 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
     $statement->bindParam(':invsvc', $services);
     $statement->bindParam(':svcamt', $svcamount);
     $statement->bindParam(':amount', $total_amt);
-    $statement->bindParam(':taxtype', $_POST['taxTypeEdit']); // NEW LINE
+    $statement->bindParam(':taxtype', $tax_type);
     $statement->execute();
 
     $deleteInvoiceService = "DELETE FROM invoice_services WHERE invoice_ids = :id";
     $statement = $db->prepare($deleteInvoiceService);
-    $statement->bindParam(':id', $_POST['invoiceId']);
+    $statement->bindParam(':id', $invoiceid);
     $statement->execute();
     if ($service_tax == 0) {
         $ST = "NA";
@@ -268,22 +269,23 @@ if (isset($_POST['invoiceEditId']) && !empty($_POST['invoiceEditId'])) {
     }
 
     $invoiceDetails = "INSERT INTO invoice_details (firm_id, customer_id, service_id, customer_name, invoice_no, invoice_date, net_price, service_tax, total_amount, svc_desc, svc_amount, tax_type) VALUES "
-            . "(:firmid, :customer_id, :customer_name, :invoiceno, :invoicedate, :netprice, :servicetax, :amount, :invsvc, :svcamt, :taxtype)";
+            . "(:firmid, :customer_id, :service_id, :customer_name, :invoiceno, :invoicedate, :netprice, :servicetax, :amount, :invsvc, :svcamt, :taxtype)";
 //        $invoiceDetails = "INSERT INTO invoice_details (firm_id,customer_id, firm_name, firm_address, firm_logo, invoice_no, invoice_date, pan_no,bank_name, bank_address, account_no, ifsc_code, micr_no, mail_id, customer_name, customer_address, contact_no, net_price, service_tax, total_amount,firm_sign, firm_abbrevation) "
 //                . "VALUES (:firmid,:customer_id,:firmname,:firmaddress,:firmlogo,:invoiceno,:invoicedate,:panno,:bankname,:bankaddress,:accno,:ifsccode,:micrno,:mailid,:customername,:customeraddress,:contactno,:netprice,:servicetax,:amount,:sign,:abbrevation);";
     $statement = $db->prepare($invoiceDetails);
     $statement->bindParam(':firmid', $firm_id);
-    $statement->bindParam(":customer_id", $_POST['invoiceCustomerId']);
+    $statement->bindParam(":customer_id", $customerId);
     $statement->bindParam(":service_id", $serviceId);
     $statement->bindParam(":customer_name", $customerName);
     $statement->bindParam(':invoiceno', $newInvoice);
-    $statement->bindParam(':invoicedate', date("Y-m-d", strtotime($quotation_date)));
+    $invoiceDate = date("Y-m-d", strtotime($quotation_date));
+    $statement->bindParam(':invoicedate', $invoiceDate);
     $statement->bindParam(':netprice', $net_price);
     $statement->bindParam(':servicetax', $service_tax);
     $statement->bindParam(':invsvc', $services);
     $statement->bindParam(':svcamt', $svcamount);
     $statement->bindParam(':amount', $total_amt);
-    $statement->bindParam(':taxtype', $_POST['taxType']); // NEW LINE
+    $statement->bindParam(':taxtype', $tax_type);
     $statement->execute();
 
     $sql = "SELECT max(LAST_INSERT_ID(invoice_id)) as id From invoice_details";

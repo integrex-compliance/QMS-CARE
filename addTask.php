@@ -24,7 +24,8 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
                 $statement = $db->prepare($sql);
                 $statement->bindParam(":id", $_POST["user-type"]);
                 $statement->bindParam(":task", $taskList[$i]);
-                $statement->bindParam(":date", date('Y-m-d'));
+$today = date('Y-m-d');
+                $statement->bindParam(":date", $today);
                 $statement->execute();
             }
         }
@@ -53,7 +54,8 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
             $statement = $db->prepare($sql1);
             $statement->bindParam(":id", $_GET["row"]);
             $statement->bindParam(":status", $_GET["status"]);
-            $statement->bindParam(":date", date('Y-m-d'));
+$today = date('Y-m-d');
+            $statement->bindParam(":date", $today);
             $statement->execute();
             if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["row"]);
             $val = "success";
@@ -76,7 +78,8 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
         $sql1 = "UPDATE `task_manager` SET task = :task, update_date = :date WHERE id = :id";
         $statement = $db->prepare($sql1);
         $statement->bindParam(":id", $_GET["rowid"]);
-        $statement->bindParam(":date", date('Y-m-d'));
+$today = date('Y-m-d');
+        $statement->bindParam(":date", $today);
         $statement->bindParam(":task", $_GET["columnVal"]);
         $statement->execute();
         if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["rowid"]);
@@ -91,7 +94,8 @@ if (isset($_POST["user-type"]) && !empty($_POST["user-type"])) {
         $sql1 = "UPDATE `task_manager` SET userid = :user, update_date = :date WHERE id = :id";
         $statement = $db->prepare($sql1);
         $statement->bindParam(":id", $_GET["rowID"]);
-        $statement->bindParam(":date", date('Y-m-d'));
+$today = date('Y-m-d');
+        $statement->bindParam(":date", $today);
         $statement->bindParam(":user", $_GET["user"]);
         $statement->execute();
         if (function_exists('aitf_sync_web_task_to_app')) aitf_sync_web_task_to_app($db, (int)$_GET["rowID"]);

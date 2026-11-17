@@ -179,7 +179,8 @@ if (isset($_POST['editquot-id']) && !empty($_POST['editquot-id'])) {
     $statement = $db->prepare($quotUpdate);
     $statement->bindParam(':custId', $customerId);
     $statement->bindParam(':service', $service_string);
-    $statement->bindParam(':quotationDate', date("Y-m-d", strtotime($quotation_date)));
+    $quotationDateFormatted = date("Y-m-d", strtotime($quotation_date));
+    $statement->bindParam(':quotationDate', $quotationDateFormatted);
     $statement->bindParam(':custName', $customerName);
     $statement->bindParam(':auditBodyCharges', $audit_body_charges);
     $statement->bindParam(':consultingCharges', $consultancy_charges);
@@ -229,7 +230,8 @@ if (isset($_POST['editquot-id']) && !empty($_POST['editquot-id'])) {
     $statement->bindParam(':quotationNo', $newQuotation);
     $statement->bindParam(':customerName', $customerName);
     $statement->bindParam(':service', $service_string);
-    $statement->bindParam(':quotationDate', date("Y-m-d", strtotime($quotation_date)));
+    $quotationDateFormatted = date("Y-m-d", strtotime($quotation_date));
+    $statement->bindParam(':quotationDate', $quotationDateFormatted);
     $statement->bindParam(':auditBodyCharges', $audit_body_charges);
     $statement->bindParam(':consultingCharges', $consultancy_charges);
     $statement->bindParam(':initialAmount', $initial_amount);

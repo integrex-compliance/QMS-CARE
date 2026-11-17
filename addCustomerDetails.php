@@ -164,7 +164,8 @@ if (isset($_GET['id']) && !empty($_GET['id']) && isset($_GET['columnName']) && !
     try {
         $updateAudit = "UPDATE services SET audit_date = :auditDate where service_id = :id";
         $statement = $db->prepare($updateAudit);
-        $statement->bindParam(':auditDate', date("Y-m-d", strtotime($_GET['auditDate'])));
+        $auditDateFormatted = date("Y-m-d", strtotime($_GET['auditDate']));
+        $statement->bindParam(':auditDate', $auditDateFormatted);
         $statement->bindParam(':id', $_GET['clientId']);
         $statement->execute();
         echo "success";
