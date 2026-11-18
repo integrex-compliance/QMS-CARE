@@ -9,11 +9,17 @@ include_once './dbConnect.php';
  */
 if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
     try {
+        $db->beginTransaction();
+        $existingService = $db->prepare('SELECT service_id FROM services WHERE service_id = :id AND customer_id = :customer');
+        $existingService->execute(array(':id' => $_GET['serviceId'], ':customer' => $_GET['customer_id']));
+        if (!$existingService->fetch()) {
+            throw new RuntimeException('Service not found for this customer');
+        }
 //        cretification details
         $cbrowid = explode('~', $_GET['cbRows']);
         $cbContractDetails = explode('~', $_GET['cbContractDetails']);
-        $cbAmountDecided = explode('~', $_GET['cbDecidedAmount']);
-        $cbPaymentReceived = explode('~', $_GET['cbPaymentReceived']);
+        $cbAmountDecided = array_map(function ($value) { return $value === '' ? 0 : $value; }, explode('~', $_GET['cbDecidedAmount']));
+        $cbPaymentReceived = array_map(function ($value) { return $value === '' ? 0 : $value; }, explode('~', $_GET['cbPaymentReceived']));
         $cbDepositDate = explode('~', $_GET['cbDepositDate']);
         $cbChequeDetails = explode('~', $_GET['cbChequeDetails']);
         $cbBankAcccountNo = explode('~', $_GET['cbBankAcccountNo']);
@@ -21,8 +27,8 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
 //        consulting details
         $consultingrowid = explode('~', $_GET['consultingrows']);
         $consultingDetails = explode('~', $_GET['consultingDetails']);
-        $consultingAmount = explode('~', $_GET['consultingAmount']);
-        $consultingPayment = explode('~', $_GET['consultingPayment']);
+        $consultingAmount = array_map(function ($value) { return $value === '' ? 0 : $value; }, explode('~', $_GET['consultingAmount']));
+        $consultingPayment = array_map(function ($value) { return $value === '' ? 0 : $value; }, explode('~', $_GET['consultingPayment']));
         $consultingDepositDate = explode('~', $_GET['consultingDepositDate']);
         $consultingChequeDetails = explode('~', $_GET['consultingChequeDetails']);
         $consultingBankAcccountNo = explode('~', $_GET['consultingBankAcccountNo']);
@@ -195,7 +201,7 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
             }
         }
 //die;
-        $serviceStatus = "SELECT service_type from services WHERE service_id = :service";
+        $serviceStatus = "SELECT service_type, service_id from services WHERE service_id = :service";
         $statement = $db->prepare($serviceStatus);
         $statement->bindParam(':service', $_GET['serviceId']);
         $statement->execute();
@@ -213,16 +219,21 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
         $statement->execute();
         $consultingIds = $statement->fetchAll();
 
+        $db->commit();
         echo json_encode(array($serviceStatus, $cbIds, $consultingIds));
 //        echo $serviceStatus['service_type'];
 //        echo json_encode($serviceStatus);
-    } catch (Exception $ex) {
-        
+    } catch (Throwable $ex) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('Service save failed: ' . $ex->getMessage());
+        http_response_code(500);
+        echo json_encode(array('error' => 'Unable to save service'));
     }
 } else if (isset($_GET['servicetype']) && !empty($_GET['servicetype']) && isset($_GET['customer_id']) && !empty($_GET['customer_id'])) {
 
     //&& isset($_GET['certbody']) && !empty($_GET['certbody']) && isset($_GET['consultingfirm']) && !empty($_GET['consultingfirm']) && isset($_GET['consultantlist']) && !empty($_GET['consultantlist']) && isset($_GET['audittype']) && !empty($_GET['audittype']) && isset($_GET['auditorlist']) && !empty($_GET['auditorlist']) && isset($_GET['auditDate']) && !empty($_GET['auditDate']) 
     try {
+        $db->beginTransaction();
 
         $certBody = "";
         $consultingFirm = "";
@@ -268,8 +279,8 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
         }
 //        cretification details
         $cbContractDetails = explode('~', $_GET['cbContractDetails']);
-        $cbAmountDecided = explode('~', $_GET['cbDecidedAmount']);
-        $cbPaymentReceived = explode('~', $_GET['cbPaymentReceived']);
+        $cbAmountDecided = array_map(function ($value) { return $value === '' ? 0 : $value; }, explode('~', $_GET['cbDecidedAmount']));
+        $cbPaymentReceived = array_map(function ($value) { return $value === '' ? 0 : $value; }, explode('~', $_GET['cbPaymentReceived']));
         $cbDepositDate = explode('~', $_GET['cbDepositDate']);
         $cbChequeDetails = explode('~', $_GET['cbChequeDetails']);
         $cbBankAcccountNo = explode('~', $_GET['cbBankAcccountNo']);
@@ -277,8 +288,8 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
 
 //        consulting details
         $consultingDetails = explode('~', $_GET['consultingDetails']);
-        $consultingAmount = explode('~', $_GET['consultingAmount']);
-        $consultingPayment = explode('~', $_GET['consultingPayment']);
+        $consultingAmount = array_map(function ($value) { return $value === '' ? 0 : $value; }, explode('~', $_GET['consultingAmount']));
+        $consultingPayment = array_map(function ($value) { return $value === '' ? 0 : $value; }, explode('~', $_GET['consultingPayment']));
         $consultingDepositDate = explode('~', $_GET['consultingDepositDate']);
         $consultingChequeDetails = explode('~', $_GET['consultingChequeDetails']);
         $consultingBankAcccountNo = explode('~', $_GET['consultingBankAcccountNo']);
@@ -300,11 +311,7 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
         $statement->bindParam(':handel', $_GET['handelby']);
         $statement->execute();
 
-        $sql = "SELECT max(LAST_INSERT_ID(service_id)) as id From services";
-        $statement = $db->prepare($sql);
-        $statement->execute();
-        $row = $statement->fetch();
-        $serviceid = $row['id'];
+        $serviceid = $db->lastInsertId();
 //  
         if ($serviceid) {
             if ($cbContractDetails != "") {
@@ -422,27 +429,31 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
 
         $serviceStatus = "SELECT service_type,service_id from services WHERE service_id = :service";
         $statement = $db->prepare($serviceStatus);
-        $statement->bindParam(':service', $_GET['serviceId']);
+        $statement->bindParam(':service', $serviceid);
         $statement->execute();
         $serviceStatus = $statement->fetch();
 
         $cbid = "SELECT * FROM certification_body WHERE service_id = :service ORDER BY certification_id ";
         $statement = $db->prepare($cbid);
-        $statement->bindParam(':service', $_GET['serviceId']);
+        $statement->bindParam(':service', $serviceid);
         $statement->execute();
         $cbIds = $statement->fetchAll();
 
         $consultingId = "SELECT * FROM consulting WHERE service_id = :service ORDER BY consulting_id ";
         $statement = $db->prepare($consultingId);
-        $statement->bindParam(':service', $_GET['serviceId']);
+        $statement->bindParam(':service', $serviceid);
         $statement->execute();
         $consultingIds = $statement->fetchAll();
 
         
+        $db->commit();
         echo json_encode(array($serviceStatus, $cbIds, $consultingIds));
 //        echo $serviceStatus['service_type'];
 //        echo json_encode($serviceStatus);
-    } catch (Exception $ex) {
-        echo $ex->getMessage();
+    } catch (Throwable $ex) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('Service save failed: ' . $ex->getMessage());
+        http_response_code(500);
+        echo json_encode(array('error' => 'Unable to save service'));
     }
 }

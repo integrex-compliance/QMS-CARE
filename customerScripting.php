@@ -710,6 +710,15 @@ if (data[0]['tax_type'] === "CGST_SGST") {
            DEBOUNCED AUTO-SAVE HANDLER
            ========================================================== */
         var autoSaveTimers = {};
+        var serviceSavesInFlight = {};
+        var pendingServiceSaves = {};
+        var newServiceSequence = 0;
+        window.addEventListener('beforeunload', function (event) {
+            if (Object.keys(autoSaveTimers).length || Object.keys(serviceSavesInFlight).length) {
+                event.preventDefault();
+                event.returnValue = '';
+            }
+        });
         window.autoSaveService = function (rowId, delay) {
             if (!rowId) return;
             if (delay === undefined) delay = 600;
@@ -722,6 +731,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             }
 
             autoSaveTimers[rowId] = setTimeout(function () {
+                delete autoSaveTimers[rowId];
                 executeServiceSave(rowId, null, false);
             }, delay);
         };
@@ -731,6 +741,13 @@ if (data[0]['tax_type'] === "CGST_SGST") {
            ========================================================== */
         window.executeServiceSave = function (rowId, callback, silent) {
             if (!rowId) return;
+            clearTimeout(autoSaveTimers[rowId]);
+            delete autoSaveTimers[rowId];
+            // Serialize saves so edits made during creation use the returned database ID.
+            if (serviceSavesInFlight[rowId]) {
+                pendingServiceSaves[rowId] = true;
+                return;
+            }
 
             var contractDetailsArray = [];
             $(".contractDetails").each(function () {
@@ -784,8 +801,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             var cbRowArray = [];
             $('.cb-row-id').each(function () {
                 if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id")) {
-                    if (cbRowArray.indexOf($(this).val()) == -1)
-                        cbRowArray.push($(this).val());
+                    cbRowArray.push($(this).val());
                 }
             });
             var cbRoeIds = cbRowArray.join("~");
@@ -842,8 +858,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             var consultingRowArray = [];
             $('.consulting-row-id').each(function () {
                 if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id")) {
-                    if (consultingRowArray.indexOf($(this).val()) == -1)
-                        consultingRowArray.push($(this).val());
+                    consultingRowArray.push($(this).val());
                 }
             });
             var consultingrowId = consultingRowArray.join("~");
@@ -862,7 +877,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             });
             var deletConsultingRows = deleteConsulting.join("~");
 
-            var serviceid = $('.service-id[data-row-id="' + rowId + '"]').val() || rowId;
+            var serviceid = $('.service-id[data-row-id="' + rowId + '"]').val() || '';
             var serviceType = $('.service-type[data-row-id="' + rowId + '"]').val();
             var certBody = $('.cert-body[data-row-id="' + rowId + '"]').val();
             var consultingFirm = $('.consulting-firm[data-row-id="' + rowId + '"]').val();
@@ -877,9 +892,12 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             var issue_cert = $('.issueCert[data-row-id="' + rowId + '"]').is(':checked') ? "YES" : "NO";
 
             if (!serviceType) {
+                $('.auto-save-status-pill[data-row-id="' + rowId + '"]').removeClass('saving');
                 return;
             }
 
+            serviceSavesInFlight[rowId] = true;
+            var saveSucceeded = false;
             $.ajax({
                 url: "addService.php",
                 dataType: "json",
@@ -917,6 +935,16 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                     consultingDeleteRows: deletConsultingRows
                 },
                 success: function (data) {
+                    if (!data || !data[0] || !data[0].service_id) {
+                        showToast("Service could not be saved. Please try again.", "error", "Save Failed");
+                        return;
+                    }
+                    saveSucceeded = true;
+                    var savedServiceId = data[0].service_id;
+                    $('.service-id[data-row-id="' + rowId + '"]').val(savedServiceId);
+                    var $serviceBox = $('#servicebox-data' + rowId);
+                    $serviceBox.find('.issueCert, .serviceInvoiceBtn').attr('data-service', savedServiceId).data('service', savedServiceId);
+                    $serviceBox.find('.serviceInvoiceBtn').attr('data-servicename', serviceType).attr('data-firm', consultingFirm);
                     var $pill = $('.auto-save-status-pill[data-row-id="' + rowId + '"]');
                     $pill.removeClass('saving error').html('<i class="fa fa-check-circle" style="color: #10b981;"></i> Auto-saved');
 
@@ -926,20 +954,20 @@ if (data[0]['tax_type'] === "CGST_SGST") {
 
                     // Update row IDs for new rows if returned
                     if (data && data[1] && data[1].length > 0) {
-                        var $cbRows = $('#servicebox-data' + rowId).find('.cb_subsection');
+                        var $cbRows = $('#servicebox-data' + rowId).find('.cb-row-id');
                         $cbRows.each(function (idx) {
                             if (data[1][idx]) {
-                                $(this).find('.cb-row-id').val(data[1][idx]['certification_id']);
-                                $(this).find('.cbDeleteIcon').attr('data-id', data[1][idx]['certification_id']);
+                                $(this).val(data[1][idx]['certification_id']);
+                                $(this).closest('tr').find('.cbDeleteIcon').attr('data-id', data[1][idx]['certification_id']);
                             }
                         });
                     }
                     if (data && data[2] && data[2].length > 0) {
-                        var $conRows = $('#servicebox-data' + rowId).find('.consulting_subsection');
+                        var $conRows = $('#servicebox-data' + rowId).find('.consulting-row-id');
                         $conRows.each(function (idx) {
                             if (data[2][idx]) {
-                                $(this).find('.consulting-row-id').val(data[2][idx]['consulting_id']);
-                                $(this).find('.consultingDeleteIcon').attr('data-id', data[2][idx]['consulting_id']);
+                                $(this).val(data[2][idx]['consulting_id']);
+                                $(this).closest('tr').find('.consultingDeleteIcon').attr('data-id', data[2][idx]['consulting_id']);
                             }
                         });
                     }
@@ -954,6 +982,12 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                     var $pill = $('.auto-save-status-pill[data-row-id="' + rowId + '"]');
                     $pill.removeClass('saving').addClass('error').html('<i class="fa fa-exclamation-triangle" style="color: #ef4444;"></i> Save error');
                     showToast("Error saving data. Please check your connection.", "error", "Save Failed");
+                },
+                complete: function () {
+                    delete serviceSavesInFlight[rowId];
+                    var needsSave = pendingServiceSaves[rowId];
+                    delete pendingServiceSaves[rowId];
+                    if (saveSucceeded && needsSave) executeServiceSave(rowId, null, silent);
                 }
             });
         };
@@ -1833,7 +1867,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                                 </div>\n\
                                     <div class="row">\n\
                                         <div class="col-xs-2 form-group float-label-control"><label>Auditor</label>\n\
-                                            <select class="consultant-list" id="consultant-list" name="consultant-list" data-row-id="" value="">\n\
+                                            <select class="auditor-list" id="auditor-list" name="auditor-list" data-row-id="" value="">\n\
                                                 <option value="" >Select Auditor</option><?php foreach ($allAuditorList as $auditors) { ?><option value="<?php echo $auditors['auditor_name'] ?>"><?php echo $auditors['auditor_name'] ?></option><?php } ?></select>\n\
                                         </div>\n\
                                         <div class="col-xs-2 form-group float-label-control"><label>Audit Date</label>\n\
@@ -1959,7 +1993,16 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                                 </div></div>\n\
     </div>\n\
 </div>';
-            $(".servicebox-bunch").append($serviceStr);
+            var draftRowId = 'new-' + (++newServiceSequence);
+            var $newService = $($serviceStr);
+            $newService.find('[data-row-id]').attr('data-row-id', draftRowId);
+            $newService.find('[id]').each(function () {
+                this.id += draftRowId;
+            });
+            // The UI key identifies the draft; service-id stays empty until INSERT succeeds.
+            $newService.find('.service-id').val('');
+            $newService.find('.issueCert').attr('data-customer', $newService.find('.customer_id').val());
+            $(".servicebox-bunch").append($newService);
         });
 
 
