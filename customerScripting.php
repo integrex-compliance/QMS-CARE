@@ -11,13 +11,18 @@ $certBody = "";
 $consultfrm = "";
 $allConsultant = "";
 
-$allServiceType = "SELECT * FROM service_type WHERE service <> ''";
-$statement = $db->prepare($allServiceType);
-$statement->execute();
-$allServices = $statement->fetchAll();
-
-foreach ($allServices as $service) {
-    $services .= $service['service'] . ",";
+$allServiceStages = [];
+try {
+    $stageStmt = $db->query("SELECT stage FROM service_stage ORDER BY id ASC");
+    if ($stageStmt) {
+        $allServiceStages = $stageStmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+} catch (Exception $e) {}
+if (empty($allServiceStages)) {
+    $allServiceStages = ['CA', 'SA-1', 'SA-2', 'RC', 'New enq', 'CNE', 'Mnt.'];
+}
+foreach ($allServiceStages as $stg) {
+    $services .= $stg . ",";
 }
 //print_r($service);
 $allCertBody = "SELECT * FROM cert_body";
@@ -488,6 +493,83 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             });
         });
 
+        // Toggle Consulting Payments Section
+        $(document.body).on('click', '.consulting-header', function (e) {
+            // Ignore click if user clicked on action buttons inside header (Issue Invoice, Add Consulting Row)
+            if ($(e.target).closest('.header-actions, .serviceInvoiceBtn, .consultingAddLink, .btn, a, button').length) {
+                return;
+            }
+            var $card = $(this).closest('.consulting-payment-block');
+            var $body = $card.find('.consulting-content-body');
+            var $indicator = $(this).find('.consulting-collapse-indicator');
+            var $tableCard = $(this).closest('.compact-table-card');
+
+            $body.slideToggle(180, function () {
+                if ($body.is(':visible')) {
+                    $indicator.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                    $tableCard.removeClass('is-collapsed');
+                } else {
+                    $indicator.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                    $tableCard.addClass('is-collapsed');
+                }
+            });
+        });
+
+        // Toggle External Party Payment Section
+        $(document.body).on('click', '.cb-header, .payment-dotted-divider', function (e) {
+            // Ignore click if user clicked on action buttons inside header (MS, Add External Party Row)
+            if ($(e.target).closest('.header-actions, .cbAddLink, .cbAddLinkForAdmin, .btn, a, button').length) {
+                return;
+            }
+            var $parentBlock = $(this).closest('.servicebox-data, .servicebox');
+            var $card = $parentBlock.find('.cb-payment-block');
+            var $body = $card.find('.cb-content-body');
+            var $header = $card.find('.cb-header');
+            var $indicator = $header.find('.cb-collapse-indicator');
+            var $divIndicator = $parentBlock.find('.divider-collapse-indicator');
+            var $tableCard = $card.find('.compact-table-card');
+
+            $body.slideToggle(180, function () {
+                if ($body.is(':visible')) {
+                    $indicator.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                    $divIndicator.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                    $tableCard.removeClass('is-collapsed');
+                } else {
+                    $indicator.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                    $divIndicator.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                    $tableCard.addClass('is-collapsed');
+                }
+            });
+        });
+
+        // Auto-expand CB section if user clicks Add External Party Row or MS button
+        $(document.body).on('click', '.cbAddLink, .cbAddLinkForAdmin', function () {
+            var $parentBlock = $(this).closest('.servicebox-data, .servicebox');
+            var $body = $parentBlock.find('.cb-content-body');
+            var $indicator = $parentBlock.find('.cb-collapse-indicator');
+            var $divIndicator = $parentBlock.find('.divider-collapse-indicator');
+            var $tableCard = $parentBlock.find('.cb-payment-block .compact-table-card');
+            if (!$body.is(':visible')) {
+                $body.slideDown(150);
+                $indicator.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                $divIndicator.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                $tableCard.removeClass('is-collapsed');
+            }
+        });
+
+        // Auto-expand Consulting section if user clicks Add Consulting Row button
+        $(document.body).on('click', '.consultingAddLink', function () {
+            var $parentBlock = $(this).closest('.servicebox-data, .servicebox');
+            var $body = $parentBlock.find('.consulting-content-body');
+            var $indicator = $parentBlock.find('.consulting-collapse-indicator');
+            var $tableCard = $parentBlock.find('.consulting-payment-block .compact-table-card');
+            if (!$body.is(':visible')) {
+                $body.slideDown(150);
+                $indicator.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                $tableCard.removeClass('is-collapsed');
+            }
+        });
+
         $('.saveChanges').change(function (e) {
 //            alert($('.nextService').val());
             saveData($(this));
@@ -855,6 +937,29 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             });
             var consultingBalance = consultingBalanceArray.join("~");
 
+            var consultingTdsArray = [];
+            $('.consultingTdsDeducted').each(function () {
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
+                    consultingTdsArray.push($(this).val());
+            });
+            var consultingTds = consultingTdsArray.join("~");
+
+            var consultingShortSettleArray = [];
+            $('.consultingShortSettle').each(function () {
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
+                    consultingShortSettleArray.push($(this).val());
+            });
+            var consultingShortSettle = consultingShortSettleArray.join("~");
+
+            var consultingBadDebtArray = [];
+            $('.consultingBadDebt').each(function () {
+                if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id"))
+                    consultingBadDebtArray.push($(this).val());
+            });
+            var consultingBadDebt = consultingBadDebtArray.join("~");
+
+            var serviceNotes = $('.serviceNotesText[data-service-id="' + rowId + '"]').val() || '';
+
             var consultingRowArray = [];
             $('.consulting-row-id').each(function () {
                 if (rowId == $(this).data("row-id") || rowId == $(this).attr("data-row-id")) {
@@ -931,6 +1036,10 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                     consultingBankAcccountNo: consultingBankAcccountNo,
                     consultingBalance: consultingBalance,
                     consultingrows: consultingrowId,
+                    consultingTds: consultingTds,
+                    consultingShortSettle: consultingShortSettle,
+                    consultingBadDebt: consultingBadDebt,
+                    serviceNotes: serviceNotes,
                     cbDeleteRows: deletCbRows,
                     consultingDeleteRows: deletConsultingRows
                 },
@@ -1002,8 +1111,115 @@ if (data[0]['tax_type'] === "CGST_SGST") {
         /* ==========================================================
            LIVE AUTO-SAVE & BALANCE CALCULATION EVENT LISTENERS
            ========================================================== */
-        // 1. Amount Decided & Payment Received: Recalculate balance on the fly + Debounced Auto-save
-        $(document).on('input', '.amountDecided, .paymentReceived, .consultingAmountDecided, .consultingPaymentReceived', function () {
+        // Helper: format currency
+        function formatCurr(val) {
+            return parseFloat(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Live calculation for Payment System matching Image 2
+        function recalcServicePayment(rowId) {
+            var $card = $('#service-payment-system-' + rowId);
+            if (!$card.length) {
+                $card = $('#service-row' + rowId).closest('.servicebox').find('.service-payment-system-card');
+            }
+            if (!$card.length) return;
+
+            // 1. Sum Invoicing Gross Total from invoices in left table
+            var invGrossTotal = 0;
+            $card.find('.inv-data-row').each(function () {
+                var amt = parseFloat($(this).attr('data-gross-amt')) || 0;
+                invGrossTotal += amt;
+            });
+            $card.find('.invoicing-gross-total-field').val(invGrossTotal.toFixed(2));
+
+            var targetAmt = invGrossTotal;
+
+            // 2. Sum Received, TDS, Short Settle, Bad Debt
+            var rcvTotal = 0;
+            var tdsTotal = 0;
+            var shortTotal = 0;
+            var badTotal = 0;
+
+            $card.find('#consulting_tbody_' + rowId + ' tr').each(function () {
+                var $tr = $(this);
+                var rcv = parseFloat($tr.find('.consultingPaymentReceived').val()) || 0;
+                var tds = parseFloat($tr.find('.consultingTdsDeducted').val()) || 0;
+                var sVal = parseFloat($tr.find('.consultingShortSettle').val()) || 0;
+                var bVal = parseFloat($tr.find('.consultingBadDebt').val()) || 0;
+
+                if ($tr.hasClass('row-is-loss')) {
+                    badTotal += (bVal > 0 ? bVal : rcv);
+                } else if ($tr.hasClass('row-is-short')) {
+                    shortTotal += (sVal > 0 ? sVal : rcv);
+                } else {
+                    rcvTotal += rcv;
+                    tdsTotal += tds;
+                    shortTotal += sVal;
+                    badTotal += bVal;
+                }
+
+                // Visual styling on Payment Received input
+                var $rcvInput = $tr.find('.consultingPaymentReceived');
+                if ($rcvInput.length && rcv > 0 && !$tr.hasClass('row-is-loss') && !$tr.hasClass('row-is-short')) {
+                    $rcvInput.css({'border-color': '#10b981', 'background': '#f0fdf4', 'color': '#166534'});
+                    if (!$tr.find('.payment-check-icon').length) {
+                        $rcvInput.parent().append('<i class="fa fa-check text-success payment-check-icon" style="position: absolute; left: 6px; top: 5px; font-size: 10px;"></i>');
+                    }
+                } else if ($rcvInput.length && !$tr.hasClass('row-is-loss') && !$tr.hasClass('row-is-short')) {
+                    $rcvInput.css({'border-color': '#cbd5e1', 'background': '#ffffff', 'color': '#0f172a'});
+                    $tr.find('.payment-check-icon').remove();
+                }
+            });
+
+            // Update footer totals
+            $card.find('.val-received-total').text(formatCurr(rcvTotal));
+            $card.find('.val-tds-total').text(formatCurr(tdsTotal));
+            $card.find('.val-short-total').text(formatCurr(shortTotal));
+            $card.find('.val-loss-total').text(formatCurr(badTotal));
+
+            var effectiveCleared = rcvTotal + tdsTotal + shortTotal + badTotal;
+            var diff = targetAmt - effectiveCleared;
+            var balance = Math.max(0, diff);
+            var excess = effectiveCleared > targetAmt ? (effectiveCleared - targetAmt) : 0;
+            var isMatched = (targetAmt > 0 && Math.abs(diff) < 0.01);
+
+            // Toggle green card styling & invoicing checkmark strictly when Invoicing Gross Total == Cleared/Received Amount
+            $card.removeClass('is-matched is-excess has-due');
+            var $invCheck = $card.find('.inv-matched-check-icon');
+            if (isMatched) {
+                $card.addClass('is-matched').css('border-color', '#22c55e');
+                $invCheck.css('display', 'inline-flex');
+            } else if (excess > 0) {
+                $card.addClass('is-excess').css('border-color', '#f59e0b');
+                $invCheck.hide();
+            } else if (targetAmt > 0) {
+                $card.addClass('has-due').css('border-color', '#cbd5e1');
+                $invCheck.hide();
+            } else {
+                $card.css('border-color', '#cbd5e1');
+                $invCheck.hide();
+            }
+
+            var $matchHeader = $card.closest('.compact-payment-block').find('.payment-match-indicator-header');
+            var $statusChip = $card.find('.chip-matched-status');
+
+            if (isMatched) {
+                $matchHeader.html('<span style="color: #166534; font-weight: 700; font-size: 11.5px; margin-left: 4px; display: inline-flex; align-items: center; gap: 3px;"><i class="fa fa-check-circle"></i> MATCHED</span>');
+                $statusChip.html('<span class="badge" style="background:#dcfce7; border:1px solid #86efac; color:#166534; font-weight:700; font-size:10.5px; padding:2px 7px; border-radius:6px;"><i class="fa fa-check-circle"></i> MATCHED: ₹0.00</span>');
+            } else if (targetAmt > 0 && balance > 0) {
+                $matchHeader.html('<span style="color: #dc2626; font-weight: 600; font-size: 11px; margin-left: 4px; display: inline-flex; align-items: center; gap: 3px;"><i class="fa fa-exclamation-circle"></i> DUE: ₹' + formatCurr(balance) + '</span>');
+                $statusChip.html('<span class="badge" style="background:#fee2e2; border:1px solid #fca5a5; color:#991b1b; font-weight:700; font-size:10.5px; padding:2px 7px; border-radius:6px;"><i class="fa fa-exclamation-circle"></i> BALANCE DUE: ₹' + formatCurr(balance) + '</span>');
+            } else if (excess > 0) {
+                $matchHeader.html('<span style="color: #d97706; font-weight: 700; font-size: 11px; margin-left: 4px; display: inline-flex; align-items: center; gap: 3px;"><i class="fa fa-exclamation-triangle"></i> EXCESS: ₹' + formatCurr(excess) + '</span>');
+                $statusChip.html('<span class="badge" style="background:#fef3c7; border:1px solid #fcd34d; color:#b45309; font-weight:700; font-size:10.5px; padding:2px 7px; border-radius:6px;"><i class="fa fa-exclamation-triangle"></i> EXCESS: ₹' + formatCurr(excess) + '</span>');
+            } else {
+                $matchHeader.html('');
+                $statusChip.html('<span class="badge" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#475569; font-weight:700; font-size:10.5px; padding:2px 7px; border-radius:6px;">NO INVOICE</span>');
+            }
+        }
+
+        // 1. Amount Decided, Payment Received & TDS: Live calculation + Auto-save
+        $(document).on('input', '.amountDecided, .paymentReceived, .consultingAmountDecided, .consultingPaymentReceived, .consultingTdsDeducted', function () {
             var $tr = $(this).closest('tr');
             var rowId = $(this).attr('data-row-id') || $tr.find('[data-row-id]').first().attr('data-row-id');
 
@@ -1012,14 +1228,11 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                 var received = parseFloat($tr.find('.paymentReceived').val()) || 0;
                 var bal = decided - received;
                 $tr.find('.balance').val(bal.toFixed(2));
+                updateServiceKpiMetrics(rowId);
             } else {
-                var cDecided = parseFloat($tr.find('.consultingAmountDecided').val()) || 0;
-                var cReceived = parseFloat($tr.find('.consultingPaymentReceived').val()) || 0;
-                var cBal = cDecided - cReceived;
-                $tr.find('.consultingBalance').val(cBal.toFixed(2));
+                recalcServicePayment(rowId);
             }
 
-            updateServiceKpiMetrics(rowId);
             autoSaveService(rowId, 600);
         });
 
@@ -1839,17 +2052,17 @@ if (data[0]['tax_type'] === "CGST_SGST") {
             
             $serviceStr = '<div class="servicebox">\n\
                             <div class="row" id="service-row" class="service-row">\n\
-                                <div class="col-xs-12 qms_customer_name service_title" data-row-id="" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 12px 18px;">\n\
-                                    <div class="service-title-left" style="display: flex; align-items: center; gap: 8px; min-width: 80px;"><i class="fa fa-folder-open-o service-folder-icon" style="color: #ffffff; font-size: 16px;"></i></div>\n\
-                                    <div class="service-title-center" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="font-weight: 800; font-size: 16px; letter-spacing: 0.6px; color: #ffffff; text-transform: uppercase;">SERVICE &mdash; <span class="serviceStatus" style="color: #ffd166; font-weight: 900; font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);"></span></span></div>\n\
-                                    <div class="service-title-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: 80px;"><a class="saveService" data-row-id="" style="display:none !important;"></a><i class="fa fa-chevron-up service-collapse-indicator" style="color: #ffffff; font-size: 14px; margin-left: 4px;" title="Click to collapse / expand"></i></div>\n\
+                                <div class="col-xs-12 qms_customer_name service_title" data-row-id="" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px;">\n\
+                                    <div class="service-title-left" style="display: flex; align-items: center; gap: 8px; min-width: 80px;"><i class="fa fa-folder-open-o service-folder-icon" style="color: #ffffff; font-size: 15px;"></i></div>\n\
+                                    <div class="service-title-center" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="font-weight: 800; font-size: 15px; letter-spacing: 0.5px; color: #ffffff; text-transform: uppercase;">SERVICE &mdash; <span class="serviceStatus" style="color: #ffd166; font-weight: 900; font-size: 16px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);"></span></span></div>\n\
+                                    <div class="service-title-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 80px;"><a class="saveService" data-row-id="" style="display:none !important;"></a><i class="fa fa-chevron-up service-collapse-indicator" style="color: #ffffff; font-size: 13px; margin-left: 4px;" title="Click to collapse / expand"></i></div>\n\
                                 </div>\n\
                                 </div>\n\
                                 <div class="servicebox-data" id="servicebox-data">\n\
-                                <div class="row" style="padding-top:10px">\n\
-                                    <div class="col-xs-3 form-group float-label-control"><label>Service Type</label>\n\
+                                <div class="row service-detail-row service-detail-row-top" style="padding-top:2px;">\n\
+                                    <div class="col-xs-3 form-group float-label-control"><label>Service Stage</label>\n\
                                         <select class="service-type" id="service-type" name="service-type" data-row-id="" value="">\n\
-                                            <option value="" >Select Service Type</option>'+option+'</select>\n\
+                                            <option value="" >Select Service Stage</option>'+option+'</select>\n\
                                     </div>\n\
                                     <div class="col-xs-3 form-group float-label-control"><label>Cert Body</label>\n\
                                         <select class="cert-body" id="cert-body" name="cert-body" data-row-id="" value="">\n\
@@ -1859,132 +2072,140 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                                         <select class="consulting-firm" id="consulting-firm" name="consulting-firm" data-row-id="" value="">\n\
                                             <option value="" >Select Consulting Firm</option>'+option2+'</select>\n\
                                     </div>\n\
-                                    <div class="col-xs-3 form-group float-label-control"><label>Consultant</label>\n\
+                                    <div class="col-xs-3 form-group float-label-control"><label>Lead Consultant</label>\n\
                                         <select class="consultant-list" id="consultant-list" name="consultant-list" data-row-id="" value="">\n\
-                                            <option value="" >Select Consultant </option>'+option3+'</select>\n\
+                                            <option value="" >Select Lead Consultant</option>'+option3+'</select>\n\
                                     </div>\n\
                                     <input type="hidden" class="service-id" id="service-id" data-row-id="" name="service-id" value="">\n\
                                 </div>\n\
-                                    <div class="row">\n\
-                                        <div class="col-xs-2 form-group float-label-control"><label>Auditor</label>\n\
+                                    <div class="row service-detail-row">\n\
+                                        <div class="col-xs-2 form-group float-label-control" style="margin-bottom:4px;"><label>Lead Auditor</label>\n\
                                             <select class="auditor-list" id="auditor-list" name="auditor-list" data-row-id="" value="">\n\
-                                                <option value="" >Select Auditor</option><?php foreach ($allAuditorList as $auditors) { ?><option value="<?php echo $auditors['auditor_name'] ?>"><?php echo $auditors['auditor_name'] ?></option><?php } ?></select>\n\
+                                                <option value="" >Select Lead Auditor</option><?php foreach ($allAuditorList as $auditors) { ?><option value="<?php echo $auditors['auditor_name'] ?>"><?php echo $auditors['auditor_name'] ?></option><?php } ?></select>\n\
                                         </div>\n\
-                                        <div class="col-xs-2 form-group float-label-control"><label>Audit Date</label>\n\
+                                        <div class="col-xs-2 form-group float-label-control" style="margin-bottom:4px;"><label>Audit Date</label>\n\
                                             <input type="text" class="audit-date" data-row-id="" name="audit-date" placeholder="Audit Date" value="" required>\n\
                                         </div>\n\
-                                        <div class="col-xs-3 form-group float-label-control" style="margin-bottom:2px;"><label>Add to</label>\n\
+                                        <div class="col-xs-3 form-group float-label-control" style="margin-bottom:4px;"><label>Add to</label>\n\
                                             <select class="add-to-service" id="add-to-service" name="add-to-service" data-row-id="" value="">\n\
                                                 <option value="" >Select add to</option><?php foreach ($addTODo as $to) { ?><option value="<?php echo $to['add_to'] ?>"><?php echo $to['add_to'] ?></option><?php } ?></select>\n\
                                         </div>\n\
-                                        <div class="col-xs-2 form-group float-label-control" style="margin-bottom:2px;"><label>Handel By</label>\n\
+                                        <div class="col-xs-2 form-group float-label-control" style="margin-bottom:4px;"><label>Dealing Officer</label>\n\
                                             <select class="handel-by" id="handel-by" name="handel-by" data-row-id="" value="">\n\
-                                                <option value="" >Select Handel By</option><?php foreach ($handlerList as $handler) { ?><option value="<?php echo $handler['handler_name'] ?>"><?php echo $handler['handler_name'] ?></option><?php } ?></select>\n\
+                                                <option value="" >Select Dealing Officer</option><?php foreach ($handlerList as $handler) { ?><option value="<?php echo $handler['handler_name'] ?>"><?php echo $handler['handler_name'] ?></option><?php } ?></select>\n\
                                         </div>\n\
-                                        <div class="col-xs-3 form-group" style="">\n\
-                                            <input type="checkbox" data-row-id="" class="issueCert" data-service="" data-customer="" value="">&nbsp;&nbsp; Certificate Given\n\
+                                        <div class="col-xs-3 form-group cert-given-group" style="margin-bottom:4px;">\n\
+                                            <label class="cert-given-box"><input type="checkbox" data-row-id="" class="issueCert" data-service="" data-customer="" value=""><span>Certificate Given</span></label>\n\
                                         </div>\n\
                                         <input type="hidden" class="customer_id" id="customer_id" data-row-id="" name="customer_id" value="<?php echo $_GET['customerid'] ?>"/>\n\
                                     </div>\n\
-                                    <div class="row" style="margin-bottom: 4px; padding: 0 10px;">\n\
+                                    <div class="row" style="margin-bottom: 4px; padding: 0 5px;">\n\
                                         <div class="col-xs-12">\n\
                                             <div class="compact-payment-block consulting-payment-block">\n\
                                                 <div class="compact-table-card">\n\
-                                                    <div class="compact-table-header consulting-header">\n\
-                                                        <div class="header-title"><i class="fa fa-handshake-o"></i> Consulting Fees & Installments</div>\n\
+                                                    <div class="compact-table-header consulting-header" style="cursor: pointer;" title="Click to collapse / expand Consulting section">\n\
+                                                        <div class="header-title" style="cursor: pointer;"><i class="fa fa-handshake-o"></i> Consulting Fees & Installments <i class="fa fa-chevron-up consulting-collapse-indicator section-collapse-indicator" style="margin-left: 6px; font-size: 10px; color: #ffffff; opacity: 0.9;"></i></div>\n\
                                                         <div class="header-actions">\n\
                                                             <button type="button" class="btn btn-xs serviceInvoiceBtn header-invoice-btn" data-customer="<?php echo htmlspecialchars($_GET['customerid']); ?>" data-service="" data-servicename="" data-firm=""><i class="fa fa-plus-circle"></i> Issue Invoice</button>\n\
                                                             <a class="consultingAddLink btn btn-xs btn-compact-add" data-row-id="" data-row-count="1"><i class="fa fa-plus-circle"></i> Add Consulting Row</a>\n\
                                                         </div>\n\
                                                     </div>\n\
-                                                    <div class="table-responsive">\n\
-                                                        <table class="table table-bordered table-hover compact-payment-table service_details" id="consulting_table_">\n\
-                                                            <thead><tr>\n\
-                                                                <th width="24%">Installment Details</th>\n\
-                                                                <th width="13%" style="text-align: right;">Amount Decided</th>\n\
-                                                                <th width="13%" style="text-align: right;">Payment Received</th>\n\
-                                                                <th width="13%" style="text-align: center;">Date of Deposit</th>\n\
-                                                                <th width="13%">Instrument No</th>\n\
-                                                                <th width="10%">Bank A/c</th>\n\
-                                                                <th width="10%" style="text-align: right;">Balance</th>\n\
-                                                                <th width="4%" style="text-align: center;"><i class="fa fa-close"></i></th>\n\
-                                                            </tr></thead>\n\
-                                                            <tbody id="consulting_tbody_">\n\
-                                                                <tr class="consulting_subsection">\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingContractDetails" name="consultingContractDetails" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="number" data-row-id="" class="consultingAmountDecided" name="consultingAmountDecided" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="number" data-row-id="" class="consultingPaymentReceived" name="consultingPaymentReceived" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingDepositDate datepicker" name="consultingDepositDate" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingChequeDetails" name="consultingChequeDetails" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingBankAcccountNo" name="consultingBankAcccountNo" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="text" class="consultingBalance" data-row-id="" name="consultingBalance" value="" placeholder="" readonly="" /></div></td>\n\
-                                                                    <td style="text-align:center;"><a href="javascript:void(0)" class="consultingRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>\n\
-                                                                </tr>\n\
-                                                                <input data-row-id="" type="hidden" class="consulting-row-id" name="consulting-row-id" value="">\n\
-                                                            </tbody>\n\
-                                                        </table>\n\
-                                                    </div>\n\
-                                                </div>\n\
-                                                <div class="compact-summary-panel consulting-summary-panel">\n\
-                                                    <div class="summary-top-bar">\n\
-                                                        <div class="summary-title"><i class="fa fa-file-text-o" style="color: #0891b2; margin-right: 4px;"></i> Consulting Financial Summary</div>\n\
-                                                    </div>\n\
-                                                    <div class="compact-kpi-row">\n\
-                                                        <div class="kpi-chip kpi-consult-decided"><span class="kpi-chip-label">Consulting Decided</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
-                                                        <div class="kpi-chip kpi-consult-invoiced"><span class="kpi-chip-label">Total Invoiced</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
-                                                        <div class="kpi-chip kpi-consult-received"><span class="kpi-chip-label">Payment Received</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
-                                                        <div class="kpi-chip kpi-consult-balance kpi-chip-success"><span class="kpi-chip-label">Invoice Balance Due</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
-                                                    </div>\n\
-                                                </div>\n\
-                                            </div>\n\
-                                            <div class="payment-dotted-divider">\n\
-                                                <span class="divider-label"><i class="fa fa-university" style="color: #1e293b;"></i> Certification Body (CB) Payments</span>\n\
-                                            </div>\n\
-                                            <div class="compact-payment-block cb-payment-block">\n\
-                                                <div class="compact-table-card">\n\
-                                                    <div class="compact-table-header cb-header">\n\
-                                                        <div class="header-title"><i class="fa fa-university"></i> Certification Body (CB) Payments</div>\n\
-                                                        <div class="header-actions">\n\
-                                                            <a class="cbAddLinkForAdmin btn btn-xs btn-compact-ms" data-row-id="" data-row-count="1" title="Add Marketing Setup">MS</a>\n\
-                                                            <a class="btn btn-xs cbAddLink btn-compact-add" data-row-id="" data-row-count="1"><i class="fa fa-plus-circle"></i> Add CB Row</a>\n\
+                                                    <div class="consulting-content-body payment-content-body">\n\
+                                                        <div class="table-responsive">\n\
+                                                            <table class="table table-bordered table-hover compact-payment-table service_details" id="consulting_table_">\n\
+                                                                <thead><tr>\n\
+                                                                    <th width="24%">Installment Details</th>\n\
+                                                                    <th width="13%" style="text-align: right;">Amount Decided</th>\n\
+                                                                    <th width="13%" style="text-align: right;">Payment Received</th>\n\
+                                                                    <th width="13%" style="text-align: center;">Date of Deposit</th>\n\
+                                                                    <th width="13%">Instrument No</th>\n\
+                                                                    <th width="10%">Bank A/c</th>\n\
+                                                                    <th width="10%" style="text-align: right;">Balance</th>\n\
+                                                                    <th width="4%" style="text-align: center;"><i class="fa fa-close"></i></th>\n\
+                                                                </tr></thead>\n\
+                                                                <tbody id="consulting_tbody_">\n\
+                                                                    <tr class="consulting_subsection">\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingContractDetails" name="consultingContractDetails" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="number" data-row-id="" class="consultingAmountDecided" name="consultingAmountDecided" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="number" data-row-id="" class="consultingPaymentReceived" name="consultingPaymentReceived" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingDepositDate datepicker" name="consultingDepositDate" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingChequeDetails" name="consultingChequeDetails" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="consultingBankAcccountNo" name="consultingBankAcccountNo" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="text" class="consultingBalance" data-row-id="" name="consultingBalance" value="" placeholder="" readonly="" /></div></td>\n\
+                                                                        <td style="text-align:center;"><a href="javascript:void(0)" class="consultingRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>\n\
+                                                                    </tr>\n\
+                                                                    <input data-row-id="" type="hidden" class="consulting-row-id" name="consulting-row-id" value="">\n\
+                                                                </tbody>\n\
+                                                            </table>\n\
                                                         </div>\n\
                                                     </div>\n\
-                                                    <div class="table-responsive">\n\
-                                                        <table class="table table-bordered table-hover compact-payment-table service_details" id="cb_table_">\n\
-                                                            <thead><tr>\n\
-                                                                <th width="24%">Installment Details</th>\n\
-                                                                <th width="13%" style="text-align: right;">Amount Decided</th>\n\
-                                                                <th width="13%" style="text-align: right;">Payment Received</th>\n\
-                                                                <th width="13%" style="text-align: center;">Date of Deposit</th>\n\
-                                                                <th width="13%">Instrument No</th>\n\
-                                                                <th width="10%">Bank A/c</th>\n\
-                                                                <th width="10%" style="text-align: right;">Balance</th>\n\
-                                                                <th width="4%" style="text-align: center;"><i class="fa fa-close"></i></th>\n\
-                                                            </tr></thead>\n\
-                                                            <tbody id="cb_tbody_">\n\
-                                                                <tr class="cb_subsection" id="cb_subsection_0">\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="contractDetails" name="contractDetails" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="number" data-row-id="" class="amountDecided" name="amountDecided" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="number" data-row-id="" class="paymentReceived" name="paymentReceived" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="depositDate datepicker" name="depositDate" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="chequeDetails" name="chequeDetails" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="bankAcccountNo" name="bankAcccountNo" value="" placeholder="" /></div></td>\n\
-                                                                    <td><div class="table-edit-control"><input type="text" data-row-id="" class="balance" name="balance" value="" placeholder="" readonly="" /></div></td>\n\
-                                                                    <td style="text-align:center;"><a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>\n\
-                                                                </tr>\n\
-                                                                <input data-row-id="" type="hidden" class="cb-row-id" name="cb-row-id" value="">\n\
-                                                            </tbody>\n\
-                                                        </table>\n\
+                                                </div>\n\
+                                                <div class="consulting-summary-wrapper consulting-content-body payment-content-body">\n\
+                                                    <div class="compact-summary-panel consulting-summary-panel">\n\
+                                                        <div class="summary-top-bar">\n\
+                                                            <div class="summary-title"><i class="fa fa-file-text-o" style="color: #0891b2; margin-right: 4px;"></i> Consulting Financial Summary</div>\n\
+                                                        </div>\n\
+                                                        <div class="compact-kpi-row">\n\
+                                                            <div class="kpi-chip kpi-consult-decided"><span class="kpi-chip-label">Consulting Decided</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                            <div class="kpi-chip kpi-consult-invoiced"><span class="kpi-chip-label">Total Invoiced</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                            <div class="kpi-chip kpi-consult-received"><span class="kpi-chip-label">Payment Received</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                            <div class="kpi-chip kpi-consult-balance kpi-chip-success"><span class="kpi-chip-label">Invoice Balance Due</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                        </div>\n\
                                                     </div>\n\
                                                 </div>\n\
-                                                <div class="compact-summary-panel cb-summary-panel">\n\
-                                                    <div class="summary-top-bar">\n\
-                                                        <div class="summary-title"><i class="fa fa-calculator" style="color: #1e293b; margin-right: 4px;"></i> Certification Body (CB) Financial Summary</div>\n\
+                                            </div>\n\
+                                            <div class="payment-dotted-divider" style="cursor: pointer;" title="Click to toggle External Party Payment">\n\
+                                                <span class="divider-label"><i class="fa fa-university" style="color: #1e293b;"></i> External Party Payment <i class="fa fa-chevron-down divider-collapse-indicator" style="font-size: 8.5px; margin-left: 3px;"></i></span>\n\
+                                            </div>\n\
+                                            <div class="compact-payment-block cb-payment-block">\n\
+                                                <div class="compact-table-card is-collapsed">\n\
+                                                    <div class="compact-table-header cb-header" style="cursor: pointer;" title="Click to collapse / expand External Party Payment section">\n\
+                                                        <div class="header-title" style="cursor: pointer;"><i class="fa fa-university"></i> External Party Payment <i class="fa fa-chevron-down cb-collapse-indicator section-collapse-indicator" style="margin-left: 6px; font-size: 10px; color: #ffffff; opacity: 0.9;"></i></div>\n\
+                                                        <div class="header-actions">\n\
+                                                            <a class="cbAddLinkForAdmin btn btn-xs btn-compact-ms" data-row-id="" data-row-count="1" title="Add Marketing Setup">MS</a>\n\
+                                                            <a class="btn btn-xs cbAddLink btn-compact-add" data-row-id="" data-row-count="1"><i class="fa fa-plus-circle"></i> Add External Party Row</a>\n\
+                                                        </div>\n\
                                                     </div>\n\
-                                                    <div class="compact-kpi-row">\n\
-                                                        <div class="kpi-chip kpi-cb-decided"><span class="kpi-chip-label">CB Decided</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
-                                                        <div class="kpi-chip kpi-cb-received"><span class="kpi-chip-label">CB Payment Received</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
-                                                        <div class="kpi-chip kpi-cb-balance kpi-chip-success"><span class="kpi-chip-label">CB Balance Due</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                    <div class="cb-content-body payment-content-body" style="display: none;">\n\
+                                                        <div class="table-responsive">\n\
+                                                            <table class="table table-bordered table-hover compact-payment-table service_details" id="cb_table_">\n\
+                                                                <thead><tr>\n\
+                                                                    <th width="24%">Installment Details</th>\n\
+                                                                    <th width="13%" style="text-align: right;">Amount Decided</th>\n\
+                                                                    <th width="13%" style="text-align: right;">Payment Received</th>\n\
+                                                                    <th width="13%" style="text-align: center;">Date of Deposit</th>\n\
+                                                                    <th width="13%">Instrument No</th>\n\
+                                                                    <th width="10%">Bank A/c</th>\n\
+                                                                    <th width="10%" style="text-align: right;">Balance</th>\n\
+                                                                    <th width="4%" style="text-align: center;"><i class="fa fa-close"></i></th>\n\
+                                                                </tr></thead>\n\
+                                                                <tbody id="cb_tbody_">\n\
+                                                                    <tr class="cb_subsection" id="cb_subsection_0">\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="contractDetails" name="contractDetails" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="number" data-row-id="" class="amountDecided" name="amountDecided" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="number" data-row-id="" class="paymentReceived" name="paymentReceived" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="depositDate datepicker" name="depositDate" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="chequeDetails" name="chequeDetails" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="bankAcccountNo" name="bankAcccountNo" value="" placeholder="" /></div></td>\n\
+                                                                        <td><div class="table-edit-control"><input type="text" data-row-id="" class="balance" name="balance" value="" placeholder="" readonly="" /></div></td>\n\
+                                                                        <td style="text-align:center;"><a href="javascript:void(0)" class="cbRowDelete"><i class="fa fa-close" aria-hidden="true"></i></a></td>\n\
+                                                                    </tr>\n\
+                                                                    <input data-row-id="" type="hidden" class="cb-row-id" name="cb-row-id" value="">\n\
+                                                                </tbody>\n\
+                                                            </table>\n\
+                                                        </div>\n\
+                                                    </div>\n\
+                                                </div>\n\
+                                                <div class="cb-summary-wrapper cb-content-body payment-content-body" style="display: none;">\n\
+                                                    <div class="compact-summary-panel cb-summary-panel">\n\
+                                                        <div class="summary-top-bar">\n\
+                                                            <div class="summary-title"><i class="fa fa-calculator" style="color: #1e293b; margin-right: 4px;"></i> External Party Payment Financial Summary</div>\n\
+                                                        </div>\n\
+                                                        <div class="compact-kpi-row">\n\
+                                                            <div class="kpi-chip kpi-cb-decided"><span class="kpi-chip-label">External Party Decided</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                            <div class="kpi-chip kpi-cb-received"><span class="kpi-chip-label">External Party Payment Received</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                            <div class="kpi-chip kpi-cb-balance kpi-chip-success"><span class="kpi-chip-label">External Party Balance Due</span><span class="kpi-chip-value">₹ 0.00</span></div>\n\
+                                                        </div>\n\
                                                     </div>\n\
                                                 </div>\n\
                                             </div>\n\
@@ -2091,5 +2312,521 @@ if (data[0]['tax_type'] === "CGST_SGST") {
 //            e.preventDefault();
 //        });
 
+
+        // Add regular payment row matching Image 2
+        $(document).on('click', '.btn-add-payment-row', function (e) {
+            e.preventDefault();
+            var serviceId = $(this).data('service-id');
+            var $tbody = $('#consulting_tbody_' + serviceId);
+            var newRow = '<tr class="consulting_subsection">' +
+                '<td style="padding: 2px 4px; border: none;">' +
+                    '<div class="table-edit-control payment-input-wrap" style="position: relative;">' +
+                        '<input type="number" step="0.01" data-row-id="' + serviceId + '" class="consultingPaymentReceived form-control" name="consultingPaymentReceived" value="" placeholder="0.00" style="height: 23px; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 6px;" />' +
+                    '</div>' +
+                '</td>' +
+                '<td style="padding: 2px 4px; border: none;">' +
+                    '<div class="table-edit-control">' +
+                        '<input type="number" step="0.01" data-row-id="' + serviceId + '" class="consultingTdsDeducted form-control" name="consultingTdsDeducted" value="" placeholder="" style="height: 23px; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 6px;" />' +
+                    '</div>' +
+                '</td>' +
+                '<td style="padding: 2px 4px; border: none;">' +
+                    '<div class="table-edit-control">' +
+                        '<input type="text" data-row-id="' + serviceId + '" class="form-control consultingDepositDate datepicker" name="consultingDepositDate" value="" placeholder="dd.mm.yyyy" style="height: 23px; font-size: 11px; text-align: center; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 4px; background: #ffffff;" />' +
+                    '</div>' +
+                '</td>' +
+                '<td style="padding: 2px 4px; border: none;">' +
+                    '<div class="table-edit-control">' +
+                        '<input type="text" data-row-id="' + serviceId + '" class="consultingChequeDetails form-control" name="consultingChequeDetails" value="" placeholder="NEFT / Cheque" style="height: 23px; font-size: 11px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 6px;" />' +
+                    '</div>' +
+                '</td>' +
+                '<td style="padding: 2px 4px; border: none; text-align: center; vertical-align: middle;">' +
+                    '<a href="javascript:void(0)" class="consultingRowDelete" title="Delete Row" style="color: #ef4444; font-size: 11px;"><i class="fa fa-trash-o"></i></a>' +
+                '</td>' +
+                '<input type="hidden" data-row-id="' + serviceId + '" class="consultingContractDetails" name="consultingContractDetails" value="Payment" />' +
+                '<input type="hidden" data-row-id="' + serviceId + '" class="consultingAmountDecided" name="consultingAmountDecided" value="0" />' +
+                '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBankAcccountNo" name="consultingBankAcccountNo" value="" />' +
+                '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBalance" name="consultingBalance" value="0" />' +
+                '<input type="hidden" data-row-id="' + serviceId + '" class="consultingShortSettle" name="consultingShortSettle" value="0" />' +
+                '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBadDebt" name="consultingBadDebt" value="0" />' +
+                '<input type="hidden" data-row-id="' + serviceId + '" class="consulting-row-id" name="consulting-row-id" value="">' +
+            '</tr>';
+            var $appended = $(newRow).appendTo($tbody);
+            $appended.find('.datepicker').datepicker({ dateFormat: 'dd.mm.yy' });
+            $appended.find('.consultingPaymentReceived').focus();
+        });
+
+        // Add Loss / Bad Debt row
+        $(document).on('click', '.btn-add-loss', function (e) {
+            e.preventDefault();
+            var serviceId = $(this).data('service-id');
+            var lossAmt = prompt("Enter Bad Debt / Loss Amount (₹):");
+            if (lossAmt && !isNaN(lossAmt) && parseFloat(lossAmt) > 0) {
+                var num = parseFloat(lossAmt);
+                var $tbody = $('#consulting_tbody_' + serviceId);
+                var today = new Date();
+                var dd = String(today.getDate()).padStart(2, '0');
+                var mm = String(today.getMonth() + 1).padStart(2, '0');
+                var yyyy = today.getFullYear();
+                var dStr = dd + '.' + mm + '.' + yyyy;
+
+                var newRow = '<tr class="consulting_subsection row-is-loss" style="background: #fff1f2;">' +
+                    '<td style="padding: 2px 4px; border: none;">' +
+                        '<span class="badge" style="background:#fee2e2; border:1px solid #fca5a5; color:#991b1b; font-size:10px; font-weight:600; letter-spacing:0.02em;">LOSS / BAD DEBT</span>' +
+                        '<input type="hidden" data-row-id="' + serviceId + '" class="consultingPaymentReceived" name="consultingPaymentReceived" value="0" />' +
+                    '</td>' +
+                    '<td style="padding: 2px 4px; border: none;">' +
+                        '<span style="font-size:11px; color:#dc2626; font-weight:700;">-₹' + formatCurr(num) + '</span>' +
+                        '<input type="hidden" data-row-id="' + serviceId + '" class="consultingTdsDeducted" name="consultingTdsDeducted" value="0" />' +
+                    '</td>' +
+                    '<td style="padding: 2px 4px; border: none;">' +
+                        '<input type="text" data-row-id="' + serviceId + '" class="form-control consultingDepositDate datepicker" name="consultingDepositDate" value="' + dStr + '" style="height: 23px; font-size: 11px; text-align: center; border: 1px solid #fca5a5; border-radius: 4px; padding: 1px 4px; background: #ffffff;" />' +
+                    '</td>' +
+                    '<td style="padding: 2px 4px; border: none;">' +
+                        '<input type="text" data-row-id="' + serviceId + '" class="consultingChequeDetails form-control" name="consultingChequeDetails" value="Bad Debt / Loss" style="height: 23px; font-size: 11px; border: 1px solid #fca5a5; border-radius: 4px; padding: 1px 6px;" />' +
+                    '</td>' +
+                    '<td style="padding: 2px 4px; border: none; text-align: center; vertical-align: middle;">' +
+                        '<a href="javascript:void(0)" class="consultingRowDelete" title="Delete Row" style="color: #ef4444; font-size: 11px;"><i class="fa fa-trash-o"></i></a>' +
+                    '</td>' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingContractDetails" name="consultingContractDetails" value="Loss" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingAmountDecided" name="consultingAmountDecided" value="0" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBankAcccountNo" name="consultingBankAcccountNo" value="" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBalance" name="consultingBalance" value="0" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingShortSettle" name="consultingShortSettle" value="0" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBadDebt" name="consultingBadDebt" value="' + num + '" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consulting-row-id" name="consulting-row-id" value="">' +
+                '</tr>';
+                var $appended = $(newRow).appendTo($tbody);
+                $appended.find('.datepicker').datepicker({ dateFormat: 'dd.mm.yy' });
+                recalcServicePayment(serviceId);
+                autoSaveService(serviceId, 100);
+            }
+        });
+
+        // Add Short Settle / Adjustment row
+        $(document).on('click', '.btn-add-adj', function (e) {
+            e.preventDefault();
+            var serviceId = $(this).data('service-id');
+            var sAmt = prompt("Enter Short Settlement / Discount Amount (₹):");
+            if (sAmt && !isNaN(sAmt) && parseFloat(sAmt) > 0) {
+                var num = parseFloat(sAmt);
+                var $tbody = $('#consulting_tbody_' + serviceId);
+                var today = new Date();
+                var dd = String(today.getDate()).padStart(2, '0');
+                var mm = String(today.getMonth() + 1).padStart(2, '0');
+                var yyyy = today.getFullYear();
+                var dStr = dd + '.' + mm + '.' + yyyy;
+
+                var newRow = '<tr class="consulting_subsection row-is-short" style="background: #faf5ff;">' +
+                    '<td style="padding: 2px 4px; border: none;">' +
+                        '<span class="badge" style="background:#f3e8ff; border:1px solid #d8b4fe; color:#6b21a8; font-size:10px; font-weight:600; letter-spacing:0.02em;">SHORT SETTLE</span>' +
+                        '<input type="hidden" data-row-id="' + serviceId + '" class="consultingPaymentReceived" name="consultingPaymentReceived" value="0" />' +
+                    '</td>' +
+                    '<td style="padding: 2px 4px; border: none;">' +
+                        '<span style="font-size:11px; color:#7c3aed; font-weight:700;">-₹' + formatCurr(num) + '</span>' +
+                        '<input type="hidden" data-row-id="' + serviceId + '" class="consultingTdsDeducted" name="consultingTdsDeducted" value="0" />' +
+                    '</td>' +
+                    '<td style="padding: 2px 4px; border: none;">' +
+                        '<input type="text" data-row-id="' + serviceId + '" class="form-control consultingDepositDate datepicker" name="consultingDepositDate" value="' + dStr + '" style="height: 23px; font-size: 11px; text-align: center; border: 1px solid #d8b4fe; border-radius: 4px; padding: 1px 4px; background: #ffffff;" />' +
+                    '</td>' +
+                    '<td style="padding: 2px 4px; border: none;">' +
+                        '<input type="text" data-row-id="' + serviceId + '" class="consultingChequeDetails form-control" name="consultingChequeDetails" value="Short Settle / Round off" style="height: 23px; font-size: 11px; border: 1px solid #d8b4fe; border-radius: 4px; padding: 1px 6px;" />' +
+                    '</td>' +
+                    '<td style="padding: 2px 4px; border: none; text-align: center; vertical-align: middle;">' +
+                        '<a href="javascript:void(0)" class="consultingRowDelete" title="Delete Row" style="color: #ef4444; font-size: 11px;"><i class="fa fa-trash-o"></i></a>' +
+                    '</td>' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingContractDetails" name="consultingContractDetails" value="Short Settle" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingAmountDecided" name="consultingAmountDecided" value="0" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBankAcccountNo" name="consultingBankAcccountNo" value="" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBalance" name="consultingBalance" value="0" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingShortSettle" name="consultingShortSettle" value="' + num + '" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consultingBadDebt" name="consultingBadDebt" value="0" />' +
+                    '<input type="hidden" data-row-id="' + serviceId + '" class="consulting-row-id" name="consulting-row-id" value="">' +
+                '</tr>';
+                var $appended = $(newRow).appendTo($tbody);
+                $appended.find('.datepicker').datepicker({ dateFormat: 'dd.mm.yy' });
+                recalcServicePayment(serviceId);
+                autoSaveService(serviceId, 100);
+            }
+        });
+
+        // Link unassigned invoice to service
+        $(document).on('click', '.linkInvoiceAction', function (e) {
+            e.preventDefault();
+            var invoiceId = $(this).data('invoice-id');
+            var serviceId = $(this).data('service-id');
+            var customerId = $(this).data('customer-id');
+
+            $.post('addService.php', {
+                action: 'link_invoice',
+                invoice_id: invoiceId,
+                service_id: serviceId,
+                customer_id: customerId
+            }, function (res) {
+                showToast("Invoice linked to service successfully!", "success", "Invoice Linked");
+                setTimeout(function () { location.reload(); }, 500);
+            }, 'json');
+        });
+
+        // Unlink invoice from service
+        $(document).on('click', '.unlinkInvoiceAction', function (e) {
+            e.preventDefault();
+            if (!confirm("Are you sure you want to unlink this invoice from this service?")) return;
+            var invoiceId = $(this).data('invoice-id');
+            var customerId = $(this).data('customer-id');
+
+            $.post('addService.php', {
+                action: 'unlink_invoice',
+                invoice_id: invoiceId,
+                customer_id: customerId
+            }, function (res) {
+                showToast("Invoice unlinked successfully.", "info", "Unlinked");
+                setTimeout(function () { location.reload(); }, 500);
+            }, 'json');
+        });
+
+        // Auto-save service notes with debounce
+        var serviceNotesTimers = {};
+        $(document).on('input', '.serviceNotesText', function () {
+            var $this = $(this);
+            var serviceId = $this.data('service-id');
+            var notes = $this.val();
+            if (serviceNotesTimers[serviceId]) clearTimeout(serviceNotesTimers[serviceId]);
+            serviceNotesTimers[serviceId] = setTimeout(function () {
+                $.post('addService.php', {
+                    action: 'save_service_notes',
+                    service_id: serviceId,
+                    notes: notes
+                }, function () {
+                    showToast("Service notes saved.", "success", "Saved");
+                }, 'json');
+            }, 600);
+        });
+
+
+        // ----------------------------------------------------
+        // Type of Service (Multi-Select Dropdown Selector)
+        // ----------------------------------------------------
+        function closeTosDropdown() {
+            $('#tosDropdownMenu').hide();
+            $('#tosSelectorBox').removeClass('is-open');
+        }
+
+        function openTosDropdown() {
+            $('#tosDropdownMenu').show();
+            $('#tosSelectorBox').addClass('is-open');
+            $('#tosSearchInput').val('').trigger('input').focus();
+        }
+
+        $(document).on('click', '#tosSelectorBox', function (e) {
+            if ($(this).hasClass('is-disabled')) return;
+            if ($(e.target).closest('.tos-tag-remove').length) return;
+            e.stopPropagation();
+            if ($('#tosDropdownMenu').is(':visible')) {
+                closeTosDropdown();
+            } else {
+                openTosDropdown();
+            }
+        });
+
+        $(document).on('click', '.btnTosDone', function (e) {
+            e.stopPropagation();
+            closeTosDropdown();
+        });
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#tosMultiselectWrapper').length) {
+                closeTosDropdown();
+            }
+        });
+
+        $(document).on('input', '#tosSearchInput', function () {
+            var q = ($(this).val() || '').toLowerCase().trim();
+            $('#tosOptionsList .tos-option-item').each(function () {
+                var txt = ($(this).data('service') || '').toString().toLowerCase();
+                $(this).toggle(txt.indexOf(q) !== -1);
+            });
+        });
+
+        $(document).on('change', '.tos-checkbox', function () {
+            var $item = $(this).closest('.tos-option-item');
+            $item.toggleClass('is-checked', $(this).is(':checked'));
+            refreshTosTagsAndSave();
+        });
+
+        $(document).on('click', '.tos-tag-remove', function (e) {
+            e.stopPropagation();
+            var svc = $(this).data('service');
+            $('#tosOptionsList .tos-checkbox').each(function () {
+                if ($(this).val() == svc) {
+                    $(this).prop('checked', false);
+                    $(this).closest('.tos-option-item').removeClass('is-checked');
+                }
+            });
+            refreshTosTagsAndSave();
+        });
+
+        $(document).on('click', '.btnTosSelectAll', function (e) {
+            e.stopPropagation();
+            $('#tosOptionsList .tos-option-item:visible .tos-checkbox').each(function () {
+                $(this).prop('checked', true);
+                $(this).closest('.tos-option-item').addClass('is-checked');
+            });
+            refreshTosTagsAndSave();
+        });
+
+        $(document).on('click', '.btnTosClearAll', function (e) {
+            e.stopPropagation();
+            $('#tosOptionsList .tos-checkbox').each(function () {
+                $(this).prop('checked', false);
+                $(this).closest('.tos-option-item').removeClass('is-checked');
+            });
+            refreshTosTagsAndSave();
+        });
+
+        function refreshTosTagsAndSave() {
+            var selected = [];
+            $('#tosOptionsList .tos-checkbox:checked').each(function () {
+                var val = ($(this).val() || '').toString().trim();
+                if (val) selected.push(val);
+            });
+
+            var $tagsContainer = $('#tosSelectedTags');
+            $tagsContainer.empty();
+
+            if (selected.length === 0) {
+                $tagsContainer.append('<span class="tos-placeholder">Select services for this client...</span>');
+            } else {
+                for (var i = 0; i < selected.length; i++) {
+                    var sName = selected[i];
+                    var $chip = $('<span class="tos-tag-chip"></span>').attr('data-service', sName);
+                    $chip.append($('<span></span>').text(sName));
+                    var $rem = $('<span class="tos-tag-remove" title="Remove">&times;</span>').attr('data-service', sName);
+                    $chip.append($rem);
+                    $tagsContainer.append($chip);
+                }
+            }
+
+            var $countPill = $('.customer-selected-services-count');
+            $countPill.text(selected.length);
+            $countPill.toggleClass('has-items', selected.length > 0);
+
+            var customerId = "<?php echo isset($_GET['customerid']) ? htmlspecialchars($_GET['customerid']) : ''; ?>";
+            if (!customerId) return;
+
+            $.ajax({
+                url: "addCustomerDetails.php",
+                type: "GET",
+                dataType: "json",
+                data: {
+                    id: customerId,
+                    columnName: "type_of_service",
+                    columnValue: selected.join(', ')
+                },
+                success: function () {
+                    if (typeof showToast === 'function') {
+                        showToast(selected.length + " service type(s) updated.", "success", "Services Saved");
+                    }
+                },
+                error: function () {
+                    if (typeof showToast === 'function') {
+                        showToast("Error updating service types.", "error", "Save Failed");
+                    }
+                }
+            });
+        }
+
+        // Initialize count pill highlight on load
+        if (parseInt($('.customer-selected-services-count').text(), 10) > 0) {
+            $('.customer-selected-services-count').addClass('has-items');
+        }
+
+
+        // ----------------------------------------------------
+        // Contract Details Scan Attachment (PDF / JPG / PNG)
+        // ----------------------------------------------------
+        function updateContractAttachmentStatus($card) {
+            var count = $card.find('.contract-att-card').length;
+            var $badge = $card.find('.contract-att-status-badge');
+
+            if (count > 0) {
+                $card.addClass('has-attachments');
+                $badge.removeClass('is-empty').addClass('is-attached')
+                    .html('<i class="fa fa-check-circle"></i> ' + count + ' Attached');
+            } else {
+                $card.removeClass('has-attachments');
+                $badge.removeClass('is-attached').addClass('is-empty')
+                    .html('No Attachment');
+            }
+        }
+
+        $(document).on('click', '.btnAttachContractScan', function (e) {
+            e.preventDefault();
+            var $card = $(this).closest('.contract-details-card');
+            $card.find('.contractScanFileInput').trigger('click');
+        });
+
+        $(document).on('change', '.contractScanFileInput', function () {
+            var input = this;
+            if (!input.files || input.files.length === 0) return;
+
+            var $input = $(this);
+            var $card = $input.closest('.contract-details-card');
+            var $btn = $card.find('.btnAttachContractScan');
+            var $list = $card.find('.contract-files-list');
+            var serviceId = $input.attr('data-service-id');
+            var customerId = $input.attr('data-customer-id');
+
+            var allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
+            var formData = new FormData();
+            formData.append('action', 'upload');
+            formData.append('customer_id', customerId);
+            formData.append('service_id', serviceId);
+
+            var validCount = 0;
+            for (var i = 0; i < input.files.length; i++) {
+                var file = input.files[i];
+                var parts = (file.name || '').split('.');
+                var ext = parts.length > 1 ? parts.pop().toLowerCase() : '';
+                if (allowedExts.indexOf(ext) === -1) {
+                    if (typeof showToast === 'function') {
+                        showToast('Invalid file: ' + file.name + '. Only PDF, JPG, JPEG, and PNG are allowed.', 'error', 'Invalid File');
+                    } else {
+                        alert('Only PDF, JPG, JPEG, and PNG files are allowed.');
+                    }
+                    continue;
+                }
+                formData.append('contract_file[]', file);
+                validCount++;
+            }
+
+            if (validCount === 0) {
+                $input.val('');
+                return;
+            }
+
+            var origBtnHtml = $btn.html();
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Uploading...');
+
+            $.ajax({
+                url: 'contractAttachmentAction.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function (res) {
+                    $btn.prop('disabled', false).html(origBtnHtml);
+                    $input.val('');
+
+                    if (res && res.status === 'success' && res.attachments) {
+                        for (var j = 0; j < res.attachments.length; j++) {
+                            var att = res.attachments[j];
+                            var extLower = (att.file_ext || '').toLowerCase();
+                            var isPdf = (extLower === 'pdf');
+
+                            var $attCard = $('<div class="contract-att-card"></div>').attr('data-att-id', att.id);
+
+                            var $thumb = $('<a target="_blank" class="contract-att-thumb"></a>')
+                                .attr('href', att.file_path)
+                                .attr('title', 'Preview ' + att.file_name)
+                                .addClass(isPdf ? 'is-pdf' : 'is-img');
+                            if (isPdf) {
+                                $thumb.html('<i class="fa fa-file-pdf-o"></i>');
+                            } else {
+                                $thumb.append($('<img alt="Scan" />').attr('src', att.file_path));
+                            }
+                            $attCard.append($thumb);
+
+                            $attCard.append(
+                                $('<a target="_blank" class="contract-att-name"></a>')
+                                    .attr('href', att.file_path)
+                                    .attr('title', att.file_name)
+                                    .text(att.file_name)
+                            );
+                            $attCard.append(
+                                $('<a target="_blank" class="contract-btn-view" title="View Scan">View</a>')
+                                    .attr('href', att.file_path)
+                            );
+                            $attCard.append(
+                                $('<a class="contract-btn-dl" title="Download"><i class="fa fa-download"></i></a>')
+                                    .attr('href', att.file_path)
+                                    .attr('download', att.file_name)
+                            );
+                            $attCard.append(
+                                $('<a href="javascript:void(0)" class="deleteContractAttachment contract-btn-del" title="Remove attachment"><i class="fa fa-trash-o"></i></a>')
+                                    .attr('data-att-id', att.id)
+                                    .attr('data-service-id', serviceId)
+                                    .attr('data-customer-id', customerId)
+                            );
+
+                            $list.append($attCard);
+                        }
+                        updateContractAttachmentStatus($card);
+
+                        if (typeof showToast === 'function') {
+                            showToast(res.attachments.length + ' contract scan(s) attached.', 'success', 'Uploaded');
+                        }
+                    } else {
+                        var msg = (res && res.message) ? res.message : 'Upload failed.';
+                        if (typeof showToast === 'function') {
+                            showToast(msg, 'error', 'Upload Failed');
+                        } else {
+                            alert(msg);
+                        }
+                    }
+                },
+                error: function () {
+                    $btn.prop('disabled', false).html(origBtnHtml);
+                    $input.val('');
+                    if (typeof showToast === 'function') {
+                        showToast('Failed to upload attachment.', 'error', 'Upload Error');
+                    } else {
+                        alert('Failed to upload attachment.');
+                    }
+                }
+            });
+        });
+
+        $(document).on('click', '.deleteContractAttachment', function (e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to remove this contract attachment?')) return;
+            var $link = $(this);
+            var $card = $link.closest('.contract-details-card');
+            var attId = $link.attr('data-att-id');
+            var serviceId = $link.attr('data-service-id');
+            var customerId = $link.attr('data-customer-id');
+
+            $.post('contractAttachmentAction.php', {
+                action: 'delete',
+                attachment_id: attId,
+                customer_id: customerId,
+                service_id: serviceId
+            }, function (res) {
+                if (res && res.status === 'success') {
+                    $link.closest('.contract-att-card').fadeOut(150, function () {
+                        $(this).remove();
+                        updateContractAttachmentStatus($card);
+                    });
+                    if (typeof showToast === 'function') {
+                        showToast('Attachment removed.', 'info', 'Removed');
+                    }
+                }
+            }, 'json');
+        });
+
+        // Payment System Header Toggle
+        $(document).on('click', '.payment-system-header', function (e) {
+            if ($(e.target).closest('.header-actions, button, a').length) return;
+            var $block = $(this).closest('.compact-payment-block');
+            var $body = $block.find('.payment-system-content-body');
+            var $icon = $(this).find('.payment-system-collapse-indicator');
+            $body.slideToggle(180, function () {
+                if ($body.is(':visible')) {
+                    $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+                } else {
+                    $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                }
+            });
+        });
     });
 </script>

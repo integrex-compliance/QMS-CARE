@@ -378,12 +378,8 @@ function getFlatDate($inputStr) {
             <!--<li><a href="newEnquiry_Test.php" class="animate <?php echo $addClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Referred Enquiry (Test)</span></a></li>-->
         <?php } ?>
 		<?php if (Utitlity::checkForUserMarketing() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-            <li><a href="newEnquiry_Test.php" class="animate <?php echo $addNewEnqClass ?>"><i class="sub_icon fa fa-building"></i><span class="menu-label">Referred Enquiry</span></a></li>
-            <!--<li><a href="newEnquiry.php" class="animate <?php echo $addNewEnqClass ?>"><i class="sub_icon fa fa-user-plus"></i><span class="menu-label">Referred Enquiry</span></a></li>-->
-            <li><a href="justdialEnquiry.php" class="animate <?php echo $addJDClass ?>"><i class="sub_icon fa fa-phone"></i><span class="menu-label">JD Enquiry</span></a></li>
-            <li><a href="telecallEnquiry.php" class="animate <?php echo $addTCClass ?>"><i class="sub_icon fa fa-phone"></i><span class="menu-label">Tel Enquiry</span></a></li>
-            <li><a href="saDuePage.php" class="animate <?php echo $addSaDueClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">SA Due</span></a></li>
-            <li><a href="rcDue.php" class="animate <?php echo $addRcDueClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">RC Due</span></a></li>
+            <li><a href="newEnquiry_Test.php" class="animate <?php echo $addNewEnqClass ?>"><i class="sub_icon fa fa-phone"></i><span class="menu-label">Enquiries</span></a></li>
+            <li><a href="saDuePage.php" class="animate <?php echo $addSaDueClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">SA/RC Due</span></a></li>
             <li><a href="disclient.php" class="animate <?php echo $adddisClass ?>"><i class="sub_icon fa fa-briefcase"></i><span class="menu-label">Discontinued Clients</span></a></li>
         <?php } ?>
 		<?php if ($_SESSION['username']=="Harish Ajabe") { ?>
@@ -526,9 +522,8 @@ function getFlatDate($inputStr) {
                 <?php } ?>
             <?php } ?>
             <?php if (Utitlity::checkForUserMarketing() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
-                <li><a href="newEnquiry.php" class="animate <?php echo isset($addWorkingClass) ? $addWorkingClass : '' ?>">NEW ENQUIRY</a></li>
-                <li><a href="saDuePage.php" class="animate <?php echo isset($addSaDueClass) ? $addSaDueClass : '' ?>">SA DUE</a></li>
-                <li><a href="rcDue.php" class="animate <?php echo isset($addRcDueClass) ? $addRcDueClass : '' ?>">RC DUE</a></li>
+                <li><a href="newEnquiry_Test.php" class="animate <?php echo isset($addNewEnqClass) ? $addNewEnqClass : '' ?>">ENQUIRIES</a></li>
+                <li><a href="saDuePage.php" class="animate <?php echo isset($addSaDueClass) ? $addSaDueClass : '' ?>">SA/RC DUE</a></li>
             <?php } if (Utitlity::checkForUserConsultant() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>
                 <li><a href="workingDetails.php" class="animate <?php echo isset($addWorkingClass) ? $addWorkingClass : '' ?>">WORKING PROJECTS</a></li>
             <?php } if (Utitlity::checkForUserFinance() || Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForOfficeBDM()) { ?>

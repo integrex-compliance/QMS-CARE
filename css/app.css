@@ -232,8 +232,8 @@ Fix to show in full screen demo
         
         body {
             /*    font-family: 'Open Sans', sans-serif;*/
-            /*    font-family: 'Copperplate', 'Copperplate Gothic Light', sans-serif;*/
-            font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+            /*    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;*/
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: #353535;
         }
         
@@ -670,8 +670,8 @@ Fix to show in full screen demo
             color: #999;
             width: 100%;
             height: 2em;
-            /*    font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;*/
-            font-family: 'Copperplate', 'Copperplate Gothic Light', sans-serif;
+            /*    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;*/
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             /*    background: slategray;*/
             background: #193048;
         }
@@ -691,7 +691,7 @@ Fix to show in full screen demo
             padding-right: 0px;
             padding-bottom: 0px;
             color: #193048;
-            font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             /*    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;*/
         }
         

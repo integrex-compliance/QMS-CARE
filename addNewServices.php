@@ -5,17 +5,24 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 include_once './dbConnect.php';
 
-if (isset($_GET['newService']) && !empty($_GET['newService'])) {
+if (isset($_GET['newService']) && !empty(trim($_GET['newService']))) {
     try {
-        $newServiceAdd = "INSERT INTO service_type (service) VALUES (:service)";
-        $statement = $db->prepare($newServiceAdd);
-        $statement->bindParam(':service', $_GET['newService']);
-        $statement->execute();
+        $svcName = trim($_GET['newService']);
+        $chk = $db->prepare("SELECT count(*) as cnt FROM service_type WHERE TRIM(LOWER(service)) = LOWER(:service)");
+        $chk->execute([':service' => $svcName]);
+        if ($chk->fetch()['cnt'] == 0) {
+            $newServiceAdd = "INSERT INTO service_type (service) VALUES (:service)";
+            $statement = $db->prepare($newServiceAdd);
+            $statement->bindParam(':service', $svcName);
+            $statement->execute();
+        }
 
-        $services = "SELECT * FROM service_type";
+        $services = "SELECT * FROM service_type ORDER BY id ASC";
         $statement = $db->prepare($services);
         $statement->execute();
         $serviceList = $statement->fetchAll();
@@ -111,7 +118,7 @@ if (isset($_GET['newService']) && !empty($_GET['newService'])) {
         $statement->bindparam(':id', $_GET['serviceId']);
         $statement->execute();
 
-        $services = "SELECT * FROM service_type";
+        $services = "SELECT * FROM service_type ORDER BY id ASC";
         $statement = $db->prepare($services);
         $statement->execute();
         $serviceList = $statement->fetchAll();

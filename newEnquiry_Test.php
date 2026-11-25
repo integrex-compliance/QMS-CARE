@@ -8,13 +8,21 @@
     $canDelete = (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin() || Utitlity::checkForUserMarketing());
     $userAbbr = !empty($_SESSION['abbrevation']) ? $_SESSION['abbrevation'] : (!empty($_SESSION['username']) ? $_SESSION['username'] : 'USER');
 
-    $listOfCustomers = [];
+    $activeTab = isset($_GET['tab']) ? strtolower(trim($_GET['tab'])) : 'referred';
+    if (!in_array($activeTab, ['referred', 'jd', 'tel'], true)) {
+        $activeTab = 'referred';
+    }
+
+    $referredCustomers = [];
+    $jdCustomers = [];
+    $tcCustomers = [];
+
     if (isset($_SESSION['username']) && isset($_SESSION['role'])) {
         try {
             $db->exec('SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;');
 
-            // High performance single-scan query (replaces slow UNION with cross-product)
-            $allCustomers = <<<EOT
+            // 1. Referred Enquiries (high performance single-scan query)
+            $referredSql = <<<EOT
 SELECT 
     cd.customer_id, cd.company_name, cd.company_address, cd.contact_person, cd.contact_no, cd.contact_email, 
     cd.client_reference, cd.priority, cd.comments, cd.next_service_date, cd.certification_date, s.handel_by,
@@ -38,14 +46,72 @@ WHERE cd.is_delete <> 'Y'
   )
 ORDER BY FIELD(cd.priority, 'High', 'Medium', 'Low', ''), cd.customer_id DESC
 EOT;
-            $statement = $db->prepare($allCustomers);
+            $statement = $db->prepare($referredSql);
             $statement->execute();
-            $listOfCustomers = $statement->fetchAll(PDO::FETCH_ASSOC);
+            $referredCustomers = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+            // 2. Just Dial Enquiries (matches legacy justdialEnquiry.php filter rules)
+            $jdSql = "SELECT distinct cd.customer_id, company_name, company_address, contact_person, contact_no, contact_email, client_reference, priority, s.service_id, service_type, marketing_audit_type, add_service_to, audit_type, comments, next_service_date, certification_date, handel_by FROM customer_details cd left join services s on cd.customer_id = s.customer_id WHERE client_of = 'Just Dial' and cd.is_delete <> 'Y' order by FIELD(priority, 'High', 'Medium', 'Low', '')";
+            $statement = $db->prepare($jdSql);
+            $statement->execute();
+            foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $cust) {
+                $svcType = $cust["service_type"] ?? "";
+                $addSvcTo = $cust["add_service_to"] ?? "";
+                if (($svcType == "CA" || $svcType == "New enq" || $svcType == "" || $svcType == "MPCB" || $svcType == "NSIC") && ($addSvcTo == "Under Marketing" || $addSvcTo == "")) {
+                    if (stripos((string)($cust['company_name'] ?? ''), "consl. ") !== 0) {
+                        $jdCustomers[] = $cust;
+                    }
+                }
+            }
+
+            // 3. Tele Call Enquiries (matches legacy telecallEnquiry.php filter rules)
+            $tcSql = "SELECT distinct cd.customer_id, company_name, company_address, contact_person, contact_no, contact_email, client_reference, priority, s.service_id, service_type, marketing_audit_type, add_service_to, audit_type, comments, next_service_date, certification_date, handel_by FROM customer_details cd left join services s on cd.customer_id = s.customer_id WHERE client_of = 'Tele Call' and cd.is_delete <> 'Y' order by FIELD(priority, 'High', 'Medium', 'Low', '')";
+            $statement = $db->prepare($tcSql);
+            $statement->execute();
+            foreach ($statement->fetchAll(PDO::FETCH_ASSOC) as $cust) {
+                $svcType = $cust["service_type"] ?? "";
+                $addSvcTo = $cust["add_service_to"] ?? "";
+                if (($svcType == "CA" || $svcType == "New enq" || $svcType == "") && ($addSvcTo == "Under Marketing" || $addSvcTo == "")) {
+                    if (stripos((string)($cust['company_name'] ?? ''), "consl. ") !== 0) {
+                        $tcCustomers[] = $cust;
+                    }
+                }
+            }
         } catch (Exception $ex) {
             echo '<div class="alert alert-danger">Error loading inquiries: ' . htmlspecialchars($ex->getMessage()) . '</div>';
         }
     }
-    $totalCount = count($listOfCustomers);
+
+    $enquiryTabs = [
+        'referred' => [
+            'label' => 'Referred Enquiry',
+            'icon' => 'fa-building',
+            'tableId' => 'tab_newEnq_list',
+            'paneId' => 'tabPaneReferred',
+            'col4Label' => 'Reference By',
+            'col4Field' => 'client_reference',
+            'rows' => $referredCustomers,
+        ],
+        'jd' => [
+            'label' => 'JD Enquiry',
+            'icon' => 'fa-search',
+            'tableId' => 'tab_jdEnq_list',
+            'paneId' => 'tabPaneJd',
+            'col4Label' => 'Location',
+            'col4Field' => 'company_address',
+            'rows' => $jdCustomers,
+        ],
+        'tel' => [
+            'label' => 'Tel Enquiry',
+            'icon' => 'fa-phone',
+            'tableId' => 'tab_tcEnq_list',
+            'paneId' => 'tabPaneTel',
+            'col4Label' => 'Location',
+            'col4Field' => 'company_address',
+            'rows' => $tcCustomers,
+        ],
+    ];
+    $totalCount = count($enquiryTabs[$activeTab]['rows']);
     ?>
 
     <!-- Modern Clean Styling for New Enquiries -->
@@ -295,7 +361,7 @@ EOT;
 
         /* Table Header: Dark Slate Gradient with Royal Blue Line */
         .dataTables_scrollHead,
-        #tab_newEnq_list thead {
+        .enq-modern-table thead {
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
             border-top-left-radius: 8px;
             border-top-right-radius: 8px;
@@ -311,7 +377,7 @@ EOT;
         }
 
         .dataTables_scrollHead table thead th,
-        #tab_newEnq_list thead th {
+        .enq-modern-table thead th {
             background: transparent !important;
             color: #f8fafc !important;
             font-size: 10.5px !important;
@@ -329,7 +395,7 @@ EOT;
         }
 
         .dataTables_scrollHead table thead th:last-child,
-        #tab_newEnq_list thead th:last-child {
+        .enq-modern-table thead th:last-child {
             border-right: none !important;
         }
 
@@ -352,27 +418,27 @@ EOT;
         }
 
         /* Table Body Styling */
-        #tab_newEnq_list {
+        .enq-modern-table {
             margin: 0 !important;
             border-collapse: collapse !important;
             min-width: 100%;
         }
 
-        #tab_newEnq_list tbody tr {
+        .enq-modern-table tbody tr {
             background-color: #ffffff;
             border-bottom: 1px solid #f1f5f9;
             transition: background-color 0.15s ease;
         }
 
-        #tab_newEnq_list tbody tr:nth-of-type(even) {
+        .enq-modern-table tbody tr:nth-of-type(even) {
             background-color: #f8fafc;
         }
 
-        #tab_newEnq_list tbody tr:hover {
+        .enq-modern-table tbody tr:hover {
             background-color: #f0f7ff !important;
         }
 
-        #tab_newEnq_list tbody td {
+        .enq-modern-table tbody td {
             padding: 8px 10px !important;
             font-size: 12.5px;
             color: #1e293b;
@@ -383,21 +449,81 @@ EOT;
             box-sizing: border-box;
         }
 
-        #tab_newEnq_list tbody td:last-child {
+        .enq-modern-table tbody td:last-child {
             border-right: none !important;
         }
 
         /* Force all spans and links in this table to be visible (overrides .table-striped span { display:none } in legacy app.css) */
-        #tab_newEnq_list span,
-        #tab_newEnq_list a,
-        #tab_newEnq_list .customer-link,
-        #tab_newEnq_list .contact-text,
-        #tab_newEnq_list .ref-text,
-        .dataTables_scrollBody #tab_newEnq_list span,
-        .dataTables_scrollBody #tab_newEnq_list a {
+        .enq-modern-table span,
+        .enq-modern-table a,
+        .enq-modern-table .customer-link,
+        .enq-modern-table .contact-text,
+        .enq-modern-table .ref-text,
+        .dataTables_scrollBody .enq-modern-table span,
+        .dataTables_scrollBody .enq-modern-table a {
             display: inline-block !important;
             visibility: visible !important;
             opacity: 1 !important;
+        }
+
+        /* Enquiry 3-Tab Switcher */
+        .enq-tab-switcher {
+            display: inline-flex;
+            align-items: center;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 9px;
+            border: 1px solid #e2e8f0;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .enq-tab-btn {
+            border: none;
+            background: transparent;
+            color: #475569;
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.15s ease;
+            outline: none;
+        }
+
+        .enq-tab-btn:hover {
+            color: #1e293b;
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .enq-tab-btn.active {
+            background: #1d4ed8;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(29, 78, 216, 0.25);
+        }
+
+        .enq-tab-count {
+            background: rgba(15, 23, 42, 0.1);
+            color: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 1px 7px;
+            border-radius: 10px;
+        }
+
+        .enq-tab-btn.active .enq-tab-count {
+            background: rgba(255, 255, 255, 0.24);
+            color: #ffffff;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         /* Checkbox styling */
@@ -684,16 +810,28 @@ EOT;
                     <div class="page-title-badge">
                         <div class="page-icon"><i class="fa fa-envelope-open-o"></i></div>
                         <div class="page-title-text">
-                            <h3>New Enquiries</h3>
-                            <div class="page-subtitle">Under Marketing &amp; Unassigned Inquiries</div>
+                            <h3>Enquiries</h3>
+                            <div class="page-subtitle">Referred, Just Dial &amp; Tele Call Inquiries</div>
                         </div>
                     </div>
+                    <div class="enq-tab-switcher" role="tablist">
+                        <?php foreach ($enquiryTabs as $tabKey => $tabCfg) { ?>
+                            <button type="button"
+                                    class="enq-tab-btn <?php echo ($activeTab === $tabKey) ? 'active' : ''; ?>"
+                                    data-target-tab="<?php echo $tabKey; ?>"
+                                    data-count="<?php echo count($tabCfg['rows']); ?>">
+                                <i class="fa <?php echo $tabCfg['icon']; ?>"></i>
+                                <span><?php echo htmlspecialchars($tabCfg['label']); ?></span>
+                                <span class="enq-tab-count"><?php echo count($tabCfg['rows']); ?></span>
+                            </button>
+                        <?php } ?>
+                    </div>
+                </div>
+                <div class="toolbar-right">
                     <span class="count-badge">
                         <i class="fa fa-list-ul"></i>
                         <span><strong id="displayCount"><?php echo $totalCount; ?></strong> Inquiries</span>
                     </span>
-                </div>
-                <div class="toolbar-right">
                     <?php if ($canDelete) { ?>
                         <button type="button" class="btn-action-delete deletebutton" title="Delete selected inquiries">
                             <i class="fa fa-trash-o"></i> Delete Selected
@@ -714,84 +852,85 @@ EOT;
                     </div>
                 </div>
 
-                <!-- Enquiries Table -->
-                <table class="table table-hover" id="tab_newEnq_list" style="width: 100%;">
-                    <thead>
-                        <tr>
-                            <?php if ($canDelete) { ?>
-                                <th class="th-checkbox-col" style="width: 40px; text-align: center;">
-                                    <div class="th-checkbox-wrap">
-                                        <input type="checkbox" id="selectAllEnquiries" class="enq-checkbox" title="Select All">
-                                    </div>
-                                </th>
-                            <?php } ?>
-                            <th style="width: 100px; text-align: center;">Prio.</th>
-                            <th style="width: 250px;">Customer</th>
-                            <th style="width: 160px;">Contact</th>
-                            <th style="width: 160px;">Reference By</th>
-                            <th>Comments</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        $count = 0;
-                        foreach ($listOfCustomers as $customer) {
-                            $count++;
-                            $cid = $customer['customer_id'];
-                            $prio = trim($customer['priority'] ?? '');
-                            $prioClass = 'prio-none';
-                            if ($prio === 'High') {
-                                $prioClass = 'prio-high';
-                            } else if ($prio === 'Medium') {
-                                $prioClass = 'prio-medium';
-                            } else if ($prio === 'Low') {
-                                $prioClass = 'prio-low';
-                            }
+                <?php foreach ($enquiryTabs as $tabKey => $tabCfg) { ?>
+                    <div id="<?php echo $tabCfg['paneId']; ?>" class="enq-tab-pane" data-tab-key="<?php echo $tabKey; ?>" style="display: <?php echo ($activeTab === $tabKey) ? 'block' : 'none'; ?>;">
+                        <table class="table table-hover enq-modern-table" id="<?php echo $tabCfg['tableId']; ?>" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <?php if ($canDelete) { ?>
+                                        <th class="th-checkbox-col" style="width: 40px; text-align: center;">
+                                            <div class="th-checkbox-wrap">
+                                                <input type="checkbox" class="enq-checkbox select-all-tab-enq" title="Select All">
+                                            </div>
+                                        </th>
+                                    <?php } ?>
+                                    <th style="width: 100px; text-align: center;">Prio.</th>
+                                    <th style="width: 250px;">Customer</th>
+                                    <th style="width: 160px;">Contact</th>
+                                    <th style="width: 160px;"><?php echo htmlspecialchars($tabCfg['col4Label']); ?></th>
+                                    <th>Comments</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                foreach ($tabCfg['rows'] as $customer) {
+                                    $cid = $customer['customer_id'];
+                                    $prio = trim($customer['priority'] ?? '');
+                                    $prioClass = 'prio-none';
+                                    if ($prio === 'High') {
+                                        $prioClass = 'prio-high';
+                                    } else if ($prio === 'Medium') {
+                                        $prioClass = 'prio-medium';
+                                    } else if ($prio === 'Low') {
+                                        $prioClass = 'prio-low';
+                                    }
 
-                            $companyName = trim($customer['company_name'] ?? '');
-                            $contact = trim($customer['contact_no'] ?? '');
-                            $ref = trim($customer['client_reference'] ?? '');
-                            ?>
-                            <tr class="enquiry-row" data-customer-id="<?php echo $cid; ?>">
-                                <?php if ($canDelete) { ?>
-                                    <td style="text-align: center;">
-                                        <input type="checkbox" class="deletecustomerlist enq-checkbox" name="deletecustomerlist" value="<?php echo $cid; ?>">
-                                    </td>
+                                    $companyName = trim($customer['company_name'] ?? '');
+                                    $contact = trim($customer['contact_no'] ?? '');
+                                    $col4Val = trim($customer[$tabCfg['col4Field']] ?? '');
+                                    ?>
+                                    <tr class="enquiry-row" data-customer-id="<?php echo $cid; ?>">
+                                        <?php if ($canDelete) { ?>
+                                            <td style="text-align: center;">
+                                                <input type="checkbox" class="deletecustomerlist enq-checkbox" name="deletecustomerlist" value="<?php echo $cid; ?>">
+                                            </td>
+                                        <?php } ?>
+                                        <td style="text-align: center;">
+                                            <select class="customPriority <?php echo $prioClass; ?>" data-id="<?php echo $cid; ?>">
+                                                <option value="" <?php echo empty($prio) ? 'selected' : ''; ?>>Select</option>
+                                                <option value="High" <?php echo ($prio === 'High') ? 'selected' : ''; ?>>High</option>
+                                                <option value="Medium" <?php echo ($prio === 'Medium') ? 'selected' : ''; ?>>Medium</option>
+                                                <option value="Low" <?php echo ($prio === 'Low') ? 'selected' : ''; ?>>Low</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <a class="customerAccount customer-link" data-id="<?php echo $cid; ?>" title="View customer account details">
+                                                <span><?php echo htmlspecialchars($companyName ?: '—'); ?></span>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($contact)) { ?>
+                                                <span class="contact-text"><i class="fa fa-phone" style="font-size: 10.5px; color: #64748b; margin-right: 4px;"></i><?php echo htmlspecialchars($contact); ?></span>
+                                            <?php } else { ?>
+                                                <span class="empty-cell-dash">—</span>
+                                            <?php } ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($col4Val)) { ?>
+                                                <span class="ref-text"><?php echo htmlspecialchars($col4Val); ?></span>
+                                            <?php } else { ?>
+                                                <span class="empty-cell-dash">—</span>
+                                            <?php } ?>
+                                        </td>
+                                        <td>
+                                            <textarea rows="2" class="autosavecomments customComments" data-row="<?php echo $cid; ?>" placeholder="Click to add note... (Press Enter for timestamp)"><?php echo htmlspecialchars($customer['comments'] ?? ''); ?></textarea>
+                                        </td>
+                                    </tr>
                                 <?php } ?>
-                                <td style="text-align: center;">
-                                    <select class="customPriority <?php echo $prioClass; ?>" data-id="<?php echo $cid; ?>">
-                                        <option value="" <?php echo empty($prio) ? 'selected' : ''; ?>>Select</option>
-                                        <option value="High" <?php echo ($prio === 'High') ? 'selected' : ''; ?>>High</option>
-                                        <option value="Medium" <?php echo ($prio === 'Medium') ? 'selected' : ''; ?>>Medium</option>
-                                        <option value="Low" <?php echo ($prio === 'Low') ? 'selected' : ''; ?>>Low</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <a class="customerAccount customer-link" data-id="<?php echo $cid; ?>" id="customerAddress<?php echo $cid; ?>" title="View customer account details">
-                                        <span id="customerName<?php echo $cid; ?>"><?php echo htmlspecialchars($companyName ?: '—'); ?></span>
-                                    </a>
-                                </td>
-                                <td>
-                                    <?php if (!empty($contact)) { ?>
-                                        <span class="contact-text" id="customerContact<?php echo $cid; ?>"><i class="fa fa-phone" style="font-size: 10.5px; color: #64748b; margin-right: 4px;"></i><?php echo htmlspecialchars($contact); ?></span>
-                                    <?php } else { ?>
-                                        <span class="empty-cell-dash">—</span>
-                                    <?php } ?>
-                                </td>
-                                <td>
-                                    <?php if (!empty($ref)) { ?>
-                                        <span class="ref-text" id="customerRef<?php echo $cid; ?>"><?php echo htmlspecialchars($ref); ?></span>
-                                    <?php } else { ?>
-                                        <span class="empty-cell-dash">—</span>
-                                    <?php } ?>
-                                </td>
-                                <td>
-                                    <textarea rows="2" class="autosavecomments customComments" data-row="<?php echo $cid; ?>" id="customerComment<?php echo $cid; ?>" placeholder="Click to add note... (Press Enter for timestamp)"><?php echo htmlspecialchars($customer['comments'] ?? ''); ?></textarea>
-                                </td>
-                            </tr>
-                        <?php } ?>
-                    </tbody>
-                </table>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php } ?>
             </div>
 
         </div>
@@ -854,8 +993,7 @@ EOT;
     }
 
     $(document).ready(function () {
-
-        // Initialize DataTables with sleek scrolling and custom search
+        var activeEnqTab = <?php echo json_encode($activeTab); ?>;
         var hasDeleteCol = <?php echo $canDelete ? 'true' : 'false'; ?>;
         var colDefs = [];
         if (hasDeleteCol) {
@@ -873,75 +1011,107 @@ EOT;
             colDefs.push({ "targets": 4, "orderable": false });
         }
 
-        var table = $('#tab_newEnq_list').DataTable({
-            "scrollY": "68vh",
-            "sScrollX": "100%",
-            "scrollCollapse": true,
-            "paging": false,
-            "ordering": true,
-            "autoWidth": false,
-            "columnDefs": colDefs,
-            "language": {
-                "search": "",
-                "searchPlaceholder": "Search customer, contact, ref...",
-                "info": "Showing _TOTAL_ inquiry records",
-                "infoEmpty": "No inquiries available",
-                "infoFiltered": "(filtered from _MAX_ total inquiries)",
-                "zeroRecords": "No matching inquiries found"
-            },
-            "initComplete": function() {
-                // Instantly remove loading overlay with a smooth fade
-                var $overlay = $('#tableLoaderOverlay');
-                $overlay.fadeOut(150, function() {
-                    $(this).remove();
-                });
-                table.columns.adjust().draw(false);
-            }
-        });
+        function initEnquiryDataTable(selector) {
+            return $(selector).DataTable({
+                "scrollY": "68vh",
+                "sScrollX": "100%",
+                "scrollCollapse": true,
+                "paging": false,
+                "ordering": true,
+                "autoWidth": false,
+                "columnDefs": colDefs,
+                "language": {
+                    "search": "",
+                    "searchPlaceholder": "Search customer, contact, ref/location...",
+                    "info": "Showing _TOTAL_ inquiry records",
+                    "infoEmpty": "No inquiries available",
+                    "infoFiltered": "(filtered from _MAX_ total inquiries)",
+                    "zeroRecords": "No matching inquiries found"
+                }
+            });
+        }
 
-        // Fallback safety to ensure loader disappears even if table init has zero rows
-        setTimeout(function() {
+        var enqTables = {
+            referred: initEnquiryDataTable('#tab_newEnq_list'),
+            jd: initEnquiryDataTable('#tab_jdEnq_list'),
+            tel: initEnquiryDataTable('#tab_tcEnq_list')
+        };
+
+        function adjustActiveTable() {
+            if (enqTables[activeEnqTab]) {
+                enqTables[activeEnqTab].columns.adjust().draw(false);
+            }
+        }
+
+        // Instantly remove loading overlay once tables are ready
+        setTimeout(function () {
             var $overlay = $('#tableLoaderOverlay');
             if ($overlay.length) {
-                $overlay.fadeOut(150, function() { $(this).remove(); });
+                $overlay.fadeOut(150, function () { $(this).remove(); });
             }
-            table.columns.adjust();
-        }, 300);
+            adjustActiveTable();
+        }, 120);
+
+        // Top 3-Tab Switcher
+        $('.enq-tab-btn').on('click', function () {
+            var targetTab = $(this).data('target-tab');
+            var countVal = $(this).data('count');
+            if (!targetTab || !enqTables[targetTab]) return;
+
+            activeEnqTab = targetTab;
+            $('.enq-tab-btn').removeClass('active');
+            $(this).addClass('active');
+
+            $('.enq-tab-pane').hide();
+            $('.enq-tab-pane[data-tab-key="' + targetTab + '"]').show();
+            $('#displayCount').text(countVal);
+
+            if (window.history && window.history.replaceState) {
+                var url = new URL(window.location.href);
+                url.searchParams.set('tab', targetTab);
+                window.history.replaceState({}, '', url.toString());
+            }
+
+            adjustActiveTable();
+            $('.enq-tab-pane[data-tab-key="' + targetTab + '"] .customComments').each(function () {
+                $(this).scrollTop($(this).prop("scrollHeight"));
+            });
+        });
 
         // Sidebar toggle adjustments
         $("#menu-toggle").on('click', function (e) {
             e.preventDefault();
             $("#wrapper").toggleClass("active");
-            setTimeout(function() {
-                table.columns.adjust().draw(false);
-            }, 250);
+            setTimeout(adjustActiveTable, 250);
         });
 
-        // "Select All" checkbox toggle
-        $('#selectAllEnquiries').on('change', function () {
+        // Scoped "Select All" checkbox toggle per tab pane
+        $(document).on('change', '.select-all-tab-enq', function () {
             var isChecked = $(this).is(':checked');
-            $('.deletecustomerlist').prop('checked', isChecked);
+            $(this).closest('.enq-tab-pane').find('.deletecustomerlist').prop('checked', isChecked);
         });
 
-        // Uncheck "Select All" if any row checkbox is unchecked
+        // Uncheck "Select All" in active pane if any row checkbox is unchecked
         $(document).on('change', '.deletecustomerlist', function () {
+            var $pane = $(this).closest('.enq-tab-pane');
+            var $selectAll = $pane.find('.select-all-tab-enq');
             if (!$(this).is(':checked')) {
-                $('#selectAllEnquiries').prop('checked', false);
+                $selectAll.prop('checked', false);
             } else {
-                var total = $('.deletecustomerlist').length;
-                var checked = $('.deletecustomerlist:checked').length;
+                var total = $pane.find('.deletecustomerlist').length;
+                var checked = $pane.find('.deletecustomerlist:checked').length;
                 if (total > 0 && total === checked) {
-                    $('#selectAllEnquiries').prop('checked', true);
+                    $selectAll.prop('checked', true);
                 }
             }
         });
 
-        // Delete button click handler
+        // Delete button click handler (only collects checked rows in active tab)
         var pendingDeleteList = "";
         $(".deletebutton").on('click', function (e) {
             e.preventDefault();
             var custList = [];
-            $(".deletecustomerlist:checked").each(function () {
+            $('.enq-tab-pane[data-tab-key="' + activeEnqTab + '"] .deletecustomerlist:checked').each(function () {
                 custList.push($(this).val());
             });
 
@@ -974,7 +1144,7 @@ EOT;
             var url = 'deleteCustomerService.php';
             var form = $('<form action="' + url + '" method="post">' +
                 '<input type="hidden" name="customersList" value="' + pendingDeleteList + '" />' +
-                '<input type="hidden" name="page" value="newEnquiry_Test.php" />' +
+                '<input type="hidden" name="page" value="newEnquiry_Test.php?tab=' + activeEnqTab + '" />' +
                 '</form>');
             $('body').append(form);
             form.submit();
@@ -1067,7 +1237,7 @@ EOT;
 
         // Window resize adjust
         $(window).on('resize', function () {
-            table.columns.adjust();
+            adjustActiveTable();
         });
     });
 </script>

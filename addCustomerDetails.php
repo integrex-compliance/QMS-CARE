@@ -7,7 +7,9 @@
   && isset($_GET['columnValue']) && !empty($_GET['columnValue'])
  */
 
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 include_once './dbConnect.php';
 
 if (isset($_GET['id']) && !empty($_GET['id']) && isset($_GET['columnName']) && !empty($_GET['columnName'])) {
@@ -109,6 +111,30 @@ if (isset($_GET['id']) && !empty($_GET['id']) && isset($_GET['columnName']) && !
             $statement->bindParam(':auditType', $_GET['columnValue']);
             $statement->bindParam(':id', $_GET['id']);
             $statement->execute();
+        } else if ($column == "type_of_service") {
+            $value = isset($_GET['columnValue']) ? trim($_GET['columnValue']) : '';
+            $updateCustomer = "UPDATE customer_details SET type_of_service = :val WHERE customer_id = :id";
+            $statement = $db->prepare($updateCustomer);
+            $statement->bindParam(':val', $value);
+            $statement->bindParam(':id', $_GET['id']);
+            $statement->execute();
+
+            try {
+                $del = $db->prepare("DELETE FROM customer_services_selected WHERE customer_id = :cid");
+                $del->execute([':cid' => $_GET['id']]);
+
+                if (!empty($value)) {
+                    $svcArr = array_map('trim', explode(',', $value));
+                    $ins = $db->prepare("INSERT INTO customer_services_selected (customer_id, service_name) VALUES (:cid, :sname)");
+                    foreach ($svcArr as $sname) {
+                        if ($sname !== '') {
+                            $ins->execute([':cid' => $_GET['id'], ':sname' => $sname]);
+                        }
+                    }
+                }
+            } catch (Exception $e) {}
+
+            echo json_encode(['status' => 'success', 'type_of_service' => $value]);
         }
 //
 //        if ($column == "certification_date") {

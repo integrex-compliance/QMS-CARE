@@ -539,13 +539,13 @@
                     <div class="servicebox-data" id="servicebox-data<?php if (isset($serviceId)) echo $serviceId; ?>" <?php echo $displayHtmlStr ?>>
                         <div class="row" style="padding-top:10px">
                             <div class="col-xs-3 form-group float-label-control">
-                                <label>Service Type </label>
+                                <label>Service Stage</label>
                                 <select class="service-type" id="service-type" name="service-type" data-row-id="<?php echo $serviceId; ?>" value="" <?php echo $financeAccess ?><?php echo $fieldAccess ?>>
                                     <option value="<?php if (isset($service1['service_type'])) echo $service1['service_type'] ?>" ><?php
                                         if (isset($service1['service_type']) && !empty($service1['service_type'])) {
                                             echo $service1['service_type'];
                                         } else {
-                                            echo "Select Service Type";
+                                            echo "Select Service Stage";
                                         }
                                         ?> </option>
                                     <?php foreach ($allServices as $svc) { ?>
@@ -587,13 +587,13 @@
                                 <!--<input type="text" class="consulting-firm" id="consulting-firm" data-row-id="<?php echo $serviceId; ?>" name="consulting-firm" placeholder="Consulting firm" value="<?php if (isset($service1['consulting_firm'])) echo $service1['consulting_firm'] ?>" <?php echo $financeAccess ?><?php echo $fieldAccess ?>>-->
                             </div>
                             <div class="col-xs-3 form-group float-label-control">
-                                <label>Consultant</label>
+                                <label>Lead Consultant</label>
                                 <select class="consultant-list" id="consultant-list" name="consultant-list" data-row-id="<?php echo $serviceId; ?>" value="" <?php echo $financeAccess ?> <?php echo $fieldAccess ?>>
                                     <option value="<?php if (isset($service1['consultant'])) echo $service1['consultant'] ?>" ><?php
                                         if (isset($service1['consultant']) && !empty($service1['consultant'])) {
                                             echo $service1['consultant'];
                                         } else {
-                                            echo "Select Consultant";
+                                            echo "Select Lead Consultant";
                                         }
                                         ?> </option>
                                     <?php foreach ($consultant as $cunslt) { ?>
@@ -606,13 +606,13 @@
                         </div>
                         <div class="row">
                             <div class="col-xs-2 form-group float-label-control" style="margin-bottom:2px;">
-                                <label>Auditor</label>
+                                <label>Lead Auditor</label>
                                 <select class="auditor-list" id="auditor-list" name="auditor-list" data-row-id="<?php echo $serviceId; ?>" value="" <?php echo $financeAccess ?>>
                                     <option value="<?php if (isset($service1['auditor'])) echo $service1['auditor'] ?>" ><?php
                                         if (isset($service1['auditor']) && !empty($service1['auditor'])) {
                                             echo $service1['auditor'];
                                         } else {
-                                            echo "Select Auditor";
+                                            echo "Select Lead Auditor";
                                         }
                                         ?> </option>
                                     <?php foreach ($allAuditorList as $auditors) { ?>
@@ -649,13 +649,13 @@
                                 </div>
                             <?php } ?>
                             <div class="col-xs-2 form-group float-label-control" style="margin-bottom:2px;">
-                                <label>Handel By</label>
+                                <label>Dealing Officer</label>
                                 <select class="handel-by" id="handel-by" name="handel-by" data-row-id="<?php echo $serviceId; ?>" value="" <?php echo $financeAccess ?>>
                                     <option value="<?php if (isset($service1['handel_by'])) echo $service1['handel_by'] ?>" ><?php
                                         if (isset($service1['handel_by']) && !empty($service1['handel_by'])) {
                                             echo $service1['handel_by'];
                                         } else {
-                                            echo "Select Handel By";
+                                            echo "Select Dealing Officer";
                                         }
                                         ?></option>
                                     <?php foreach ($handlerList as $handler) { ?>
@@ -1967,9 +1967,9 @@
 <div class="servicebox-data" id="servicebox-data">\n\
     <div class="row" style="padding-top:10px">\n\
         <div class="col-xs-3 form-group float-label-control">\n\
-            <label>Service Type</label>\n\
+            <label>Service Stage</label>\n\
                 <select class="service-type" id="service-type" name="service-type" data-row-id="" value="">\n\
-                <option value="" >Select Service Type</option>\n\<?php foreach ($allServices as $svc) { ?>\n\
+                <option value="" >Select Service Stage</option>\n\<?php foreach ($allServices as $svc) { ?>\n\
                                                                     <option value="<?php echo $svc['service'] ?>"><?php echo $svc['service'] ?></option>\n\<?php } ?></select>\n\
         </div>\n\
         <div class="col-xs-3 form-group float-label-control">\n\
@@ -1985,18 +1985,18 @@
                                                                     <option value="<?php echo $firm['firm_name'] ?>"><?php echo $firm['firm_name'] ?></option>\n\<?php } ?></select>\n\
         </div>\n\
         <div class="col-xs-3 form-group float-label-control">\n\
-            <label>Consultant</label>\n\
+            <label>Lead Consultant</label>\n\
             <select class="consultant-list" id="consultant-list" name="consultant-list" data-row-id="" value="">\n\
-                <option value="" >Select Consultant </option>\n\<?php foreach ($consultant as $cunslt) { ?>\n\
+                <option value="" >Select Lead Consultant </option>\n\<?php foreach ($consultant as $cunslt) { ?>\n\
                                                                     <option value="<?php echo $cunslt['consultant_name'] ?>"><?php echo $cunslt['consultant_name'] ?></option>\n\<?php } ?></select>\n\
         </div>\n\
         <input type="hidden" class="service-id" id="service-id" data-row-id="" name="service-id" value="">\n\
     </div>\n\
     <div class="row">\n\
         <div class="col-xs-2 form-group float-label-control">\n\
-            <label>Auditor</label>\n\
+            <label>Lead Auditor</label>\n\
             <select class="consultant-list" id="consultant-list" name="consultant-list" data-row-id="" value="">\n\
-                <option value="" >Select Auditor</option>\n\<?php foreach ($allAuditorList as $auditors) { ?>\n\
+                <option value="" >Select Lead Auditor</option>\n\<?php foreach ($allAuditorList as $auditors) { ?>\n\
                                                                     <option value="<?php echo $auditors['auditor_name'] ?>"><?php echo $auditors['auditor_name'] ?></option>\n\<?php } ?></select>\n\
            <!-- <input type="text" class="auditor-list" data-row-id="" id="auditor-list" name="auditor-list" placeholder="Auditor" value="" required> -->\n\
         </div>\n\
@@ -2011,9 +2011,9 @@
                                                                         <option value="<?php echo $to['add_to'] ?>"><?php echo $to['add_to'] ?></option>\n\<?php } ?></select>\n\
         </div>\n\
         <div class="col-xs-2 form-group float-label-control" style="margin-bottom:2px;">\n\
-                <label>Handel By</label>\n\
+                <label>Dealing Officer</label>\n\
                 <select class="handel-by" id="handel-by" name="handel-by" data-row-id="" value="">\n\
-                <option value="" >Select Handel By</option>\n\<?php foreach ($handlerList as $handler) { ?>\n\
+                <option value="" >Select Dealing Officer</option>\n\<?php foreach ($handlerList as $handler) { ?>\n\
                                                     <option value="<?php echo $handler['handler_name'] ?>"><?php echo $handler['handler_name'] ?></option>\n\<?php } ?></select>\n\
                 <!--<input type="text" class="add-to-service" data-row-id="<?php echo $serviceId; ?>" id="add-to-service" name="add-to-service" placeholder="Add To" value="<?php if (isset($service1['add_service_to'])) echo $service1['add_service_to'] ?>" required>-->\n\
             </div>\n\

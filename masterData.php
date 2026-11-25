@@ -7,7 +7,7 @@
     include_once './dbConnect.php';
 
 //    select service list
-    $services = "SELECT * FROM service_type";
+    $services = "SELECT * FROM service_type ORDER BY id ASC";
     $statement = $db->prepare($services);
     $statement->execute();
     $serviceList = $statement->fetchAll();
@@ -75,7 +75,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="well" style="max-height: 200px;overflow: auto;">
+                            <div class="well" style="max-height: 280px;overflow: auto;">
                                 <ul class="list-group checked-list-box operateServices">
                                     <?php foreach ($serviceList as $service) { ?>
                                         <li class="list-group-item"><?php echo $service['service'] ?><a class="deleteService" data-id="<?php echo $service['id'] ?>" style="float: right"><i class="fa fa-trash"></i></a></li>                                
@@ -99,7 +99,7 @@
                             </div>
                         </div>
                         <div class="row" style="">
-                            <div class="well" style="max-height: 200px;overflow: auto;">
+                            <div class="well" style="max-height: 280px;overflow: auto;">
                                 <ul class="list-group checked-list-box operateCert">
                                     <?php foreach ($certList as $cert) { ?>
                                         <li class="list-group-item"><?php echo $cert['cert'] ?><a class="deleteCert" data-id="<?php echo $cert['cert_id'] ?>" style="float: right"><i class="fa fa-trash"></i></a><a class="editCert" data-id="<?php echo $cert['cert_id'] ?>" style="float: right; padding-right: 5px"><i class="fa fa-edit"></i></a></li>                                
@@ -125,7 +125,7 @@
                             </div>
                         </div>
                         <div class="row" style="">
-                            <div class="well" style="max-height: 200px;overflow: auto;">
+                            <div class="well" style="max-height: 280px;overflow: auto;">
                                 <ul class="list-group checked-list-box operateFirm">
                                     <?php foreach ($firmList as $firm) { ?>
                                         <li class="list-group-item" ><?php echo $firm['firm_name'] ?><a class="deleteFirm" data-id="<?php echo $firm['consulting_firm_id'] ?>" style="float: right" title="Delete Consulting Firm"><i class="fa fa-trash"></i></a><a class="editFirm" data-id="<?php echo $firm['consulting_firm_id'] ?>" style="float: right; padding-right: 5px" title="Edit Consulting Firm"><i class="fa fa-edit"></i></a></li>                                
@@ -146,7 +146,7 @@
                             </div>
                         </div>
                         <div class="row" style="">
-                            <div class="well" style="max-height: 200px;overflow: auto;">
+                            <div class="well" style="max-height: 280px;overflow: auto;">
                                 <ul class="list-group checked-list-box operateConsultant">
                                     <?php foreach ($consultantList as $consultant) { ?>
                                         <li class="list-group-item"><?php echo $consultant['consultant_name'] ?><a class="deleteConsultant" data-id="<?php echo $consultant['consultant_id'] ?>" style="float: right"><i class="fa fa-trash"></i></a></li>
@@ -172,7 +172,7 @@
                             </div>
                         </div>
                         <div class="row" style="">
-                            <div class="well" style="max-height: 200px;overflow: auto;">
+                            <div class="well" style="max-height: 280px;overflow: auto;">
                                 <ul class="list-group checked-list-box operateAuditors">
                                     <?php foreach ($auditorsList as $auditor) { ?>
                                         <li class="list-group-item"><?php echo $auditor['auditor_name'] ?><a class="deleteAuditor" data-id="<?php echo $auditor['auditors_id'] ?>" style="float: right"><i class="fa fa-trash"></i></a></li>
@@ -194,7 +194,7 @@
                             </div>
                         </div>
                         <div class="row" style="">
-                            <div class="well" style="max-height: 200px;overflow: auto;">
+                            <div class="well" style="max-height: 280px;overflow: auto;">
                                 <ul class="list-group checked-list-box operateHandler">
                                     <?php foreach ($handlerList as $handler) { ?>
                                         <li class="list-group-item"><?php echo $handler['handler_name'] ?><a class="deleteHandler" data-id="<?php echo $handler['handler_id'] ?>" style="float: right"><i class="fa fa-trash"></i></a></li>
@@ -219,7 +219,7 @@
                             </div>
                         </div>
                         <div class="row" style="">
-                            <div class="well" style="max-height: 200px;overflow: auto;">
+                            <div class="well" style="max-height: 280px;overflow: auto;">
                                 <ul class="list-group checked-list-box operatePCIP">
                                     <?php foreach ($pcips as $ips) { ?>
                                         <li class="list-group-item"><?php echo $ips['pcip'] ?><a class="deletePcip" data-id="<?php echo $ips['id'] ?>" style="float: right"><i class="fa fa-trash"></i></a></li>
@@ -294,7 +294,7 @@
         $('body').on('click', ".deletePcip", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addNewServices.php",
                     type: "GET",
@@ -583,7 +583,7 @@
         $('body').on('click', ".deleteAuditType", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addNewServices.php",
                     type: "GET",
@@ -615,7 +615,7 @@
         $('body').on('click', ".deleteAuditor", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addNewServices.php",
                     type: "GET",
@@ -646,7 +646,7 @@
         $('body').on('click', ".deleteHandler", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addNewServices.php",
                     type: "GET",
@@ -678,7 +678,7 @@
         $('body').on('click', ".deleteService", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addNewServices.php",
                     type: "GET",
@@ -712,7 +712,7 @@
         $('body').on('click', ".deleteCert", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addNewServices.php",
                     type: "GET",
@@ -746,7 +746,7 @@
         $('body').on('click', ".deleteFirm", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addConsultingFirm.php",
                     type: "GET",
@@ -777,7 +777,7 @@
         $('body').on('click', ".deleteConsultant", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addNewServices.php",
                     type: "GET",
@@ -808,7 +808,7 @@
         $('body').on('click', ".deleteBankAccount", function (e) {
             $id = $(this).attr('data-id');
             $('#delete-details').show();
-            $('.delete-confirm-ok').click(function () {
+            $('.delete-confirm-ok').off('click').on('click', function () {
                 $.ajax({
                     url: "addBankDetails.php",
                     type: "GET",

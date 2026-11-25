@@ -890,9 +890,9 @@ $listOfUsers = $statement->fetchAll();
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-sm-6 form-group float-label-control">
-                                <label>Service Type</label>
+                                <label>Service Stage</label>
                                 <select name="serviceType" class="form-control serviceType" id="serviceType">
-                                    <option value="">Select Service Type</option>
+                                    <option value="">Select Service Stage</option>
                                     <?php foreach ($services as $service) { ?>
                                         <option value="<?php echo $service['service'] ?>">
                                             <?php echo $service['service'] ?>
@@ -925,9 +925,9 @@ $listOfUsers = $statement->fetchAll();
                                 </select>
                             </div>
                             <div class="col-sm-6 form-group float-label-control">
-                                <label>Consultant</label>
+                                <label>Lead Consultant</label>
                                 <select name="consultant" class="form-control consultant" id="consultant">
-                                    <option value="">Select Consultant</option>
+                                    <option value="">Select Lead Consultant</option>
                                     <?php foreach ($consultantList as $consultant) { ?>
                                         <option value="<?php echo $consultant['consultant_name'] ?>">
                                             <?php echo $consultant['consultant_name'] ?>
@@ -949,9 +949,9 @@ $listOfUsers = $statement->fetchAll();
                                 </select>
                             </div>
                             <div class="col-sm-4 form-group float-label-control">
-                                <label>Auditor</label>
+                                <label>Lead Auditor</label>
                                 <select name="auditor" class="form-control auditor" id="auditor">
-                                    <option value="">Select Auditor</option>
+                                    <option value="">Select Lead Auditor</option>
                                     <?php foreach ($auditorsList as $auditors) { ?>
                                         <option value="<?php echo $auditors['auditor_name'] ?>">
                                             <?php echo $auditors['auditor_name'] ?>
