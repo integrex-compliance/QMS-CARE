@@ -324,4 +324,42 @@ if (isset($_GET['newService']) && !empty(trim($_GET['newService']))) {
     } catch (Exception $ex) {
         
     }
+} else if (isset($_GET['newServiceStage'])) {
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS `service_stage` (`id` int(11) NOT NULL AUTO_INCREMENT, `stage` varchar(50) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `stage` (`stage`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci");
+        $stageName = trim($_GET['newServiceStage']);
+        if ($stageName !== '') {
+            $chk = $db->prepare("SELECT count(*) as cnt FROM service_stage WHERE TRIM(LOWER(stage)) = LOWER(:stage)");
+            $chk->execute([':stage' => $stageName]);
+            if ((int)$chk->fetch()['cnt'] === 0) {
+                $newStageAdd = "INSERT INTO service_stage (stage) VALUES (:stage)";
+                $statement = $db->prepare($newStageAdd);
+                $statement->bindParam(':stage', $stageName);
+                $statement->execute();
+            }
+        }
+
+        $stages = "SELECT * FROM service_stage ORDER BY id ASC";
+        $statement = $db->prepare($stages);
+        $statement->execute();
+        $stageList = $statement->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($stageList);
+    } catch (Exception $ex) {
+        echo json_encode([]);
+    }
+} else if (isset($_GET['serviceStageId']) && !empty($_GET['serviceStageId'])) {
+    try {
+        $removeStage = "DELETE FROM service_stage WHERE id = :id";
+        $statement = $db->prepare($removeStage);
+        $statement->bindParam(':id', $_GET['serviceStageId']);
+        $statement->execute();
+
+        $stages = "SELECT * FROM service_stage ORDER BY id ASC";
+        $statement = $db->prepare($stages);
+        $statement->execute();
+        $stageList = $statement->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($stageList);
+    } catch (Exception $ex) {
+        echo json_encode([]);
+    }
 }

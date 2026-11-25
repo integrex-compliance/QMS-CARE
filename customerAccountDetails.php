@@ -138,14 +138,16 @@
             $allServices = $statement->fetchAll();
             $allMasterServiceTypes = $allServices;
             $allServiceStages = [];
+            $stageQueryOk = false;
             try {
                 $allServiceStageSql = "SELECT stage FROM service_stage ORDER BY id ASC";
                 $stageStmt = $db->query($allServiceStageSql);
                 if ($stageStmt) {
                     $allServiceStages = $stageStmt->fetchAll(PDO::FETCH_COLUMN);
+                    $stageQueryOk = true;
                 }
             } catch (Exception $e) {}
-            if (empty($allServiceStages)) {
+            if (!$stageQueryOk) {
                 $allServiceStages = ['CA', 'SA-1', 'SA-2', 'RC', 'New enq', 'CNE', 'Mnt.'];
             }
 
@@ -811,16 +813,17 @@
                         <div class="row service-detail-row service-detail-row-top" style="padding-top:2px;">
                             <div class="col-xs-3 form-group float-label-control">
                                 <label>Service Stage</label>
+                                <?php $currentStage = isset($service1['service_type']) ? trim((string)$service1['service_type']) : ''; ?>
                                 <select class="service-type" id="service-type" name="service-type" data-row-id="<?php echo $serviceId; ?>" value="" <?php echo $financeAccess ?><?php echo $fieldAccess ?>>
-                                    <option value="<?php if (isset($service1['service_type'])) echo $service1['service_type'] ?>" ><?php
-                                        if (isset($service1['service_type']) && !empty($service1['service_type'])) {
-                                            echo $service1['service_type'];
-                                        } else {
-                                            echo "Select Service Stage";
-                                        }
-                                        ?> </option>
-                                    <?php foreach ($allServiceStages as $stg) { ?>
-                                        <option value="<?php echo $stg ?>"><?php echo $stg ?></option>
+                                    <?php if ($currentStage !== '') { ?>
+                                        <option value="<?php echo htmlspecialchars($currentStage, ENT_QUOTES, 'UTF-8') ?>" selected><?php echo htmlspecialchars($currentStage, ENT_QUOTES, 'UTF-8') ?></option>
+                                    <?php } else { ?>
+                                        <option value="">Select Service Stage</option>
+                                    <?php } ?>
+                                    <?php foreach ($allServiceStages as $stg) {
+                                        if ($stg === $currentStage) continue;
+                                    ?>
+                                        <option value="<?php echo htmlspecialchars($stg, ENT_QUOTES, 'UTF-8') ?>"><?php echo htmlspecialchars($stg, ENT_QUOTES, 'UTF-8') ?></option>
                                     <?php } ?>
                                 </select>
                             </div>

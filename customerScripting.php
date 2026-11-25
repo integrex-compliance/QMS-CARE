@@ -12,13 +12,15 @@ $consultfrm = "";
 $allConsultant = "";
 
 $allServiceStages = [];
+$stageQueryOk = false;
 try {
     $stageStmt = $db->query("SELECT stage FROM service_stage ORDER BY id ASC");
     if ($stageStmt) {
         $allServiceStages = $stageStmt->fetchAll(PDO::FETCH_COLUMN);
+        $stageQueryOk = true;
     }
 } catch (Exception $e) {}
-if (empty($allServiceStages)) {
+if (!$stageQueryOk) {
     $allServiceStages = ['CA', 'SA-1', 'SA-2', 'RC', 'New enq', 'CNE', 'Mnt.'];
 }
 foreach ($allServiceStages as $stg) {
@@ -2000,16 +2002,14 @@ if (data[0]['tax_type'] === "CGST_SGST") {
 //            $('#addService').modal("show");
             $("#saveService0").hide();
 //            alert(("<?php echo $services ?>"));
-            var allServices = ("<?php echo $services ?>");
-            var service = allServices.split(',');
-            var allServiceLen = allServices.length;
-            
-            var max = (Math.max(allServiceLen));
+            var allServiceStagesArr = <?php echo json_encode(array_values($allServiceStages), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             var option = "";
-            for (var key = 0; key < max; key++) {
-                var svcname = key <= allServiceLen && service[key] != null && service[key] != "" ? service[key] : "";
-                option += '<option value="' + svcname + '">' + svcname + '</option>';
-//                alert(svcname);
+            for (var key = 0; key < allServiceStagesArr.length; key++) {
+                var svcname = allServiceStagesArr[key];
+                if (svcname != null && svcname !== "") {
+                    var escapedSvc = $('<div>').text(svcname).html();
+                    option += '<option value="' + escapedSvc + '">' + escapedSvc + '</option>';
+                }
             }
             
 //            alert(("<?php echo $certBody ?>"));

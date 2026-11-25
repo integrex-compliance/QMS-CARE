@@ -12,6 +12,19 @@ $statement = $db->prepare($allServices);
 $statement->execute();
 $services = $statement->fetchAll();
 
+$modalServiceStages = [];
+$modalStageQueryOk = false;
+try {
+    $modalStageStmt = $db->query("SELECT stage FROM service_stage ORDER BY id ASC");
+    if ($modalStageStmt) {
+        $modalServiceStages = $modalStageStmt->fetchAll(PDO::FETCH_COLUMN);
+        $modalStageQueryOk = true;
+    }
+} catch (Exception $e) {}
+if (!$modalStageQueryOk) {
+    $modalServiceStages = ['CA', 'SA-1', 'SA-2', 'RC', 'New enq', 'CNE', 'Mnt.'];
+}
+
 $allStatus = "SELECT * FROM customer_status";
 $statement = $db->prepare($allStatus);
 $statement->execute();
@@ -893,9 +906,9 @@ $listOfUsers = $statement->fetchAll();
                                 <label>Service Stage</label>
                                 <select name="serviceType" class="form-control serviceType" id="serviceType">
                                     <option value="">Select Service Stage</option>
-                                    <?php foreach ($services as $service) { ?>
-                                        <option value="<?php echo $service['service'] ?>">
-                                            <?php echo $service['service'] ?>
+                                    <?php foreach ($modalServiceStages as $stg) { ?>
+                                        <option value="<?php echo htmlspecialchars($stg, ENT_QUOTES, 'UTF-8') ?>">
+                                            <?php echo htmlspecialchars($stg, ENT_QUOTES, 'UTF-8') ?>
                                         </option>
                                     <?php } ?>
                                 </select>                                

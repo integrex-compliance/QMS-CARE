@@ -57,6 +57,16 @@
     $statement = $db->prepare($allpcip);
     $statement->execute();
     $pcips = $statement->fetchAll();
+
+//    service stages
+    $serviceStageList = [];
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS `service_stage` (`id` int(11) NOT NULL AUTO_INCREMENT, `stage` varchar(50) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `stage` (`stage`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci");
+        $serviceStagesSql = "SELECT * FROM service_stage ORDER BY id ASC";
+        $statement = $db->prepare($serviceStagesSql);
+        $statement->execute();
+        $serviceStageList = $statement->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {}
     ?>
 
     <div id="page-content-wrapper" >
@@ -231,7 +241,27 @@
                         </div>
                     </div>
                     <div class="col-sm-6">
-                        
+                        <div class="row" style="">
+                            <div class="col-xs-8  text-center btn  qms_complete_btn ">
+                                <span><i class="fa ">Service Stage</i></span>
+                            </div>
+
+                            <div class="col-xs-4  text-center btn qms_complete_btn newServiceStage">
+                                <span><i class="fa fa-plus-square "> Add Stage</i></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="well" style="max-height: 280px;overflow: auto;">
+                                <ul class="list-group checked-list-box operateServiceStages">
+                                    <?php foreach ($serviceStageList as $stg) { ?>
+                                        <li class="list-group-item"><?php echo htmlspecialchars($stg['stage'], ENT_QUOTES, 'UTF-8') ?><a class="deleteServiceStage" data-id="<?php echo (int)$stg['id'] ?>" style="float: right; cursor: pointer;"><i class="fa fa-trash"></i></a></li>
+                                    <?php } ?>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="row addNewServiceStage">
+
+                        </div>
                     </div>
                 </div>
                 
@@ -340,6 +370,84 @@
                                         <a class="btn btn-info btn-xs createService" style="float: right;"><i class="fa fa-check"></i></a>\n\
                                         </div>\n\
                                         </div>')
+        });
+
+        function renderServiceStagesList(data) {
+            var $list = $('.operateServiceStages').empty();
+            if (!Array.isArray(data)) return;
+            for (var i = 0; i < data.length; i++) {
+                var $li = $('<li class="list-group-item"></li>').text(data[i]['stage']);
+                var $del = $('<a class="deleteServiceStage" style="float: right; cursor: pointer;"><i class="fa fa-trash"></i></a>').attr('data-id', data[i]['id']);
+                $li.append($del);
+                $list.append($li);
+            }
+        }
+
+        $('.newServiceStage').click(function () {
+            $('.addNewServiceStage').empty();
+            $('.addNewServiceStage').append('<div class="col-sm-12"><div class="well" style="height: 100px;">\n\
+                                        <div class="col-sm-12 form-group float-label-control">\n\
+                                        <label>New Service Stage</label>\n\
+                                        <input type="text" name="newServiceStage" class="form-control" id="newServiceStageInput" placeholder="New Service Stage" maxlength="50"></div>\n\
+                                        <a class="btn btn-info btn-xs createServiceStage" style="float: right; cursor: pointer;"><i class="fa fa-check"></i></a>\n\
+                                        </div>\n\
+                                        </div>');
+            $('#newServiceStageInput').focus();
+        });
+
+        $('body').on('keydown', '#newServiceStageInput', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('.createServiceStage').click();
+            }
+        });
+
+        $('body').on('click', '.createServiceStage', function () {
+            var stageVal = $.trim($('#newServiceStageInput').val());
+            if (!stageVal) {
+                $('#newServiceStageInput').focus();
+                return;
+            }
+            $.ajax({
+                url: "addNewServices.php",
+                type: "GET",
+                dataType: "json",
+                data: {
+                    newServiceStage: stageVal
+                },
+                success: function (data) {
+                    $('.addNewServiceStage').empty();
+                    renderServiceStagesList(data);
+                },
+                error: function () {
+                    $('.addNewServiceStage').empty();
+                }
+            });
+        });
+
+        $('body').on('click', '.deleteServiceStage', function () {
+            var stageId = $(this).attr('data-id');
+            $('#delete-details').show();
+            $('.delete-confirm-ok').off('click').on('click', function () {
+                $.ajax({
+                    url: "addNewServices.php",
+                    type: "GET",
+                    dataType: "json",
+                    data: {
+                        serviceStageId: stageId
+                    },
+                    success: function (data) {
+                        $('#delete-details').hide();
+                        renderServiceStagesList(data);
+                    },
+                    error: function (data, status) {
+                        alert(status);
+                    }
+                });
+            });
+            $('.delete-cancel').off('click').on('click', function () {
+                $('#delete-details').hide();
+            });
         });
 
         $('.newCert').click(function () {
