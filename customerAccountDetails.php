@@ -16,6 +16,14 @@
     <link rel="stylesheet" href="css/customer-service-flow.css?v=<?php echo filemtime(__DIR__ . '/css/customer-service-flow.css'); ?>">
     <script src="js/customer-service-flow.js?v=<?php echo filemtime(__DIR__ . '/js/customer-service-flow.js'); ?>" defer></script>
     <link rel="stylesheet" href="css/client-ledger.css?v=<?php echo filemtime(__DIR__ . '/css/client-ledger.css'); ?>">
+    <script src="js/payment-input-guard.js?v=<?php echo filemtime(__DIR__ . '/js/payment-input-guard.js'); ?>" defer></script>
+    <style>
+        #wrapper input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+        #wrapper input[type="number"]::-webkit-inner-spin-button,
+        #wrapper input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .payment-firm-line { margin: 0 0 6px; padding: 4px 6px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; color: #475569; font-size: 11.5px; overflow-wrap: anywhere; }
+        .payment-firm-line strong { color: #193048; }
+    </style>
     <?php
 
     if (isset($_GET['customerid']) && !empty($_GET['customerid'])) {
@@ -1134,6 +1142,10 @@
                                                     </div>
                                                 </div>
 
+                                                <div class="payment-firm-line">
+                                                    <i class="fa fa-building-o" aria-hidden="true"></i> Consulting Firm:
+                                                    <strong class="payment-firm-name"><?php echo htmlspecialchars(trim($service1['consulting_firm'] ?? '') ?: 'Not selected', ENT_QUOTES, 'UTF-8'); ?></strong>
+                                                </div>
                                                 <!-- Payment Table -->
                                                 <div class="table-responsive" style="margin-bottom: 4px;">
                                                     <table class="table compact-payment-receipt-table service_details" id="consulting_table_<?php echo $serviceId; ?>" style="margin-bottom: 0; width: 100%; border-collapse: separate; border-spacing: 0 3px;">

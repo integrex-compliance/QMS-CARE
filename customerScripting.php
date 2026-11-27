@@ -1056,6 +1056,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                     var $serviceBox = $('#servicebox-data' + rowId);
                     $serviceBox.find('.issueCert, .serviceInvoiceBtn').attr('data-service', savedServiceId).data('service', savedServiceId);
                     $serviceBox.find('.serviceInvoiceBtn').attr('data-servicename', serviceType).attr('data-firm', consultingFirm);
+                    $serviceBox.find('.payment-firm-name').text($.trim(consultingFirm || '') || 'Not selected');
                     var $pill = $('.auto-save-status-pill[data-row-id="' + rowId + '"]');
                     $pill.removeClass('saving error').html('<i class="fa fa-check-circle" style="color: #10b981;"></i> Auto-saved');
 
