@@ -74,7 +74,7 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
                 $statement->execute();
             }
         }
-        $serviceUpdate = "UPDATE services SET service_type = :servicetype , cert_body =:certbody , consulting_firm = :consultingfirm , consultant = :consultants , audit_type = :audittype , auditor = :auditor , audit_date = :auditdate, handel_by = :handel, add_service_to = :addTo WHERE service_id = :service_id";
+        $serviceUpdate = "UPDATE services SET service_type = CASE WHEN EXISTS (SELECT 1 FROM customer_service_flow f WHERE f.service_id = services.service_id AND f.customer_id = services.customer_id) THEN service_type ELSE :servicetype END , cert_body =:certbody , consulting_firm = :consultingfirm , consultant = :consultants , audit_type = :audittype , auditor = :auditor , audit_date = :auditdate, handel_by = :handel, add_service_to = :addTo WHERE service_id = :service_id";
         $addserviceto = $_GET['addTo'] . '-' . $_GET['servicetype'];
         $statement = $db->prepare($serviceUpdate);
         $statement->bindParam(':servicetype', $_GET['servicetype']);

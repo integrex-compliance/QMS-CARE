@@ -11,6 +11,9 @@ foreach ($inserts as $insert) {
     $db->exec('CREATE TABLE IF NOT EXISTS ' . $insert[1] . ' (' . $primaryKeys[$insert[1]] . ' INTEGER PRIMARY KEY AUTOINCREMENT, ' . $insert[2] . ')');
 }
 $db->exec('CREATE TABLE customer_details (customer_id, certification_date, next_service_date, next_service_type)');
+$db->exec('ALTER TABLE services ADD COLUMN service_notes TEXT');
+$db->exec('CREATE TABLE customer_service_flow (service_id INTEGER, customer_id TEXT)');
+$_SERVER['REQUEST_METHOD'] = 'GET';
 $db->exec("INSERT INTO customer_details VALUES (1, '2026-01-01', NULL, NULL)");
 preg_match_all('/\$_GET\[\x27([^\x27]+)\x27\]/', $source, $keys);
 $request = array_fill_keys($keys[1], '');
@@ -47,6 +50,11 @@ saveServiceForTest($request);
 checkSave($db->query('SELECT COUNT(*) FROM services')->fetchColumn() == 1, 'Repeated save must not duplicate service');
 checkSave($db->query('SELECT COUNT(*) FROM certification_body')->fetchColumn() == 1, 'Repeated save must not duplicate installment');
 checkSave($db->query('SELECT balance FROM certification_body')->fetchColumn() == 500, 'Balance must update');
+$db->exec('INSERT INTO customer_service_flow VALUES (' . (int)$id . ', 1)');
+$db->exec("UPDATE services SET service_type = 'SA-2' WHERE service_id = " . (int)$id);
+$request['servicetype'] = 'CA';
+saveServiceForTest($request);
+checkSave($db->query('SELECT service_type FROM services WHERE service_id = ' . (int)$id)->fetchColumn() === 'SA-2', 'Payment/detail saves must not overwrite the header-controlled stage');
 $request['serviceId'] = '';
 $createdWithPayments = saveServiceForTest($request);
 checkSave($createdWithPayments[0]['service_id'] != $id, 'Second service must get its own ID');

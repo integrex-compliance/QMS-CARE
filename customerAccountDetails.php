@@ -3,6 +3,20 @@
     include_once './header.php';
     include_once './dbConnect.php';
     include './customerScripting.php';
+    require_once './customer_service_flow.php';
+    require_once './client_ledger.php';
+    ensureCustomerServiceFlow($db);
+    if (empty($_SESSION['service_flow_csrf'])) $_SESSION['service_flow_csrf'] = bin2hex(random_bytes(32));
+    $flowStmt = $db->prepare('SELECT f.*, s.service_type AS current_stage FROM customer_service_flow f LEFT JOIN services s ON s.service_id = f.service_id AND s.customer_id = f.customer_id WHERE f.customer_id = ? ORDER BY f.id');
+    $flowStmt->execute([$_GET['customerid'] ?? '']);
+    $customerFlows = $flowStmt->fetchAll(PDO::FETCH_ASSOC);
+    $flowByService = [];
+    foreach ($customerFlows as $flow) $flowByService[$flow['service_id']] = $flow;
+    ?>
+    <link rel="stylesheet" href="css/customer-service-flow.css?v=<?php echo filemtime(__DIR__ . '/css/customer-service-flow.css'); ?>">
+    <script src="js/customer-service-flow.js?v=<?php echo filemtime(__DIR__ . '/js/customer-service-flow.js'); ?>" defer></script>
+    <link rel="stylesheet" href="css/client-ledger.css?v=<?php echo filemtime(__DIR__ . '/css/client-ledger.css'); ?>">
+    <?php
 
     if (isset($_GET['customerid']) && !empty($_GET['customerid'])) {
         try {
@@ -187,6 +201,7 @@
             $statement->bindParam(':customer', $_GET["customerid"]);
             $statement->execute();
             $giveninvoices = $statement->fetchAll();
+            $clientLedger = loadClientLedger($db, $_GET['customerid'], $giveninvoices);
 
             $unassignedSql = "SELECT inv.invoice_id, inv.firm_id, inv.customer_id, inv.service_id, inv.customer_name, inv.invoice_no, inv.invoice_date, inv.net_price, inv.total_amount, inv.svc_desc, cf.firm_name, cf.firm_abbrevation FROM invoice_details inv LEFT JOIN consulting_firm cf ON inv.firm_id = cf.consulting_firm_id WHERE inv.customer_id = :customer AND (inv.service_id IS NULL OR inv.service_id = '' OR inv.service_id = 0) AND inv.is_deleted = 'No' ORDER BY inv.invoice_date DESC, inv.invoice_id DESC";
             $unassignedStmt = $db->prepare($unassignedSql);
@@ -411,63 +426,33 @@
                                     <div class="tos-label-col">
                                         <span class="tos-label-icon"><i class="fa fa-tags"></i></span>
                                         <span>Type of Service</span>
+                                        <span class="tos-count-pill customer-selected-services-count" title="Added services"><?php echo count($assignedServicesArray); ?></span>
                                     </div>
 
-                                    <div class="tos-multiselect-wrapper" id="tosMultiselectWrapper">
-                                        <div class="tos-selector-box <?php echo $isReadOnlyServiceType ? 'is-disabled' : ''; ?>" id="tosSelectorBox" tabindex="0">
-                                            <div class="tos-selected-tags" id="tosSelectedTags">
-                                                <?php if (empty($assignedServicesArray)) { ?>
-                                                    <span class="tos-placeholder">Select services for this client...</span>
-                                                <?php } else {
-                                                    foreach ($assignedServicesArray as $selSvc) { ?>
-                                                        <span class="tos-tag-chip" data-service="<?php echo htmlspecialchars($selSvc); ?>">
-                                                            <span><?php echo htmlspecialchars($selSvc); ?></span>
-                                                            <?php if (!$isReadOnlyServiceType) { ?>
-                                                                <span class="tos-tag-remove" data-service="<?php echo htmlspecialchars($selSvc); ?>" title="Remove">&times;</span>
-                                                            <?php } ?>
-                                                        </span>
-                                                    <?php }
-                                                } ?>
-                                            </div>
-                                            <div class="tos-selector-right">
-                                                <span class="tos-count-pill customer-selected-services-count"><?php echo count($assignedServicesArray); ?></span>
-                                                <span class="tos-caret"><i class="fa fa-chevron-down"></i></span>
-                                            </div>
-                                        </div>
-
+                                    <div class="tos-add-panel" id="tosMultiselectWrapper">
                                         <?php if (!$isReadOnlyServiceType) { ?>
-                                        <div class="tos-dropdown-menu" id="tosDropdownMenu" style="display: none;">
-                                            <div class="tos-search-wrap">
-                                                <i class="fa fa-search tos-search-icon"></i>
-                                                <input type="text" id="tosSearchInput" class="tos-search-input" placeholder="Search services..." autocomplete="off" />
-                                            </div>
-                                            <div class="tos-options-list" id="tosOptionsList">
-                                                <?php if (!empty($allMasterServiceTypes)) {
-                                                    foreach ($allMasterServiceTypes as $mst) {
-                                                        $sName = trim($mst['service']);
-                                                        if (empty($sName)) continue;
-                                                        $isSelected = in_array($sName, $assignedServicesArray);
+                                        <div class="tos-add-controls">
+                                            <select id="tosAddServiceSelect" class="tos-add-select" aria-label="Choose a service to add" aria-describedby="tosAddHint">
+                                                <option value="">Select service...</option>
+                                                <?php foreach ($allMasterServiceTypes ?? [] as $mst) {
+                                                    $sName = trim($mst['service']);
+                                                    if ($sName === '') continue;
+                                                    $isSelected = in_array($sName, $assignedServicesArray, true);
                                                 ?>
-                                                    <label class="tos-option-item <?php echo $isSelected ? 'is-checked' : ''; ?>" data-service="<?php echo htmlspecialchars($sName); ?>">
-                                                        <input type="checkbox" class="tos-checkbox" value="<?php echo htmlspecialchars($sName); ?>" <?php echo $isSelected ? 'checked' : ''; ?> />
-                                                        <span class="tos-option-label"><?php echo htmlspecialchars($sName); ?></span>
-                                                        <span class="tos-option-check"><i class="fa fa-check"></i></span>
-                                                    </label>
-                                                <?php }
-                                                } else { ?>
-                                                    <div class="tos-empty-msg">No service types found in Master Creator.</div>
+                                                    <option value="<?php echo htmlspecialchars($sName, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isSelected ? 'disabled' : ''; ?>><?php echo htmlspecialchars($sName, ENT_QUOTES, 'UTF-8'); ?></option>
                                                 <?php } ?>
-                                            </div>
-                                            <div class="tos-dropdown-footer">
-                                                <div class="tos-footer-actions">
-                                                    <button type="button" class="tos-text-btn btnTosSelectAll">Select All</button>
-                                                    <span style="color:#cbd5e1;">|</span>
-                                                    <button type="button" class="tos-text-btn btnTosClearAll">Clear All</button>
-                                                </div>
-                                                <button type="button" class="tos-done-btn btnTosDone">Done</button>
-                                            </div>
+                                            </select>
+                                            <button type="button" id="tosAddServiceButton" class="tos-add-button" disabled><i class="fa fa-plus" aria-hidden="true"></i> Add</button>
                                         </div>
+                                        <span id="tosAddHint" class="sr-only" aria-live="polite">Add one service at a time.</span>
                                         <?php } ?>
+                                        <div class="tos-selected-tags" id="tosSelectedTags" aria-live="polite">
+                                            <?php if (empty($assignedServicesArray)) { ?>
+                                                <span class="tos-placeholder">No services added yet.</span>
+                                            <?php } else { foreach ($assignedServicesArray as $selSvc) { ?>
+                                                <span class="tos-tag-chip" data-service="<?php echo htmlspecialchars($selSvc, ENT_QUOTES, 'UTF-8'); ?>"><span><?php echo htmlspecialchars($selSvc, ENT_QUOTES, 'UTF-8'); ?></span></span>
+                                            <?php } } ?>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -488,20 +473,7 @@
                             if (stripos($customer['company_name'], "consl. ") === FALSE) {
                                 if (!Utitlity::checkForUserConsultant()) {
                                     ?>
-                                    <div class="qms-milestones-row">
-                                        <div class="qms-milestone-field">
-                                            <label for="certificationDate"><i class="fa fa-calendar-check-o"></i> CA/RC Date</label>
-                                            <input class="saveChanges dob certification-date lookslike-label <?php echo $certDate ?>" id="certificationDate" placeholder="dd.mm.yyyy" data-column="certification_date" value="<?php if (isset($customer['certification_date'])) echo simpleDateConversion($customer['certification_date']) ?>" <?php echo $customerAccess ?> />
-                                        </div>
-                                        <div class="qms-milestone-field">
-                                            <label for="serviceDate"><i class="fa fa-calendar"></i> Next Service Date</label>
-                                            <input class="saveChanges dob lookslike-label <?php echo $srvcDate ?>" id="serviceDate" placeholder="dd.mm.yyyy" data-column="next_service_date" value="<?php if (isset($customer['next_service_date'])) echo simpleDateConversion($customer['next_service_date']) ?>" <?php echo $customerAccess ?> />
-                                        </div>
-                                        <div class="qms-milestone-field">
-                                            <label for="birthDate"><i class="fa fa-step-forward"></i> Next Service Stage</label>
-                                            <input class="saveChanges nextService lookslike-label" id="birthDate" placeholder="e.g. SA-1" data-column="next_service_type" value="<?php if (isset($customer['next_service_type'])) echo $customer['next_service_type'] ?>" <?php echo $customerAccess ?> />
-                                        </div>
-                                    </div>
+                                    <?php include './customer_service_milestones.php'; ?>
                                 <?php } ?>
                             </div>
                         </div>
@@ -527,66 +499,14 @@
                             <div class="col-xs-2  text-center btn qms_complete_btn <?php echo $active ?> " <?php echo $show ?>>
                                 <span><i class="fa fa-plus-square "> Add Service </i></span>
                             </div>
-                            <div class="col-xs-6  text-center btn qms_complete_btn show-all-invoices" <?php echo $show ?>>
-                                <span><i class="fa fa-inr"> Invoices Issued </i></span>
+                            <div class="col-xs-6 text-center btn qms_complete_btn show-all-invoices client-ledger-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="client-ledger-panel">
+                                <span><i class="fa fa-inr" aria-hidden="true"></i> Payment System Summary / Client Ledger</span>
                             </div>
                         </div>
-                        <div class="row hidden-row" style="display: none">
-                            <div class="col-sm-6">
-                            </div>
-                            <div class="col-sm-6">
-                                <table class="table table-bordered table-hover table-sortable service_details" id="service_details">
-                                    <thead>
-                                        <tr>
-                                            <th class="" width="10%" style="padding: 2px">
-                                                <small>Invoice No.</small>
-                                            </th>
-                                            <th class="" width="10%" style="padding: 2px">
-                                                <small>Date</small>
-                                            </th>
-                                            <th class="" width="10%" style="padding: 2px">
-                                                <small>Consulting Firm</small>
-                                            </th>
-                                            <th class="" width="10%" style="padding: 2px">
-                                                <small>Amount</small>
-                                            </th>
-                                            <th class="" width="20%" style="padding: 2px">
-                                                <small>Service</small>
-                                            </th>
-                                            <th class="" width="10%" style="padding: 2px">
-                                                <small>V/E</small>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="">
-                                        <?php foreach ($giveninvoices as $invoice) { ?>
-                                            <tr class="cb_subsection" id="cb_subsection_0" style="display: ">
-                                                <td class="" style="padding: 0px;">
-                                                    <?php echo $invoice["firm_abbrevation"] . '/' . $invoice["invoice_no"] ?>
-                                                </td>
-                                                <td class="" style="padding: 0px;">
-                                                    <?php echo simpleDateConversion($invoice["invoice_date"]) ?>
-                                                </td>
-                                                <td class="" style="padding: 0px;">
-                                                    <?php echo $invoice["firm_name"] ?>
-                                                </td>
-                                                <td class="" style="padding: 0px;">
-                                                    <?php echo $invoice["total_amount"] ?>
-                                                </td>
-                                                <td class="" style="padding: 0px;">
-                                                    <?php if (!empty($invoice["linked_service_type"])) { ?>
-                                                        <span class="label label-primary" style="font-size:10px; margin-right:4px;"><?php echo htmlspecialchars($invoice["linked_service_type"]); ?></span>
-                                                    <?php } ?>
-                                                    <?php echo $invoice["svc_desc"] ?>
-                                                </td>
-                                                <td class="" style="padding: 0px;">
-                                                    <a class="viewInvoice" data-id="<?php echo $invoice["invoice_id"] ?>" data-invoice="<?php echo $invoice["invoice_no"] ?>" data-customer="<?php echo $invoice["customer_id"] ?>"><i class="fa fa-file-pdf-o" style="padding:3px"></i></a>
-                                                    <a class="editInvoice" data-id="<?php echo $invoice["invoice_id"] ?>" data-firm="<?php echo $invoice['firm_id'] ?>" data-customer="<?php echo $invoice["customer_id"] ?>" title="Edit envoice" style="padding: 1px 5px; "><i class="fa fa-pencil-square" style="padding:3px"></i></a>
-                                                </td>
-                                            </tr>
-                                        <?php } ?>
-                                    </tbody>
-                                </table>
+                        <div class="row hidden-row" id="client-ledger-panel" style="display: none">
+                            <div class="col-xs-12">
+                                <p id="client-ledger-status" class="text-muted" role="status" style="margin: 8px 0;"></p>
+                                <?php include __DIR__ . '/include/client_ledger_view.php'; ?>
                             </div>
                         </div>
                         <?php
@@ -781,7 +701,7 @@
 //                    continue;
                 }
                 ?>
-                <div class="servicebox" style="display:<?php echo $saveButton ?> <?php //echo $srvcDisplay       ?>">
+                <div class="servicebox" data-flow-name="<?php echo htmlspecialchars($flowByService[$serviceId]['service_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-flow-active="<?php echo $flowByService[$serviceId]['active'] ?? 1; ?>" style="display:<?php echo $saveButton ?> <?php //echo $srvcDisplay       ?>">
                     <div class="row" id="service-row<?php echo $serviceId; ?>" class="service-row"> 
                         <div class="col-xs-12 qms_customer_name service_title" data-row-id="<?php echo $serviceId; ?>" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px;">
                             <div class="service-title-left" style="display: flex; align-items: center; gap: 8px; min-width: 80px;">
@@ -795,14 +715,17 @@
 
                             <div class="service-title-center" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
                                 <span style="font-weight: 600; font-size: 13.5px; letter-spacing: 0.04em; color: #ffffff; text-transform: uppercase;">
-                                    SERVICE &mdash; <span class="serviceStatus" style="color: #fde047; font-weight: 700; font-size: 14px; letter-spacing: 0.04em;"><?php if (isset($service1['service_type'])) echo $service1['service_type']; ?></span>
+                                    <?php if (isset($flowByService[$serviceId])) echo htmlspecialchars($flowByService[$serviceId]['service_name'], ENT_QUOTES, 'UTF-8') . ' &mdash; '; else echo 'SERVICE &mdash; '; ?> <span class="serviceStatus" style="color: #fde047; font-weight: 700; font-size: 14px; letter-spacing: 0.04em;"><?php if (isset($service1['service_type'])) echo $service1['service_type']; ?></span>
                                 </span>
                             </div>
 
                             <div class="service-title-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 80px;">
                                 <a class="saveService" data-row-id="<?php echo $serviceId; ?>" style="display:none !important;"></a>
 
-                                <?php if (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin()) { ?>
+                                <?php if (isset($flowByService[$serviceId]) && (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin())) { ?>
+                                    <button type="button" class="flow-delete-service" data-flow-id="<?php echo (int)$flowByService[$serviceId]['id']; ?>" title="Delete service" aria-label="Delete <?php echo htmlspecialchars($flowByService[$serviceId]['service_name'], ENT_QUOTES, 'UTF-8'); ?>"><i class="fa fa-trash-o" aria-hidden="true"></i></button>
+                                <?php } ?>
+                                <?php if (!isset($flowByService[$serviceId]) && (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin())) { ?>
                                     <a class="deleteService" id="deleteService" data-row-id="<?php echo $serviceId; ?>" title="Delete Service" style="color: #dc3545; background: #ffffff; width: 24px; height: 24px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; text-decoration: none; transition: all 0.15s ease;"><i class="fa fa-trash-o"></i></a>
                                 <?php } ?>
                                 <i class="fa <?php echo ($displayHtmlStr == '') ? 'fa-chevron-up' : 'fa-chevron-down'; ?> service-collapse-indicator" style="color: #ffffff; font-size: 13px; margin-left: 4px; transition: transform 0.2s;" title="Click to collapse / expand"></i>
@@ -811,6 +734,9 @@
                     </div>
                     <div class="servicebox-data" id="servicebox-data<?php if (isset($serviceId)) echo $serviceId; ?>" <?php echo $displayHtmlStr ?>>
                         <div class="row service-detail-row service-detail-row-top" style="padding-top:2px;">
+                            <?php if (isset($flowByService[$serviceId])) { ?>
+                                <input type="hidden" class="service-type" data-row-id="<?php echo $serviceId; ?>" value="<?php echo htmlspecialchars($service1['service_type'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php } else { ?>
                             <div class="col-xs-3 form-group float-label-control">
                                 <label>Service Stage</label>
                                 <?php $currentStage = isset($service1['service_type']) ? trim((string)$service1['service_type']) : ''; ?>
@@ -827,6 +753,7 @@
                                     <?php } ?>
                                 </select>
                             </div>
+                            <?php } ?>
                             <div class="col-xs-3 form-group float-label-control">
                                 <label>Cert Body</label>
                                 <select class="cert-body" id="cert-body" name="cert-body" data-row-id="<?php echo $serviceId; ?>" value=""  <?php echo $financeAccess ?><?php echo $fieldAccess ?>>
@@ -1713,9 +1640,28 @@
 </style>
 <script>
     $(document).ready(function () {
-        $(".show-all-invoices").click(function () {
-//            alert("in");
-            $('.hidden-row').toggle();
+        var ledgerRequest = null;
+        $(".show-all-invoices").on('click', function () {
+            var panel = $('#client-ledger-panel');
+            var opening = !panel.is(':visible');
+            panel.toggle(opening);
+            $(this).attr('aria-expanded', opening ? 'true' : 'false');
+            if (!opening || ledgerRequest) return;
+            $('#client-ledger-status').text('Refreshing saved payments...');
+            ledgerRequest = $.ajax({url: window.location.href, cache: false, dataType: 'html'})
+                .done(function (html) {
+                    var updated = $('<div>').append($.parseHTML(html, document, false)).find('#client-ledger-content');
+                    if (updated.length) {
+                        $('#client-ledger-content').replaceWith(updated);
+                        $('#client-ledger-status').text('Showing saved payments across all services.');
+                    } else {
+                        $('#client-ledger-status').text('Unable to refresh ledger. Reload the page to see latest payments.');
+                    }
+                })
+                .fail(function () { $('#client-ledger-status').text('Unable to refresh ledger. Reload the page to see latest payments.'); })
+                .always(function () { ledgerRequest = null; });
+        }).on('keydown', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); $(this).click(); }
         });
 
         $('body').on('click', ".viewInvoice", function (e) {
