@@ -2,9 +2,22 @@
 
 session_start();
 include_once './dbConnect.php';
+require_once __DIR__ . '/payment_schema.php';
+header('Content-Type: application/json');
+
+try {
+    ensurePaymentSchema($db);
+    $paymentHasFlow = paymentHasServiceFlow($db);
+} catch (Throwable $ex) {
+    error_log('Payment schema upgrade failed: ' . $ex->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => paymentSchemaFailureMessage($ex)]);
+    return;
+}
 
 // Quick Ajax actions for invoice linking, unlinking, and service notes
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    try {
     header('Content-Type: application/json');
     if ($_POST['action'] === 'link_invoice') {
         $invId = (int)$_POST['invoice_id'];
@@ -30,6 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $stmt->execute([':notes' => $notes, ':svc' => $svcId]);
         echo json_encode(['status' => 'success', 'message' => 'Notes saved']);
         exit;
+    }
+    } catch (Throwable $ex) {
+        error_log('Payment action failed: ' . $ex->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Unable to save payment changes. Please retry; if this continues, ask the administrator to check the server error log.']);
+        return;
     }
 }
 
@@ -74,7 +93,8 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
                 $statement->execute();
             }
         }
-        $serviceUpdate = "UPDATE services SET service_type = CASE WHEN EXISTS (SELECT 1 FROM customer_service_flow f WHERE f.service_id = services.service_id AND f.customer_id = services.customer_id) THEN service_type ELSE :servicetype END , cert_body =:certbody , consulting_firm = :consultingfirm , consultant = :consultants , audit_type = :audittype , auditor = :auditor , audit_date = :auditdate, handel_by = :handel, add_service_to = :addTo WHERE service_id = :service_id";
+        $stageValue = $paymentHasFlow ? 'CASE WHEN EXISTS (SELECT 1 FROM customer_service_flow f WHERE f.service_id = services.service_id AND f.customer_id = services.customer_id) THEN service_type ELSE :servicetype END' : ':servicetype';
+        $serviceUpdate = "UPDATE services SET service_type = $stageValue , cert_body =:certbody , consulting_firm = :consultingfirm , consultant = :consultants , audit_type = :audittype , auditor = :auditor , audit_date = :auditdate, handel_by = :handel, add_service_to = :addTo WHERE service_id = :service_id";
         $addserviceto = $_GET['addTo'] . '-' . $_GET['servicetype'];
         $statement = $db->prepare($serviceUpdate);
         $statement->bindParam(':servicetype', $_GET['servicetype']);

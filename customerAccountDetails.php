@@ -2,6 +2,14 @@
     <?php
     include_once './header.php';
     include_once './dbConnect.php';
+    require_once __DIR__ . '/payment_schema.php';
+    try {
+        ensurePaymentSchema($db);
+    } catch (Throwable $ex) {
+        error_log('Payment schema upgrade failed: ' . $ex->getMessage());
+        echo '<div class="alert alert-danger">' . htmlspecialchars(paymentSchemaFailureMessage($ex), ENT_QUOTES, 'UTF-8') . '</div>';
+        return;
+    }
     include './customerScripting.php';
     require_once './customer_service_flow.php';
     require_once './client_ledger.php';

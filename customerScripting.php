@@ -1093,7 +1093,8 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                 error: function (xhr, status, err) {
                     var $pill = $('.auto-save-status-pill[data-row-id="' + rowId + '"]');
                     $pill.removeClass('saving').addClass('error').html('<i class="fa fa-exclamation-triangle" style="color: #ef4444;"></i> Save error');
-                    showToast("Error saving data. Please check your connection.", "error", "Save Failed");
+                    var saveError = xhr.responseJSON && xhr.responseJSON.error;
+                    showToast(saveError || "Payment could not be saved. Please retry; if this continues, ask the administrator to check the server error log.", "error", "Save Failed");
                 },
                 complete: function () {
                     delete serviceSavesInFlight[rowId];
