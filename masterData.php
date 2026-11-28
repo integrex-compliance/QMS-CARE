@@ -5,6 +5,9 @@
 
     include_once './header.php';
     include_once './dbConnect.php';
+    require_once __DIR__ . '/service_stage_config.php';
+    ensureServiceStageConfig($db);
+    if (empty($_SESSION['service_stage_config_csrf'])) $_SESSION['service_stage_config_csrf'] = bin2hex(random_bytes(32));
 
 //    select service list
     $services = "SELECT * FROM service_type ORDER BY id ASC";
@@ -69,6 +72,26 @@
     } catch (Exception $e) {}
     ?>
 
+    <link rel="stylesheet" href="css/service-stage-master.css?v=<?php echo filemtime(__DIR__ . '/css/service-stage-master.css'); ?>">
+    <script src="js/service-stage-master.js?v=<?php echo filemtime(__DIR__ . '/js/service-stage-master.js'); ?>" defer></script>
+    <div class="modal fade" id="serviceStageEditor" tabindex="-1" role="dialog" aria-labelledby="serviceStageEditorTitle" data-csrf="<?php echo htmlspecialchars($_SESSION['service_stage_config_csrf'], ENT_QUOTES, 'UTF-8'); ?>">
+        <div class="modal-dialog" role="document"><div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="serviceStageEditorTitle">Stages for <strong class="stage-editor-service"></strong></h4>
+            </div>
+            <div class="modal-body">
+                <p>Select the stages available for this service in Customer Account. Untick a stage to stop new additions; existing records are retained.</p>
+                <div class="stage-editor-status" role="status" aria-live="polite"></div>
+                <div class="stage-editor-options"></div>
+                <div class="stage-editor-new">
+                    <label for="serviceStageNewName">Add a new stage</label>
+                    <div class="input-group"><input type="text" class="form-control" id="serviceStageNewName" maxlength="50" placeholder="e.g. Bronze, Silver, Gold"><span class="input-group-btn"><button type="button" class="btn btn-default stage-editor-add">Add</button></span></div>
+                </div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary stage-editor-save">Save stages</button></div>
+        </div></div>
+    </div>
     <div id="page-content-wrapper" >
         <div class="page-content inset">
             <div class="container" style="margin-top: 60px;">

@@ -21,6 +21,9 @@ if (!isset($targetAttendanceName)) {
 if (!isset($targetAttendanceRole)) {
     $targetAttendanceRole = isset($targetDashboardRole) ? $targetDashboardRole : (isset($userRole) ? $userRole : (isset($_SESSION['role']) ? $_SESSION['role'] : 'Staff'));
 }
+require_once __DIR__ . '/hrms.php';
+$attendanceWeekoffDay = hrms_weekoff_day($db);
+$attendanceDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 ?>
 
 <!-- Clean White Theme - Attendance Calendar Styles -->
@@ -208,7 +211,7 @@ if (!isset($targetAttendanceRole)) {
     border-right: none;
 }
 
-.att-weekday-cell.is-sun {
+.att-weekday-cell.is-weekoff {
     color: #dc2626;
     background: #fee2e2;
 }
@@ -285,7 +288,7 @@ if (!isset($targetAttendanceRole)) {
     box-shadow: 0 2px 6px rgba(37,99,235,0.3);
 }
 
-.att-day-cell.is-sun .att-day-number {
+.att-day-cell.is-weekend .att-day-number {
     color: #dc2626;
 }
 
@@ -642,7 +645,7 @@ if (!isset($targetAttendanceRole)) {
             <span class="att-dot att-dot-leave"></span> Leave
         </div>
         <div class="att-legend-item">
-            <span class="att-dot att-dot-weekend"></span> Weekend (Sunday)
+            <span class="att-dot att-dot-weekend"></span> Weekoff (<?php echo $attendanceDayNames[$attendanceWeekoffDay]; ?>)
         </div>
         <div class="att-legend-item">
             <span class="att-dot att-dot-today"></span> Today
@@ -653,13 +656,9 @@ if (!isset($targetAttendanceRole)) {
     <div class="att-calendar-grid-wrap">
         <!-- Weekday Headers (Sun to Sat) -->
         <div class="att-weekdays-row">
-            <div class="att-weekday-cell is-sun">Sun</div>
-            <div class="att-weekday-cell">Mon</div>
-            <div class="att-weekday-cell">Tue</div>
-            <div class="att-weekday-cell">Wed</div>
-            <div class="att-weekday-cell">Thu</div>
-            <div class="att-weekday-cell">Fri</div>
-            <div class="att-weekday-cell">Sat</div>
+            <?php foreach ($attendanceDayNames as $dayIndex => $dayName): ?>
+                <div class="att-weekday-cell <?php echo $dayIndex === $attendanceWeekoffDay ? 'is-weekoff' : ''; ?>"><?php echo substr($dayName, 0, 3); ?></div>
+            <?php endforeach; ?>
         </div>
 
         <!-- Dynamic Days Grid (Rendered by JS) -->
@@ -738,7 +737,7 @@ if (!isset($targetAttendanceRole)) {
                 </div>
                 <div class="att-line-details">
                     <span style="font-size: 13px; color: #475569;">
-                        Sundays (Off): <strong style="color: #0f172a;" id="sumSundayCount">4</strong> days &bull; Total Month Days: <strong style="color: #0f172a;" id="sumTotalMonthDays">31</strong> days
+                        Weekoff days: <strong style="color: #0f172a;" id="sumWeekoffCount">0</strong> days &bull; Total Month Days: <strong style="color: #0f172a;" id="sumTotalMonthDays">31</strong> days
                     </span>
                 </div>
             </div>
@@ -753,7 +752,7 @@ if (!isset($targetAttendanceRole)) {
         <div class="modal-content" style="border-radius: 12px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
             <div class="modal-header" style="background: linear-gradient(135deg, #0d4d8b 0%, #2563eb 100%); color: #ffffff; padding: 16px 20px;">
                 <h5 class="modal-title" id="attDayDetailModalLabel" style="font-weight: 700; font-size: 16px; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa fa-calendar-check-o"></i> Attendance Details & Action
+                    <i class="fa fa-calendar-check-o"></i> Attendance Details
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: #ffffff; opacity: 0.85; text-shadow: none; font-size: 20px;">
                     <span aria-hidden="true">&times;</span>
@@ -771,7 +770,7 @@ if (!isset($targetAttendanceRole)) {
                 </div>
 
                 <!-- Punch Log & Shift Details -->
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 0;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div>
                             <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600;">Punch In</div>
@@ -791,41 +790,6 @@ if (!isset($targetAttendanceRole)) {
                     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; font-size: 12px;">
                         <span style="color: #64748b;">Note / Shift Status:</span>
                         <strong id="modalPunchNoteVal" style="color: #0f172a;">--</strong>
-                    </div>
-                </div>
-
-                <!-- Interactive Mark Attendance Controls -->
-                <div class="att-mark-actions-box" id="modalMarkActionsBox" style="margin-bottom: 16px;">
-                    <label style="font-size: 11.5px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 0.3px;">
-                        <i class="fa fa-pencil-square-o" style="color: #2563eb;"></i> Mark / Change Status for this Date:
-                    </label>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-sm btn-mark-att" data-mark="present" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-weight: 600; border-radius: 6px; padding: 5px 11px; font-size: 12px;">
-                            <i class="fa fa-check"></i> Present
-                        </button>
-                        <button type="button" class="btn btn-sm btn-mark-att" data-mark="late" style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-weight: 600; border-radius: 6px; padding: 5px 11px; font-size: 12px;">
-                            <i class="fa fa-clock-o"></i> Late Login
-                        </button>
-                        <button type="button" class="btn btn-sm btn-mark-att" data-mark="halfday" style="background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; font-weight: 600; border-radius: 6px; padding: 5px 11px; font-size: 12px;">
-                            <i class="fa fa-hourglass-half"></i> Half Day
-                        </button>
-                        <button type="button" class="btn btn-sm btn-mark-att" data-mark="leave" style="background: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; font-weight: 600; border-radius: 6px; padding: 5px 11px; font-size: 12px;">
-                            <i class="fa fa-calendar-minus-o"></i> Leave
-                        </button>
-                        <button type="button" class="btn btn-sm btn-mark-att" data-mark="clear" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; font-weight: 600; border-radius: 6px; padding: 5px 11px; font-size: 12px;">
-                            <i class="fa fa-eraser"></i> Clear
-                        </button>
-                    </div>
-                    <div id="markFeedbackMsg" style="display: none; margin-top: 8px; font-size: 12px; font-weight: 600; color: #16a34a;">
-                        <i class="fa fa-check-circle"></i> Status marked successfully! Summary updated.
-                    </div>
-                </div>
-
-                <!-- Info Notice -->
-                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; font-size: 12px; color: #1e40af; line-height: 1.5; display: flex; gap: 10px;">
-                    <i class="fa fa-info-circle" style="font-size: 15px; margin-top: 2px; color: #2563eb; flex-shrink: 0;"></i>
-                    <div>
-                        <strong>Real-time Sync Ready:</strong> Status marks will automatically reflect in the calendar days and in the monthly summary below.
                     </div>
                 </div>
             </div>
@@ -852,6 +816,7 @@ if (!isset($targetAttendanceRole)) {
     ];
 
     var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    var weekoffDay = <?php echo (int)$attendanceWeekoffDay; ?>;
 
     function padZero(num) {
         return num < 10 ? '0' + num : num;
@@ -945,20 +910,20 @@ if (!isset($targetAttendanceRole)) {
         for (var day = 1; day <= daysInCurrentMonth; day++) {
             var dateObj = new Date(year, month, day);
             var dayOfWeek = dateObj.getDay();
-            var isSunday = (dayOfWeek === 0);
+            var isWeekoff = (dayOfWeek === weekoffDay);
             var isToday = (year === today.getFullYear() && month === today.getMonth() && day === today.getDate());
 
             var dateStr = year + '-' + padZero(month + 1) + '-' + padZero(day);
 
             var cellClasses = 'att-day-cell';
-            if (isSunday) cellClasses += ' is-weekend is-sun';
+            if (isWeekoff) cellClasses += ' is-weekend';
             if (isToday) cellClasses += ' is-today';
 
             var badgeTag = '';
             if (isToday) {
                 badgeTag = '<span class="att-day-badge-tag att-tag-today">Today</span>';
-            } else if (isSunday) {
-                badgeTag = '<span class="att-day-badge-tag att-tag-weekend">Weekend</span>';
+            } else if (isWeekoff) {
+                badgeTag = '<span class="att-day-badge-tag att-tag-weekend">Weekoff</span>';
             }
 
             // Attendance pill status
@@ -974,14 +939,16 @@ if (!isset($targetAttendanceRole)) {
                     statusHtml = '<span class="att-pill-status att-pill-halfday"><i class="fa fa-hourglass-half"></i> Half Day</span>';
                 } else if (record.status === 'leave') {
                     statusHtml = '<span class="att-pill-status att-pill-leave"><i class="fa fa-calendar-minus-o"></i> Leave</span>';
+                } else if (record.status === 'holiday') {
+                    statusHtml = '<span class="att-pill-status att-pill-off"><i class="fa fa-star"></i> Holiday</span>';
                 }
-            } else if (isSunday) {
-                statusHtml = '<span class="att-pill-status att-pill-off"><i class="fa fa-coffee"></i> Off</span>';
+            } else if (isWeekoff) {
+                statusHtml = '<span class="att-pill-status att-pill-off"><i class="fa fa-coffee"></i> Weekoff</span>';
             } else {
                 statusHtml = '<span class="att-pill-status att-pill-empty"><i class="fa fa-circle-o"></i> Not Marked</span>';
             }
 
-            gridHtml += '<div class="' + cellClasses + '" data-date="' + dateStr + '" data-day="' + day + '" data-day-name="' + dayNames[dayOfWeek] + '" data-is-sun="' + (isSunday ? '1' : '0') + '">' +
+            gridHtml += '<div class="' + cellClasses + '" data-date="' + dateStr + '" data-day="' + day + '" data-day-name="' + dayNames[dayOfWeek] + '" data-is-weekoff="' + (isWeekoff ? '1' : '0') + '">' +
                 '<div class="att-day-top">' +
                     '<span class="att-day-number">' + day + '</span>' +
                     badgeTag +
@@ -1024,12 +991,11 @@ if (!isset($targetAttendanceRole)) {
         var halfDayList = [];
         var leaveList = [];
         var presentList = [];
-        var totalSundays = 0;
+        var totalWeekoffs = 0;
 
         for (var d = 1; d <= daysInCurrentMonth; d++) {
             var dateObj = new Date(year, month, d);
-            var isSun = (dateObj.getDay() === 0);
-            if (isSun) totalSundays++;
+            if (dateObj.getDay() === weekoffDay) totalWeekoffs++;
 
             var dateStr = year + '-' + padZero(month + 1) + '-' + padZero(d);
             var rec = window.AITF_ATTENDANCE_CACHE[dateStr];
@@ -1047,12 +1013,12 @@ if (!isset($targetAttendanceRole)) {
             }
         }
 
-        var workingDays = daysInCurrentMonth - totalSundays;
+        var workingDays = daysInCurrentMonth - totalWeekoffs;
 
         $('#attSummaryMonthTitle').text(monthNames[month] + ' ' + year);
         $('#sumTotalMonthDays').text(daysInCurrentMonth);
         $('#sumWorkingDays').text(workingDays);
-        $('#sumSundayCount').text(totalSundays);
+        $('#sumWeekoffCount').text(totalWeekoffs);
 
         // 1. Late Login Text Line
         $('#sumLateCount').text(lateList.length);
@@ -1150,6 +1116,11 @@ if (!isset($targetAttendanceRole)) {
             $('#modalInAddressVal').hide();
             $('#modalOutAddressVal').hide();
             $('#modalWorkingHoursRow').hide();
+            var parts = dateStr.split('-');
+            if (new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).getDay() === weekoffDay) {
+                $('#modalAttStatusBadge').html('<span class="att-pill-status att-pill-off"><i class="fa fa-coffee"></i> Weekoff</span>');
+                $('#modalPunchNoteVal').text('Weekly Off (' + dayNames[weekoffDay] + ')');
+            }
         }
     }
 
@@ -1210,7 +1181,7 @@ if (!isset($targetAttendanceRole)) {
             var dateStr = $(this).data('date');
             var dayNum = $(this).data('day');
             var dayName = $(this).data('day-name');
-            var isSun = $(this).data('is-sun') === 1 || $(this).data('is-sun') === '1';
+            var isWeekoff = $(this).data('is-weekoff') === 1 || $(this).data('is-weekoff') === '1';
 
             if (!dateStr) return;
 
@@ -1224,79 +1195,18 @@ if (!isset($targetAttendanceRole)) {
             var formattedDate = dayName + ', ' + d + ' ' + monthNames[m] + ' ' + y;
             $('#modalAttFullDate').text(formattedDate);
 
-            if (isSun) {
-                $('#modalAttDayType').text('Weekend (Sunday - Official Off)');
-                $('#modalAttStatusBadge').html('<span class="att-pill-status att-pill-off" style="font-size: 12px; padding: 4px 10px;"><i class="fa fa-coffee"></i> Weekend / Off</span>');
+            updateModalStatusBadge(dateStr);
+            if (isWeekoff && !window.AITF_ATTENDANCE_CACHE[dateStr]) {
+                $('#modalAttDayType').text('Weekoff (' + dayName + ')');
+                $('#modalAttStatusBadge').html('<span class="att-pill-status att-pill-off" style="font-size: 12px; padding: 4px 10px;"><i class="fa fa-coffee"></i> Weekoff</span>');
                 $('#modalPunchInVal').text('--');
                 $('#modalPunchOutVal').text('--');
-                $('#modalPunchNoteVal').text('Weekly Off (Sunday)');
-                $('#modalMarkActionsBox').hide();
+                $('#modalPunchNoteVal').text('Weekly Off (' + dayName + ')');
             } else {
-                $('#modalAttDayType').text('Standard Working Day');
-                $('#modalMarkActionsBox').show();
-                updateModalStatusBadge(dateStr);
+                $('#modalAttDayType').text(isWeekoff ? 'Attendance recorded on weekoff (' + dayName + ')' : 'Standard Working Day');
             }
 
-            $('#markFeedbackMsg').hide();
             $('#attDayDetailModal').modal('show');
-        });
-
-        // Mark Attendance Action (Late Login, Half Day, Leave, Present, Clear)
-        $(document).on('click', '.btn-mark-att', function(e) {
-            e.preventDefault();
-            var $btn = $(this);
-            var markType = $btn.data('mark');
-            var activeDateStr = $('#attDayDetailModal').data('active-date');
-            if (!activeDateStr) return;
-
-            var origHtml = $btn.html();
-            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
-
-            $.ajax({
-                url: 'attendance_action.php',
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    action: markType === 'clear' ? 'clear' : 'mark',
-                    user_id: targetAttendanceUid,
-                    date: activeDateStr,
-                    status: markType
-                },
-                success: function(resp) {
-                    $btn.prop('disabled', false).html(origHtml);
-                    if (resp && resp.success) {
-                        if (markType === 'clear') {
-                            delete window.AITF_ATTENDANCE_CACHE[activeDateStr];
-                        } else {
-                            var d = resp.data || {};
-                            window.AITF_ATTENDANCE_CACHE[activeDateStr] = {
-                                status: markType,
-                                label: d.label || (markType === 'late' ? 'Late Login' : (markType === 'halfday' ? 'Half Day' : ucfirst(markType))),
-                                inTime: d.inTime || (markType === 'leave' ? '--' : '09:30 AM'),
-                                outTime: d.outTime || (markType === 'leave' ? '--' : (markType === 'halfday' ? '02:00 PM' : '06:30 PM')),
-                                workingHours: d.workingHours || null,
-                                inAddress: null,
-                                outAddress: null,
-                                note: d.note || (markType === 'leave' ? 'Casual / Sick Leave' : (markType === 'late' ? 'Late login' : 'Full day attendance'))
-                            };
-                        }
-
-                        // Re-render calendar and update summary
-                        renderCalendar(viewedYear, viewedMonth);
-
-                        // Update modal state
-                        updateModalStatusBadge(activeDateStr);
-
-                        $('#markFeedbackMsg').text('Status updated and saved successfully!').stop(true, true).fadeIn().delay(1600).fadeOut();
-                    } else {
-                        alert(resp && resp.error ? resp.error : 'Failed to save attendance.');
-                    }
-                },
-                error: function() {
-                    $btn.prop('disabled', false).html(origHtml);
-                    alert('Error connecting to server. Please check your network.');
-                }
-            });
         });
     });
 })();

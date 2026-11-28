@@ -1,6 +1,7 @@
 <?php
 session_start();
 include_once __DIR__ . '/dbConnect.php';
+require_once __DIR__ . '/include/hrms.php';
 
 header('Content-Type: application/json');
 
@@ -26,6 +27,11 @@ if ($action === 'update_profile_records') {
     $targetUid = (int)(isset($_POST['target_user_id']) ? $_POST['target_user_id'] : (isset($_SESSION['id']) ? $_SESSION['id'] : 0));
     if ($targetUid <= 0) {
         $targetUid = (int)(isset($_SESSION['id']) ? $_SESSION['id'] : 0);
+    }
+    if (!hrms_can_view_dashboard($db, $_SESSION['id'], $_SESSION['role'] ?? '', $targetUid)) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'You do not have access to this dashboard.']);
+        exit;
     }
 
     $applicableRecords = isset($_POST['applicable_records']) ? $_POST['applicable_records'] : '';

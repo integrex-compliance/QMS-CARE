@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 date_default_timezone_set('Asia/Kolkata');
 include_once __DIR__ . '/dbConnect.php';
+require_once __DIR__ . '/include/hrms.php';
 
 header('Content-Type: application/json');
 
@@ -44,7 +45,9 @@ if ($targetUserId <= 0) {
 
 // Can only manage other users if admin / manager
 $isManager = aitf_can_manage_attendance($currentUserRole) || aitf_is_main_admin_role($currentUserRole);
-if ($targetUserId !== $currentUserId && !$isManager) {
+if (!hrms_can_view_dashboard($db, $currentUserId, $currentUserRole, $targetUserId)
+    || ($action !== 'fetch_month' && $targetUserId !== $currentUserId && !$isManager)) {
+    http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Permission denied to manage other users attendance.']);
     exit();
 }
@@ -57,104 +60,18 @@ if (!empty($dateStr) && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
 
 $systemCode = 'QMS_CARE';
 
-if ($action === 'mark') {
-    if (empty($dateStr)) {
-        echo json_encode(['success' => false, 'error' => 'Date is required.']);
-        exit();
-    }
-    $status = isset($_POST['status']) ? strtolower(trim($_POST['status'])) : 'present';
-    $validStatuses = ['present', 'late', 'halfday', 'leave', 'holiday'];
-    if (!in_array($status, $validStatuses, true)) {
-        $status = 'present';
-    }
-
-    $inTime = isset($_POST['in_time']) ? trim($_POST['in_time']) : null;
-    $outTime = isset($_POST['out_time']) ? trim($_POST['out_time']) : null;
-    $remarks = isset($_POST['remarks']) ? trim($_POST['remarks']) : '';
-
-    if (empty($inTime)) {
-        if ($status === 'present') {
-            $inTime = '09:30:00';
-            $outTime = '18:30:00';
-            if (empty($remarks)) $remarks = 'Full day attendance';
-        } elseif ($status === 'late') {
-            $inTime = '10:15:00';
-            $outTime = '18:30:00';
-            if (empty($remarks)) $remarks = 'Late login marked';
-        } elseif ($status === 'halfday') {
-            $inTime = '09:30:00';
-            $outTime = '14:00:00';
-            if (empty($remarks)) $remarks = 'Half day shift';
-        } elseif ($status === 'leave') {
-            $inTime = null;
-            $outTime = null;
-            if (empty($remarks)) $remarks = 'Casual / Sick Leave';
-        } elseif ($status === 'holiday') {
-            $inTime = null;
-            $outTime = null;
-            if (empty($remarks)) $remarks = 'Company Holiday';
-        }
-    } else {
-        $inTime = date('H:i:s', strtotime($inTime));
-        if (!empty($outTime)) {
-            $outTime = date('H:i:s', strtotime($outTime));
-        }
-    }
-
-    $workingHours = 0.00;
-    if (!empty($inTime) && !empty($outTime)) {
-        $sec = strtotime($dateStr . ' ' . $outTime) - strtotime($dateStr . ' ' . $inTime);
-        if ($sec > 0) {
-            $workingHours = round($sec / 3600, 2);
-        }
-    }
-
-    // Check if record exists
-    $checkStmt = $db->prepare("SELECT id FROM aitf_attendance WHERE user_id = ? AND attendance_date = ?");
-    $checkStmt->execute([$targetUserId, $dateStr]);
-    $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($existing) {
-        $upStmt = $db->prepare("
-            UPDATE aitf_attendance 
-            SET status = ?, in_time = ?, out_time = ?, total_working_hours = ?, remarks = ?, updated_at = NOW()
-            WHERE id = ?
-        ");
-        $upStmt->execute([$status, $inTime, $outTime, $workingHours, $remarks, $existing['id']]);
-    } else {
-        $insStmt = $db->prepare("
-            INSERT INTO aitf_attendance 
-            (user_id, system_code, attendance_date, status, in_time, out_time, total_working_hours, remarks, in_address, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Web Portal', NOW(), NOW())
-        ");
-        $insStmt->execute([$targetUserId, $systemCode, $dateStr, $status, $inTime, $outTime, $workingHours, $remarks]);
-    }
-
-    echo json_encode([
-        'success' => true,
-        'message' => 'Attendance saved successfully.',
-        'data' => [
-            'status' => $status,
-            'label' => ($status === 'late') ? 'Late Login' : (($status === 'halfday') ? 'Half Day' : ucfirst($status)),
-            'inTime' => !empty($inTime) ? date('h:i A', strtotime($inTime)) : '--',
-            'outTime' => !empty($outTime) ? date('h:i A', strtotime($outTime)) : '--',
-            'workingHours' => $workingHours,
-            'note' => $remarks
-        ]
-    ]);
-    exit();
-} elseif ($action === 'clear') {
-    if (empty($dateStr)) {
-        echo json_encode(['success' => false, 'error' => 'Date is required.']);
-        exit();
-    }
-    $delStmt = $db->prepare("DELETE FROM aitf_attendance WHERE user_id = ? AND attendance_date = ?");
-    $delStmt->execute([$targetUserId, $dateStr]);
-    echo json_encode(['success' => true, 'message' => 'Attendance record cleared.']);
+if ($action === 'mark' || $action === 'clear') {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Manual attendance status modification is disabled.']);
     exit();
 } elseif ($action === 'fetch_month') {
     $year = isset($_POST['year']) ? (int)$_POST['year'] : (int)date('Y');
     $month = isset($_POST['month']) ? (int)$_POST['month'] : (int)date('m');
+    if ($year < 2000 || $year > 2100 || $month < 1 || $month > 12) {
+        http_response_code(422);
+        echo json_encode(['success' => false, 'error' => 'Invalid calendar month.']);
+        exit;
+    }
     $startDate = sprintf('%04d-%02d-01', $year, $month);
     $endDate = date('Y-m-t', strtotime($startDate));
 
@@ -196,7 +113,8 @@ if ($action === 'mark') {
             'outSelfieUrl' => $r['punch_out_selfie_url'] ?? ''
         ];
     }
-    echo json_encode(['success' => true, 'records' => $records]);
+    $weekoffDay = hrms_weekoff_day($db);
+    echo json_encode(['success' => true, 'records' => $records, 'weekoff_day' => $weekoffDay, 'weekoff_dates' => hrms_weekoff_dates($year, $month, $weekoffDay)]);
     exit();
 } else {
     echo json_encode(['success' => false, 'error' => 'Invalid action.']);

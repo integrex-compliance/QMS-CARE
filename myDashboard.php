@@ -31,14 +31,6 @@ error_reporting(E_ALL);
         }
     }
 
-    if (!function_exists('aitf_can_view_others_dashboard')) {
-        function aitf_can_view_others_dashboard($role) {
-            $r = strtolower(str_replace([' ', '_', '-'], '', (string)$role));
-            return in_array($r, ['mainadmin', 'admin', 'finance', 'bdm', 'officebdm', 'topmgmt', 'topmanagement', 'director'], true)
-                || (class_exists('Utitlity') && (Utitlity::checkForMainAdmin() || Utitlity::checkForUserAdmin()));
-        }
-    }
-
     if (!function_exists('aitf_can_manage_tasks')) {
         function aitf_can_manage_tasks($role) {
             $r = strtolower(str_replace([' ', '_', '-'], '', (string)$role));
@@ -69,7 +61,23 @@ error_reporting(E_ALL);
 
     $isMainAdmin = aitf_is_main_admin_role($actualLoggedInRole)
         || (class_exists('Utitlity') && Utitlity::checkForMainAdmin());
-    $canViewOthers = aitf_can_view_others_dashboard($actualLoggedInRole);
+    $allowedDashboardIds = [];
+    try {
+        $allowedDashboardIds = hrms_dashboard_targets($db, $actualLoggedInUserId);
+    } catch (Exception $e) {
+        error_log('HRMS permissions unavailable: ' . $e->getMessage());
+    }
+    $canViewOthers = $isMainAdmin || !empty($allowedDashboardIds);
+    // Enforce the same policy for direct URLs as for the dashboard switcher.
+    if (!empty($_GET['view_user']) && $_GET['view_user'] !== 'self') {
+        $requestedView = (string)$_GET['view_user'];
+        if (!preg_match('/^(?:user_)?([1-9][0-9]*)$/', $requestedView, $viewMatch)
+            || !hrms_can_view_dashboard($db, $actualLoggedInUserId, $actualLoggedInRole, (int)$viewMatch[1])) {
+            http_response_code(403);
+            echo '<div id="page-content-wrapper"><div class="alert alert-danger">You do not have access to this dashboard. <a href="myDashboard.php">Return to My Dashboard</a></div></div></div>';
+            exit;
+        }
+    }
     $canManageTasks = aitf_can_manage_tasks($actualLoggedInRole);
     $isManagementUser = $canViewOthers;
     $isTopMgmt = $isMainAdmin;
@@ -122,10 +130,7 @@ error_reporting(E_ALL);
             }
             $seenUids[$suId] = true;
 
-            // Visibility rule:
-            // Main Admin can view everyone.
-            // Admin, BDM, Finance can view everyone EXCEPT Main Admin.
-            if (!$isMainAdmin && aitf_is_main_admin_role(isset($su['role']) ? $su['role'] : '')) {
+            if (!$isMainAdmin && !in_array($suId, $allowedDashboardIds, true)) {
                 continue;
             }
 
@@ -177,10 +182,8 @@ error_reporting(E_ALL);
                     $targetUserRow = $uStmt->fetch(PDO::FETCH_ASSOC);
                     if ($targetUserRow) {
                         $targetRole = trim((string)(isset($targetUserRow['role']) ? $targetUserRow['role'] : ''));
-                        // Role check: Only Main Admin can view Main Admin's dashboard
-                        // Admin, BDM, and Finance can view all dashboards EXCEPT Main Admin
-                        if (!$isMainAdmin && aitf_is_main_admin_role($targetRole)) {
-                            // Blocked access! Cannot view Main Admin dashboard. Fallback to own.
+                        if (!hrms_can_view_dashboard($db, $actualLoggedInUserId, $actualLoggedInRole, $targetUid)) {
+                            // Access changed during this request; retain the personal dashboard.
                             $isViewingOther = false;
                         } else {
                             $userRow = $targetUserRow;
@@ -3700,7 +3703,7 @@ error_reporting(E_ALL);
                                 </span>
                             </div>
                             <div style="font-size: 11.5px; color: #475569; margin-top: 2px;">
-                                Supervisor Mode: You are viewing profile, attendance, and managing tasks for <strong><?php echo htmlspecialchars($userName); ?></strong>.
+                                You are viewing the dashboard of <strong><?php echo htmlspecialchars($userName); ?></strong>.
                             </div>
                         </div>
                     </div>
@@ -4343,13 +4346,18 @@ error_reporting(E_ALL);
                                                 <i class="fa fa-paperclip"></i> Documents (<?php echo count($attachments); ?>):
                                             </span>
                                             <?php foreach ($attachments as $att): 
-                                                $iconInfo = aitf_get_file_icon_info($att['original_name']);
-                                                $fileSizeFormatted = aitf_format_file_size($att['file_size']);
+                                                $attOrigName = isset($att['original_name']) ? $att['original_name'] : (isset($att['file_name']) ? $att['file_name'] : 'Document');
+                                                $attFileSize = isset($att['file_size']) ? $att['file_size'] : 0;
+                                                $attUrl = !empty($att['file_url'])
+                                                    ? $att['file_url']
+                                                    : (!empty($att['file_name']) ? 'uploads/guidelines/' . $att['file_name'] : '#');
+                                                $iconInfo = aitf_get_file_icon_info($attOrigName);
+                                                $fileSizeFormatted = aitf_format_file_size($attFileSize);
                                             ?>
-                                            <a href="view_guideline_doc.php?id=<?php echo (int)$att['id']; ?>" target="_blank" class="guideline-file-chip" title="<?php echo htmlspecialchars($att['original_name']); ?>">
+                                            <a href="<?php echo htmlspecialchars($attUrl, ENT_QUOTES, 'UTF-8'); ?>"<?php echo ($attUrl !== '#') ? ' target="_blank"' : ''; ?> class="guideline-file-chip" title="<?php echo htmlspecialchars($attOrigName, ENT_QUOTES, 'UTF-8'); ?>">
                                                 <span class="file-chip-icon"><i class="<?php echo $iconInfo['icon']; ?>" style="color: <?php echo $iconInfo['color']; ?>;"></i></span>
                                                 <span class="file-chip-details">
-                                                    <span class="file-chip-name"><?php echo htmlspecialchars($att['original_name']); ?></span>
+                                                    <span class="file-chip-name"><?php echo htmlspecialchars($attOrigName, ENT_QUOTES, 'UTF-8'); ?></span>
                                                     <span class="file-chip-size">(<?php echo $fileSizeFormatted; ?>)</span>
                                                 </span>
                                                 <i class="fa fa-external-link file-chip-arrow"></i>

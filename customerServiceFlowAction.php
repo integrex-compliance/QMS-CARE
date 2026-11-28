@@ -12,6 +12,7 @@ try {
     ensureCustomerServiceFlow($db);
     $cid = $_POST['customer_id'] ?? '';
     if (!ctype_digit((string)$cid) || (int)$cid < 1) throw new InvalidArgumentException('Invalid customer.');
+    assignLegacyCustomerServices($db, $cid);
     if (($_POST['action'] ?? '') === 'delete') {
         if (!in_array($_SESSION['role'], ['Admin', 'Main Admin', 'Office Staff'], true)) flowReply(403, ['error' => 'You do not have permission to delete services.']);
         flowReply(200, deleteCustomerServiceFlow($db, $cid, $_POST['id'] ?? ''));
@@ -37,9 +38,13 @@ try {
     $value = trim($_POST['value'] ?? '');
     if ($column !== 'next_service_type') $value = serviceFlowDate($value);
     elseif (strlen($value) > 50) throw new InvalidArgumentException('Stage must be 50 characters or fewer.');
-    $stmt = $db->prepare('SELECT id FROM customer_service_flow WHERE id = ? AND customer_id = ? AND active = 1');
+    $stmt = $db->prepare('SELECT service_name FROM customer_service_flow WHERE id = ? AND customer_id = ? AND active = 1');
     $stmt->execute([$_POST['id'] ?? '', $cid]);
-    if (!$stmt->fetchColumn()) throw new InvalidArgumentException('Service not found. Refresh the page.');
+    $serviceName = $stmt->fetchColumn();
+    if (!$serviceName) throw new InvalidArgumentException('Service not found. Refresh the page.');
+    if ($column === 'next_service_type' && $value !== '' && !in_array($value, allowedServiceTypeStages($db, $serviceName), true)) {
+        throw new InvalidArgumentException('Select a stage enabled for this service in Master Creator.');
+    }
     $stmt = $db->prepare("UPDATE customer_service_flow SET $column = ? WHERE id = ? AND customer_id = ? AND active = 1");
     $stmt->execute([$value, $_POST['id'], $cid]);
     flowReply(200, ['status' => 'success']);

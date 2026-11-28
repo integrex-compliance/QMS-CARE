@@ -3,10 +3,12 @@
 session_start();
 include_once './dbConnect.php';
 require_once __DIR__ . '/payment_schema.php';
+require_once __DIR__ . '/service_stage_config.php';
 header('Content-Type: application/json');
 
 try {
     ensurePaymentSchema($db);
+    ensureServiceStageConfig($db);
     $paymentHasFlow = paymentHasServiceFlow($db);
 } catch (Throwable $ex) {
     error_log('Payment schema upgrade failed: ' . $ex->getMessage());
@@ -309,6 +311,12 @@ if (isset($_GET['serviceId']) && !empty($_GET['serviceId'])) {
     }
 } else if (isset($_GET['servicetype']) && !empty($_GET['servicetype'])) {
     try {
+        // Unnamed legacy invoice/service drafts use the ISO 9001 default.
+        if (!in_array($_GET['servicetype'], allowedServiceTypeStages($db, 'ISO 9001'), true)) {
+            http_response_code(422);
+            echo json_encode(['error' => 'Select a stage enabled for ISO 9001 in Master Creator.']);
+            return;
+        }
         $db->beginTransaction();
         $certBody = "";
         if (isset($_GET['certbody']) && !empty($_GET['certbody'])) {

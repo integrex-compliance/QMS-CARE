@@ -1,36 +1,40 @@
 <div id="customerServiceMilestones" data-customer="<?php echo (int)$_GET['customerid']; ?>" data-csrf="<?php echo htmlspecialchars($_SESSION['service_flow_csrf'], ENT_QUOTES, 'UTF-8'); ?>" data-readonly="<?php echo $isReadOnlyServiceType ? '1' : '0'; ?>">
-    <?php foreach ($customerFlows as $flow) { if (!$flow['active']) continue; ?>
-    <div class="service-flow-dates" data-flow-name="<?php echo htmlspecialchars($flow['service_name'], ENT_QUOTES, 'UTF-8'); ?>">
-        <?php $currentFlowStage = $flow['current_stage'] ?? ''; ?>
-        <div class="service-flow-heading">
-            <strong class="service-flow-label"><?php echo htmlspecialchars($flow['service_name'], ENT_QUOTES, 'UTF-8'); ?></strong>
+    <?php
+    $milestoneGroups = [];
+    foreach ($customerFlows as $flow) {
+        if ($flow['active']) $milestoneGroups[$flow['service_name']][] = $flow;
+    }
+    foreach ($milestoneGroups as $serviceName => $stageFlows) {
+        // Keep the overview's date record stable as more stages are added.
+        usort($stageFlows, function ($a, $b) { return $a['id'] <=> $b['id']; });
+        $firstFlow = $stageFlows[0];
+        $allowedFlowStages = $serviceStagesByName[$serviceName] ?? [];
+        $groupHeadingId = 'flow-group-' . (int)$firstFlow['id'];
+    ?>
+    <section class="service-flow-group" data-flow-name="<?php echo htmlspecialchars($serviceName, ENT_QUOTES, 'UTF-8'); ?>" aria-labelledby="<?php echo $groupHeadingId; ?>">
+        <div class="service-flow-overview-heading">
+            <h3 id="<?php echo $groupHeadingId; ?>" class="service-flow-label"><span class="service-flow-prefix">Type of Service:</span> <?php echo htmlspecialchars($serviceName, ENT_QUOTES, 'UTF-8'); ?></h3>
+            <?php if (!$isReadOnlyServiceType) { ?>
             <div class="service-flow-stage-field">
-                <label for="flow-stage-<?php echo (int)$flow['id']; ?>">Service Stage</label>
-                <select class="flow-current-stage" id="flow-stage-<?php echo (int)$flow['id']; ?>" data-id="<?php echo (int)$flow['id']; ?>" data-service-id="<?php echo (int)$flow['service_id']; ?>" data-saved-stage="<?php echo htmlspecialchars($currentFlowStage, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isReadOnlyServiceType ? 'disabled' : ''; ?>>
-                    <?php if (!in_array($currentFlowStage, $allServiceStages, true)) { ?>
-                        <option value="<?php echo htmlspecialchars($currentFlowStage, ENT_QUOTES, 'UTF-8'); ?>" selected><?php echo htmlspecialchars($currentFlowStage ?: 'Select Service Stage', ENT_QUOTES, 'UTF-8'); ?></option>
-                    <?php } ?>
-                    <?php foreach ($allServiceStages as $stage) { ?>
-                        <option value="<?php echo htmlspecialchars($stage, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $stage === $currentFlowStage ? 'selected' : ''; ?>><?php echo htmlspecialchars($stage, ENT_QUOTES, 'UTF-8'); ?></option>
+                <label for="overview-stage-<?php echo (int)$firstFlow['id']; ?>">Add Service Stage</label>
+                <select class="flow-current-stage" id="overview-stage-<?php echo (int)$firstFlow['id']; ?>" data-id="<?php echo (int)$firstFlow['id']; ?>" <?php echo $allowedFlowStages ? '' : 'disabled'; ?>>
+                    <option value=""><?php echo $allowedFlowStages ? 'Select stage to add' : 'Set stages in Master Creator'; ?></option>
+                    <?php foreach ($allowedFlowStages as $stage) { ?>
+                    <option value="<?php echo htmlspecialchars($stage, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($stage, ENT_QUOTES, 'UTF-8'); ?></option>
                     <?php } ?>
                 </select>
             </div>
+            <?php } ?>
         </div>
-        <div class="qms-milestones-row">
-        <?php foreach (['certification_date' => 'CA/RC Date', 'next_service_date' => 'Next Service Date', 'next_service_type' => 'Next Service Stage'] as $column => $label) {
-            $value = $flow[$column];
-            if ($column !== 'next_service_type') $value = $value ? date('d.m.Y', strtotime($value)) : '';
-            $inputId = 'flow-' . $flow['id'] . '-' . $column;
+        <?php
+        $stageFlow = $firstFlow;
+        $dateInputPrefix = 'overview-';
+        include __DIR__ . '/customer_service_stage_dates.php';
+        unset($dateInputPrefix);
         ?>
-            <div class="qms-milestone-field">
-                <label for="<?php echo $inputId; ?>"><i class="fa fa-calendar"></i> <?php echo $label; ?></label>
-                <input id="<?php echo $inputId; ?>" class="flow-milestone lookslike-label" data-id="<?php echo $flow['id']; ?>" data-column="<?php echo $column; ?>" value="<?php echo htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo $column === 'next_service_type' ? 'e.g. SA-1' : 'dd.mm.yyyy'; ?>" <?php echo $isReadOnlyServiceType ? 'readonly' : ''; ?>>
-            </div>
-        <?php } ?>
-        </div>
-    </div>
+    </section>
     <?php } ?>
-    <?php if (!array_filter($customerFlows, function ($flow) { return !empty($flow['active']); })) { ?><p class="service-flow-empty">Select a service to create its section and individual dates.</p><?php } ?>
+    <?php if (!$milestoneGroups) { ?><p class="service-flow-empty">Select a service to create its section and individual dates.</p><?php } ?>
 </div>
 <?php if (!empty($customer['certification_date']) || !empty($customer['next_service_date'])) { ?>
 <details class="service-flow-legacy"><summary>Previous customer-level dates (reference)</summary>

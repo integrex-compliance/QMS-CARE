@@ -7,13 +7,21 @@
         var busy = false;
         function notify(message, type) { window.showToast($('<div>').text(message).html(), type); }
         function decorate() {
-            // Stable type identity, independent of selection order.
+            // Use the service's theme, with certification-grade colors for ZED.
             $('[data-flow-name], .tos-tag-chip').each(function () {
                 var name = $(this).attr('data-flow-name') || $(this).attr('data-service');
                 if (!name) return;
-                var hash = 0;
-                for (var i = 0; i < name.length; i++) hash = ((hash * 31) + name.charCodeAt(i)) >>> 0;
-                this.style.setProperty('--flow-color', 'hsl(' + (hash % 360) + ', 65%, 34%)');
+                var theme = window.customerServiceTheme(name, $(this).attr('data-flow-stage'));
+                $(this).attr('data-flow-theme', theme.key);
+                this.style.setProperty('--flow-color', theme.color);
+                this.style.setProperty('--flow-soft', theme.soft);
+                this.style.setProperty('--flow-ink', theme.ink);
+            });
+        }
+        function updateGroupControls() {
+            $root.find('.service-flow-group').each(function () {
+                var $group = $(this);
+                $group.toggle(saved.indexOf($group.attr('data-flow-name')) !== -1);
             });
         }
         function restoreSelection() {
@@ -49,27 +57,42 @@
                 customer_id: $root.attr('data-customer'), csrf: $root.attr('data-csrf')
             }, data)});
         }
+        function refreshStageChoices($existing, $incoming) {
+            if (!$existing.length || !$incoming.length) return;
+            $existing.empty().append($incoming.children().clone()).prop('disabled', $incoming.prop('disabled'));
+            $existing.attr('data-id', $incoming.attr('data-id'));
+        }
         function refreshSections() {
             return $.get('customerAccountDetails.php', {customerid: $root.attr('data-customer')}).then(function (html) {
                 var $page = $('<div>').append($.parseHTML(html, document, false));
                 var $fresh = $page.find('#customerServiceMilestones');
                 if (!$fresh.length) throw new Error('Page refresh failed');
                 // Keep existing editors intact, including any unsaved installment input.
-                $fresh.find('.service-flow-dates').each(function () {
-                    var name = $(this).attr('data-flow-name');
-                    if (!$root.find('.service-flow-dates').filter(function () { return $(this).attr('data-flow-name') === name; }).length) $root.append(this);
+                $root.find('.service-flow-group').hide();
+                $fresh.find('.service-flow-group').each(function () {
+                    var $incoming = $(this), name = $incoming.attr('data-flow-name');
+                    var $group = $root.find('.service-flow-group').filter(function () { return $(this).attr('data-flow-name') === name; });
+                    if (!$group.length) $group = $incoming;
+                    else {
+                        var $dates = $group.find('.service-flow-dates'), $newDates = $incoming.find('.service-flow-dates');
+                        if ($dates.attr('data-flow-id') !== $newDates.attr('data-flow-id')) $dates.replaceWith($newDates);
+                        refreshStageChoices($group.find('.flow-current-stage'), $incoming.find('.flow-current-stage'));
+                        refreshStageChoices($group.find('select.flow-milestone'), $incoming.find('select.flow-milestone'));
+                    }
+                    $root.append($group.show());
                 });
-                $root.find('.service-flow-dates').each(function () { $(this).toggle(saved.indexOf($(this).attr('data-flow-name')) !== -1); });
+                updateGroupControls();
                 $root.find('.service-flow-empty').toggle(!saved.length);
                 $page.find('.servicebox[data-flow-name]').each(function () {
-                    var name = $(this).attr('data-flow-name');
+                    var $incoming = $(this), name = $incoming.attr('data-flow-name'), id = $incoming.attr('data-service-id');
                     if (!name) return;
-                    var $existing = $('.servicebox-bunch .servicebox').filter(function () { return $(this).attr('data-flow-name') === name; });
-                    if (!$existing.length) $('.servicebox-bunch').append(this);
-                });
-                $('.servicebox-bunch .servicebox[data-flow-name]').each(function () {
-                    var name = $(this).attr('data-flow-name');
-                    if (name) $(this).attr('data-flow-active', saved.indexOf(name) === -1 ? '0' : '1');
+                    var $existing = $('.servicebox-bunch .servicebox').filter(function () { return $(this).attr('data-service-id') === id; });
+                    if ($existing.length) {
+                        $existing.attr('data-flow-active', $incoming.attr('data-flow-active'));
+                        refreshStageChoices($existing.find('.flow-current-stage'), $incoming.find('.flow-current-stage'));
+                    }
+                    // Server order groups all stages of each service, including newly added ones.
+                    $('.servicebox-bunch').append($existing.length ? $existing : this);
                 });
                 decorate();
             });
@@ -107,7 +130,7 @@
                 $(document).off('keydown.flowDelete');
                 $button.focus();
             }
-            $('.meeting-cancel-confirm-message').text('Are you sure you want to delete it?');
+            $('.meeting-cancel-confirm-message').text('Delete this stage of ' + name + '? Other stages and saved history will be retained.');
             $('.delete-confirm-ok').off('click').on('click.flowDelete', function () {
                 closeDelete();
                 if (busy) return;
@@ -115,20 +138,25 @@
                 updateAddControls();
                 $('#tosMultiselectWrapper').addClass('flow-saving').attr('aria-busy', 'true');
                 $('.flow-delete-service').prop('disabled', true);
+                function finishDelete() { $('.flow-delete-service').prop('disabled', false); unlock(); }
                 request({action: 'delete', id: $button.attr('data-flow-id')}).done(function (res) {
                     if (!res || res.status !== 'success' || !Array.isArray(res.selected)) {
-                        notify('Could not delete service. Refresh and retry.', 'error'); return;
+                        notify('Could not delete service. Refresh and retry.', 'error'); finishDelete(); return;
                     }
                     saved = res.selected;
                     restoreSelection();
-                    $('.servicebox[data-flow-name]').filter(function () { return $(this).attr('data-flow-name') === res.service_name; }).attr('data-flow-active', '0');
-                    $root.find('.service-flow-dates').filter(function () { return $(this).attr('data-flow-name') === res.service_name; }).hide();
+                    $('.servicebox[data-service-id]').filter(function () { return $(this).attr('data-service-id') === String(res.service_id); }).attr('data-flow-active', '0');
+                    updateGroupControls();
                     if (!$root.find('.service-flow-empty').length) $root.append('<p class="service-flow-empty">Select a service to create its section and individual dates.</p>');
                     $root.find('.service-flow-empty').toggle(!saved.length);
-                    notify(res.service_name + ' deleted from active services. History retained.', 'success');
+                    notify(res.service_name + ' stage deleted. History retained.', 'success');
+                    refreshSections().fail(function () {
+                        notify('Stage deleted. Reload this page to refresh the service dates.', 'error');
+                    }).always(finishDelete);
                 }).fail(function (xhr) {
                     notify((xhr.responseJSON || {}).error || 'Could not delete service. Please retry.', 'error');
-                }).always(function () { $('.flow-delete-service').prop('disabled', false); unlock(); });
+                    finishDelete();
+                });
             });
             $('.delete-cancel').off('click').on('click.flowDelete', function () {
                 closeDelete();
@@ -144,39 +172,50 @@
             });
         });
         $(document).on('change', '.flow-current-stage', function () {
-            var $select = $(this), previous = $select.attr('data-saved-stage');
+            var $select = $(this), currentStage = $select.attr('data-current-stage') || '';
+            if (!$select.val() || $select.val() === currentStage) return;
+            if (busy) { $select.val(currentStage); notify('Please wait for the current save to finish.', 'info'); return; }
+            busy = true;
+            updateAddControls();
             $select.prop('disabled', true).attr('aria-busy', 'true');
+            function finishStage() {
+                var hasStages = $select.find('option:not(:disabled)').filter(function () { return this.value !== ''; }).length > 0;
+                $select.val(currentStage).prop('disabled', !hasStages || $root.attr('data-readonly') === '1').attr('aria-busy', 'false');
+                unlock();
+            }
             request({action: 'stage', id: $select.attr('data-id'), stage: $select.val()}).done(function (res) {
                 if (!res || res.status !== 'success') {
-                    $select.val(previous); notify('Stage could not be saved. Please retry.', 'error'); return;
+                    notify('Stage could not be added. Please retry.', 'error'); finishStage(); return;
                 }
-                $select.attr('data-saved-stage', res.stage).val(res.stage);
-                var sid = String(res.service_id);
-                $('.service-type').filter(function () { return $(this).attr('data-row-id') === sid; }).val(res.stage);
-                $('.service_title').filter(function () { return $(this).attr('data-row-id') === sid; }).find('.serviceStatus').text(res.stage);
-                notify($select.closest('.service-flow-dates').attr('data-flow-name') + ' stage saved.', 'success');
+                refreshSections().done(function () {
+                    notify($select.closest('[data-flow-name]').attr('data-flow-name') + ' — ' + res.stage + ' is ready. Existing stages retained.', 'success');
+                }).fail(function () {
+                    notify('Stage saved, but sections could not refresh. Reload this page to view it.', 'error');
+                }).always(finishStage);
             }).fail(function (xhr) {
-                $select.val(previous);
-                notify((xhr.responseJSON || {}).error || 'Stage could not be saved. Previous stage restored.', 'error');
-            }).always(function () { $select.prop('disabled', false).attr('aria-busy', 'false'); });
+                notify((xhr.responseJSON || {}).error || 'Stage could not be added. Please retry.', 'error');
+                finishStage();
+            });
         });
         $(document).on('focus', '.flow-milestone:not([readonly])', function () {
             if ($(this).attr('data-column') !== 'next_service_type' && !$(this).hasClass('hasDatepicker')) $(this).datepicker({dateFormat: 'dd.mm.yy', changeMonth: true, changeYear: true, yearRange: '-100:+100'});
         });
         $(document).on('change', '.flow-milestone:not([readonly])', function () {
-            var $input = $(this);
-            $input.prop('disabled', true).attr('aria-invalid', 'false');
-            request({action: 'dates', id: $input.attr('data-id'), column: $input.attr('data-column'), value: $input.val()}).done(function () {
+            var $input = $(this), id = $input.attr('data-id'), column = $input.attr('data-column'), value = $input.val();
+            var $copies = $('.flow-milestone').filter(function () { return $(this).attr('data-id') === id && $(this).attr('data-column') === column; });
+            $copies.prop('disabled', true).attr('aria-invalid', 'false');
+            request({action: 'dates', id: id, column: column, value: value}).done(function () {
+                $copies.val(value);
                 notify('Service date / stage saved.', 'success');
             }).fail(function (xhr) {
                 $input.attr('aria-invalid', 'true');
                 notify((xhr.responseJSON || {}).error || 'Could not save. Please retry.', 'error');
-            }).always(function () { $input.prop('disabled', false); });
+            }).always(function () { $copies.prop('disabled', false); });
         });
         decorate();
         updateAddControls();
         if ($root.attr('data-readonly') !== '1' && saved.some(function (name) {
-            return !$root.find('.service-flow-dates').filter(function () { return $(this).attr('data-flow-name') === name; }).length;
+            return !$root.find('.service-flow-group').filter(function () { return $(this).attr('data-flow-name') === name; }).length;
         })) window.saveCustomerServiceSelection(saved, true);
     });
 })(jQuery);

@@ -1,0 +1,13 @@
+.operateServices .list-group-item { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.operateServices .manage-service-stages { margin-left: auto; padding: 4px 9px; border: 1px solid #cbd5e1; border-radius: 5px; background: #eff6ff; color: #1558b0; font-size: 12px; font-weight: 600; }
+.operateServices .deleteService { margin-left: 5px; cursor: pointer; }
+#serviceStageEditor .modal-header { background: #eff6ff; border-radius: 6px 6px 0 0; }
+#serviceStageEditor .modal-title { color: #1558b0; font-size: 17px; }
+#serviceStageEditor .modal-body > p { color: #64748b; font-size: 13px; }
+.stage-editor-options { display: flex; flex-wrap: wrap; gap: 8px; max-height: 280px; overflow: auto; margin: 16px 0; }
+.stage-editor-option { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; cursor: pointer; font-weight: 500; }
+.stage-editor-option:has(input:checked) { background: #eff6ff; border-color: #1558b0; color: #1558b0; }
+.stage-editor-option input { margin: 0; }
+.stage-editor-status { font-size: 13px; color: #475569; }
+.stage-editor-status.is-error { color: #b91c1c; }
+.stage-editor-new > label { font-weight: 600; font-size: 13px; }

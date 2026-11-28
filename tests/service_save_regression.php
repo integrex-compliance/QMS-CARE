@@ -4,6 +4,7 @@
 $source = file_get_contents(__DIR__ . '/../addService.php');
 $source = str_replace(array('<?php', 'session_start();', "include_once './dbConnect.php';"), '', $source);
 $source = str_replace("__DIR__ . '/payment_schema.php'", var_export(__DIR__ . '/../payment_schema.php', true), $source);
+$source = str_replace("__DIR__ . '/service_stage_config.php'", var_export(__DIR__ . '/../service_stage_config.php', true), $source);
 $db = new PDO('sqlite::memory:');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 preg_match_all('/INSERT INTO (services|certification_body|consulting) \(([^)]+)\)/', $source, $inserts, PREG_SET_ORDER);
@@ -14,6 +15,12 @@ foreach ($inserts as $insert) {
 }
 $db->exec('CREATE TABLE customer_details (customer_id, certification_date, next_service_date, next_service_type)');
 $db->exec('CREATE TABLE invoice_details (invoice_id INTEGER PRIMARY KEY)');
+$db->exec('CREATE TABLE service_type (id INTEGER PRIMARY KEY, service TEXT)');
+$db->exec("INSERT INTO service_type VALUES (1, 'ISO 9001')");
+require_once __DIR__ . '/../service_stage_config.php';
+ensureServiceStageConfig($db);
+$db->exec("INSERT INTO service_stage (stage) VALUES ('CA')");
+$db->exec('INSERT INTO service_type_stages VALUES (1, 1, 0)');
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $db->exec("INSERT INTO customer_details VALUES (1, '2026-01-01', NULL, NULL)");
 preg_match_all('/\$_GET\[\x27([^\x27]+)\x27\]/', $source, $keys);
@@ -34,6 +41,9 @@ function checkSave($condition, $message) {
 }
 $created = saveServiceForTest($request);
 $id = $created[0]['service_id'];
+$blocked = $request;
+$blocked['servicetype'] = 'Gold';
+checkSave(isset(saveServiceForTest($blocked)['error']) && http_response_code() === 422, 'Legacy create must reject a stage not assigned to ISO 9001');
 checkSave($id > 0, 'Create must return the new service ID');
 checkSave($db->query('SELECT COUNT(*) FROM services')->fetchColumn() == 1, 'New service must persist');
 checkSave(in_array('tds_deducted', paymentTableColumns($db, 'consulting'), true), 'Old payment schema must be upgraded automatically');

@@ -10,18 +10,23 @@
         echo '<div class="alert alert-danger">' . htmlspecialchars(paymentSchemaFailureMessage($ex), ENT_QUOTES, 'UTF-8') . '</div>';
         return;
     }
-    include './customerScripting.php';
     require_once './customer_service_flow.php';
     require_once './client_ledger.php';
     ensureCustomerServiceFlow($db);
+    $serviceStagesByName = serviceTypeStageMap($db);
+    include './customerScripting.php';
+    if (ctype_digit((string)($_GET['customerid'] ?? '')) && (int)$_GET['customerid'] > 0) {
+        assignLegacyCustomerServices($db, $_GET['customerid']);
+    }
     if (empty($_SESSION['service_flow_csrf'])) $_SESSION['service_flow_csrf'] = bin2hex(random_bytes(32));
     $flowStmt = $db->prepare('SELECT f.*, s.service_type AS current_stage FROM customer_service_flow f LEFT JOIN services s ON s.service_id = f.service_id AND s.customer_id = f.customer_id WHERE f.customer_id = ? ORDER BY f.id');
     $flowStmt->execute([$_GET['customerid'] ?? '']);
-    $customerFlows = $flowStmt->fetchAll(PDO::FETCH_ASSOC);
+    $customerFlows = sortCustomerServiceFlows($flowStmt->fetchAll(PDO::FETCH_ASSOC));
     $flowByService = [];
     foreach ($customerFlows as $flow) $flowByService[$flow['service_id']] = $flow;
     ?>
     <link rel="stylesheet" href="css/customer-service-flow.css?v=<?php echo filemtime(__DIR__ . '/css/customer-service-flow.css'); ?>">
+    <script src="js/customer-service-theme.js?v=<?php echo filemtime(__DIR__ . '/js/customer-service-theme.js'); ?>" defer></script>
     <script src="js/customer-service-flow.js?v=<?php echo filemtime(__DIR__ . '/js/customer-service-flow.js'); ?>" defer></script>
     <link rel="stylesheet" href="css/client-ledger.css?v=<?php echo filemtime(__DIR__ . '/css/client-ledger.css'); ?>">
     <script src="js/payment-input-guard.js?v=<?php echo filemtime(__DIR__ . '/js/payment-input-guard.js'); ?>" defer></script>
@@ -167,19 +172,7 @@
             $statement->execute();
             $allServices = $statement->fetchAll();
             $allMasterServiceTypes = $allServices;
-            $allServiceStages = [];
-            $stageQueryOk = false;
-            try {
-                $allServiceStageSql = "SELECT stage FROM service_stage ORDER BY id ASC";
-                $stageStmt = $db->query($allServiceStageSql);
-                if ($stageStmt) {
-                    $allServiceStages = $stageStmt->fetchAll(PDO::FETCH_COLUMN);
-                    $stageQueryOk = true;
-                }
-            } catch (Exception $e) {}
-            if (!$stageQueryOk) {
-                $allServiceStages = ['CA', 'SA-1', 'SA-2', 'RC', 'New enq', 'CNE', 'Mnt.'];
-            }
+            $allServiceStages = $serviceStagesByName['ISO 9001'] ?? [];
 
             $allCertBody = "SELECT * FROM cert_body";
             $statement = $db->prepare($allCertBody);
@@ -458,7 +451,7 @@
                                                     <option value="<?php echo htmlspecialchars($sName, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $isSelected ? 'disabled' : ''; ?>><?php echo htmlspecialchars($sName, ENT_QUOTES, 'UTF-8'); ?></option>
                                                 <?php } ?>
                                             </select>
-                                            <button type="button" id="tosAddServiceButton" class="tos-add-button" disabled><i class="fa fa-plus" aria-hidden="true"></i> Add</button>
+                                            <button type="button" id="tosAddServiceButton" class="tos-add-button" disabled><i class="fa fa-plus" aria-hidden="true"></i> Add Service Type</button>
                                         </div>
                                         <span id="tosAddHint" class="sr-only" aria-live="polite">Add one service at a time.</span>
                                         <?php } ?>
@@ -472,6 +465,20 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <?php if (!Utitlity::checkForUserConsultant() && stripos($customer['company_name'], "consl. ") === FALSE) { ?>
+                            <div class="row" style="margin: 10px 0;">
+                                <div class="col-xs-12 text-center btn qms_complete_btn show-all-invoices client-ledger-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="client-ledger-panel">
+                                    <span><i class="fa fa-inr" aria-hidden="true"></i> Payment System Summary / Client Ledger</span>
+                                </div>
+                            </div>
+                            <div class="row hidden-row" id="client-ledger-panel" style="display: none">
+                                <div class="col-xs-12">
+                                    <p id="client-ledger-status" class="text-muted" role="status" style="margin: 8px 0;"></p>
+                                    <?php include __DIR__ . '/include/client_ledger_view.php'; ?>
+                                </div>
+                            </div>
+                            <?php } ?>
 
                             <!-- Milestone Dates Row -->
                             <?php
@@ -495,38 +502,7 @@
                         </div>
                     </div>
 
-                    <?php if (!Utitlity::checkForUserConsultant()) { ?>
-                        <div class="row" style="">
-                            <div class="col-xs-2  text-center btn  qms_complete_btn invoiceBtn" data-customer="<?php echo $_GET['customerid'] ?>">
-                                <span><i class="fa fa-inr "> Invoice</i></span>
-                            </div>
-                            <div class="col-xs-2  text-center btn qms_complete_btn quotationBtn" data-customer="<?php echo $_GET['customerid'] ?>">
-                                <span><i class="fa fa-quote-left "> Quotation</i></span>
-                            </div>
-                            <?php
-                            if (Utitlity::checkForUserFinance()) {
-                                $active = "";
-                                $show = "disabled";
-                            } else {
-                                $active = "addNewService";
-                                $show = "";
-                            }
-                            ?>
-                            <div class="col-xs-2  text-center btn qms_complete_btn <?php echo $active ?> " <?php echo $show ?>>
-                                <span><i class="fa fa-plus-square "> Add Service </i></span>
-                            </div>
-                            <div class="col-xs-6 text-center btn qms_complete_btn show-all-invoices client-ledger-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="client-ledger-panel">
-                                <span><i class="fa fa-inr" aria-hidden="true"></i> Payment System Summary / Client Ledger</span>
-                            </div>
-                        </div>
-                        <div class="row hidden-row" id="client-ledger-panel" style="display: none">
-                            <div class="col-xs-12">
-                                <p id="client-ledger-status" class="text-muted" role="status" style="margin: 8px 0;"></p>
-                                <?php include __DIR__ . '/include/client_ledger_view.php'; ?>
-                            </div>
-                        </div>
-                        <?php
-                    }
+                    <?php
                 }
                 ?>
             </div>
@@ -569,6 +545,7 @@
             $statement->bindParam(':customerid', $_GET['customerid']);
             $statement->execute();
             $services = $statement->fetchAll();
+            $services = groupCustomerStageServices($services, $customerFlows);
             $totalServiceCount = count($services);
             $serviceNo = 1;
 
@@ -717,7 +694,7 @@
 //                    continue;
                 }
                 ?>
-                <div class="servicebox" data-flow-name="<?php echo htmlspecialchars($flowByService[$serviceId]['service_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-flow-active="<?php echo $flowByService[$serviceId]['active'] ?? 1; ?>" style="display:<?php echo $saveButton ?> <?php //echo $srvcDisplay       ?>">
+                <div class="servicebox" data-service-id="<?php echo (int)$serviceId; ?>" data-flow-name="<?php echo htmlspecialchars($flowByService[$serviceId]['service_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-flow-stage="<?php echo htmlspecialchars($service1['service_type'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" data-flow-active="<?php echo $flowByService[$serviceId]['active'] ?? 1; ?>" style="display:<?php echo $saveButton ?> <?php //echo $srvcDisplay       ?>">
                     <div class="row" id="service-row<?php echo $serviceId; ?>" class="service-row"> 
                         <div class="col-xs-12 qms_customer_name service_title" data-row-id="<?php echo $serviceId; ?>" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px;">
                             <div class="service-title-left" style="display: flex; align-items: center; gap: 8px; min-width: 80px;">
@@ -730,16 +707,16 @@
                             </div>
 
                             <div class="service-title-center" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                <span style="font-weight: 600; font-size: 13.5px; letter-spacing: 0.04em; color: #ffffff; text-transform: uppercase;">
-                                    <?php if (isset($flowByService[$serviceId])) echo htmlspecialchars($flowByService[$serviceId]['service_name'], ENT_QUOTES, 'UTF-8') . ' &mdash; '; else echo 'SERVICE &mdash; '; ?> <span class="serviceStatus" style="color: #fde047; font-weight: 700; font-size: 14px; letter-spacing: 0.04em;"><?php if (isset($service1['service_type'])) echo $service1['service_type']; ?></span>
-                                </span>
+                                <span class="service-heading-field">Service Type: <strong><?php echo htmlspecialchars($flowByService[$serviceId]['service_name'] ?? 'Not assigned', ENT_QUOTES, 'UTF-8'); ?></strong></span>
+                                <span class="service-heading-separator" aria-hidden="true">&mdash;</span>
+                                <span class="service-heading-field">Service Stage: <span class="serviceStatus"><?php echo htmlspecialchars($service1['service_type'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></span>
                             </div>
 
                             <div class="service-title-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 80px;">
                                 <a class="saveService" data-row-id="<?php echo $serviceId; ?>" style="display:none !important;"></a>
 
                                 <?php if (isset($flowByService[$serviceId]) && (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin())) { ?>
-                                    <button type="button" class="flow-delete-service" data-flow-id="<?php echo (int)$flowByService[$serviceId]['id']; ?>" title="Delete service" aria-label="Delete <?php echo htmlspecialchars($flowByService[$serviceId]['service_name'], ENT_QUOTES, 'UTF-8'); ?>"><i class="fa fa-trash-o" aria-hidden="true"></i></button>
+                                    <button type="button" class="flow-delete-service" data-flow-id="<?php echo (int)$flowByService[$serviceId]['id']; ?>" title="Delete this stage" aria-label="Delete <?php echo htmlspecialchars($flowByService[$serviceId]['service_name'] . ' ' . $service1['service_type'], ENT_QUOTES, 'UTF-8'); ?>"><i class="fa fa-trash-o" aria-hidden="true"></i></button>
                                 <?php } ?>
                                 <?php if (!isset($flowByService[$serviceId]) && (Utitlity::checkForUserAdmin() || Utitlity::checkForOfficeStaff() || Utitlity::checkForMainAdmin())) { ?>
                                     <a class="deleteService" id="deleteService" data-row-id="<?php echo $serviceId; ?>" title="Delete Service" style="color: #dc3545; background: #ffffff; width: 24px; height: 24px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; text-decoration: none; transition: all 0.15s ease;"><i class="fa fa-trash-o"></i></a>
@@ -752,6 +729,19 @@
                         <div class="row service-detail-row service-detail-row-top" style="padding-top:2px;">
                             <?php if (isset($flowByService[$serviceId])) { ?>
                                 <input type="hidden" class="service-type" data-row-id="<?php echo $serviceId; ?>" value="<?php echo htmlspecialchars($service1['service_type'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                <?php
+                                $currentStage = trim((string)($service1['service_type'] ?? ''));
+                                $allowedCardStages = $serviceStagesByName[$flowByService[$serviceId]['service_name']] ?? [];
+                                ?>
+                                <div class="col-xs-3 form-group float-label-control">
+                                    <label for="service-flow-stage-<?php echo (int)$serviceId; ?>">Service Stage</label>
+                                    <select class="flow-current-stage" id="service-flow-stage-<?php echo (int)$serviceId; ?>" data-id="<?php echo (int)$flowByService[$serviceId]['id']; ?>" data-current-stage="<?php echo htmlspecialchars($currentStage, ENT_QUOTES, 'UTF-8'); ?>" title="Select another stage to add it separately. Existing stages are retained." <?php echo ($isReadOnlyServiceType || !$allowedCardStages) ? 'disabled' : ''; ?>>
+                                        <option value="<?php echo htmlspecialchars($currentStage, ENT_QUOTES, 'UTF-8'); ?>" selected <?php echo in_array($currentStage, $allowedCardStages, true) ? '' : 'disabled'; ?>><?php echo htmlspecialchars($currentStage ?: 'Select Service Stage', ENT_QUOTES, 'UTF-8'); ?></option>
+                                        <?php foreach ($allowedCardStages as $stg) { if ($stg === $currentStage) continue; ?>
+                                            <option value="<?php echo htmlspecialchars($stg, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($stg, ENT_QUOTES, 'UTF-8'); ?></option>
+                                        <?php } ?>
+                                    </select>
+                                </div>
                             <?php } else { ?>
                             <div class="col-xs-3 form-group float-label-control">
                                 <label>Service Stage</label>
@@ -2323,10 +2313,22 @@ body, #page-content-wrapper {
 .service-title-center {
     flex: 1 !important;
     text-align: center !important;
-    display: flex !align-items: center !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap;
+    min-width: 0;
     justify-content: center !important;
     gap: 6px !important;
 }
+.service-heading-field {
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 500;
+    text-transform: none;
+    overflow-wrap: anywhere;
+}
+.service-heading-field strong { font-weight: 700; }
+.service-heading-separator { margin: 0 5px; color: rgba(255, 255, 255, .7); }
 .service_title .serviceStatus {
     color: #fde047 !important;
     font-weight: 700 !important;

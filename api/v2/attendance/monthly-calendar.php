@@ -2,6 +2,7 @@
 // C:\xampp\htdocs\public_html\api\v1\attendance\monthly-calendar.php
 require_once __DIR__ . '/../helpers/cors.php';
 require_once __DIR__ . '/../helpers/auth_middleware.php';
+require_once dirname(__DIR__, 3) . '/include/hrms.php';
 
 date_default_timezone_set('Asia/Kolkata');
 
@@ -9,10 +10,11 @@ $user = requireAuth($db);
 $currentUserId = (int)$user['user_id'];
 $systemCode = $user['system_code'] ?? 'AITF_MAIN';
 
-// Allow viewing other users if manager/admin
+// Use the organisation's explicit dashboard permissions for attendance reads.
 $targetUserId = isset($_GET['user_id']) ? (int)$_GET['user_id'] : $currentUserId;
-if ($targetUserId !== $currentUserId && empty($user['can_manage_tasks'])) {
-    $targetUserId = $currentUserId;
+$policyDb = $GLOBALS['aitf_identity_db'] ?? $db;
+if (!hrms_can_view_dashboard($policyDb, $currentUserId, $user['role'] ?? '', $targetUserId)) {
+    jsonResponse(false, 'You do not have access to this dashboard.', [], 403);
 }
 
 $year  = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
@@ -102,7 +104,13 @@ foreach ($rows as $r) {
     ];
 }
 
+$weekoffDay = hrms_weekoff_day($policyDb);
+$weekoffDates = hrms_weekoff_dates($year, $month, $weekoffDay);
+$summary['weekoff_days'] = count($weekoffDates);
+$summary['working_days'] = (int)date('t', strtotime($startDate)) - count($weekoffDates);
 jsonResponse(true, "Monthly calendar fetched", [
+    'weekoff_day' => $weekoffDay,
+    'weekoff_dates' => $weekoffDates,
     'year' => $year,
     'month' => $month,
     'user_id' => $targetUserId,

@@ -977,7 +977,7 @@ $listOfUsers = $statement->fetchAll();
                                 <input type="text" class="auditDate" id="auditDate" name="auditDate" placeholder="Audit Date" required>
                             </div>
                         </div>
-                        <input type="hidden" class="customer_id" id="customer_id" name="customer_id" value="<?php echo $_GET['customerid'] ?>">
+                        <input type="hidden" class="customer_id" id="customer_id" name="customer_id" value="<?php echo htmlspecialchars((string)($_GET['customerid'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-default serviceAdd">Add</button>

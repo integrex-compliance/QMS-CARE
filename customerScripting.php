@@ -11,18 +11,7 @@ $certBody = "";
 $consultfrm = "";
 $allConsultant = "";
 
-$allServiceStages = [];
-$stageQueryOk = false;
-try {
-    $stageStmt = $db->query("SELECT stage FROM service_stage ORDER BY id ASC");
-    if ($stageStmt) {
-        $allServiceStages = $stageStmt->fetchAll(PDO::FETCH_COLUMN);
-        $stageQueryOk = true;
-    }
-} catch (Exception $e) {}
-if (!$stageQueryOk) {
-    $allServiceStages = ['CA', 'SA-1', 'SA-2', 'RC', 'New enq', 'CNE', 'Mnt.'];
-}
+$allServiceStages = $serviceStagesByName['ISO 9001'] ?? [];
 foreach ($allServiceStages as $stg) {
     $services .= $stg . ",";
 }
@@ -2004,7 +1993,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
 //            $('#addService').modal("show");
             $("#saveService0").hide();
 //            alert(("<?php echo $services ?>"));
-            var allServiceStagesArr = <?php echo json_encode(array_values($allServiceStages), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+            var allServiceStagesArr = <?php echo json_encode(array_values($serviceStagesByName['ISO 9001'] ?? []), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             var option = "";
             for (var key = 0; key < allServiceStagesArr.length; key++) {
                 var svcname = allServiceStagesArr[key];
@@ -2056,7 +2045,7 @@ if (data[0]['tax_type'] === "CGST_SGST") {
                             <div class="row" id="service-row" class="service-row">\n\
                                 <div class="col-xs-12 qms_customer_name service_title" data-row-id="" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px;">\n\
                                     <div class="service-title-left" style="display: flex; align-items: center; gap: 8px; min-width: 80px;"><i class="fa fa-folder-open-o service-folder-icon" style="color: #ffffff; font-size: 15px;"></i></div>\n\
-                                    <div class="service-title-center" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;"><span style="font-weight: 800; font-size: 15px; letter-spacing: 0.5px; color: #ffffff; text-transform: uppercase;">SERVICE &mdash; <span class="serviceStatus" style="color: #ffd166; font-weight: 900; font-size: 16px; text-shadow: 0 1px 3px rgba(0,0,0,0.3);"></span></span></div>\n\
+                                    <div class="service-title-center" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px;"><span class="service-heading-field">Service Type: <strong>Not assigned</strong></span><span class="service-heading-separator" aria-hidden="true">&mdash;</span><span class="service-heading-field">Service Stage: <span class="serviceStatus"></span></span></div>\n\
                                     <div class="service-title-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 80px;"><a class="saveService" data-row-id="" style="display:none !important;"></a><i class="fa fa-chevron-up service-collapse-indicator" style="color: #ffffff; font-size: 13px; margin-left: 4px;" title="Click to collapse / expand"></i></div>\n\
                                 </div>\n\
                                 </div>\n\

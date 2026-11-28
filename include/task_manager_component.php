@@ -60,6 +60,7 @@ $isLoggedInMainAdmin = aitf_is_main_admin_role($actualRole)
 $isTopMgmtUser = $isLoggedInMainAdmin || aitf_can_manage_tasks($actualRole);
 $canDeleteTasks = aitf_can_delete_tasks($actualRole);
 $canForwardTasks = aitf_can_manage_tasks($actualRole);
+$canEditViewedTasks = $isViewingSelf || aitf_can_manage_tasks($actualRole);
 
 // Fetch all system users for "Also assign to" forward option
 $assignableUsers = [];
@@ -159,6 +160,10 @@ if (isset($db) && $db instanceof PDO && $targetDashboardUid > 0) {
 
 <!-- Clean White Theme - Styles -->
 <style>
+<?php if (!$canEditViewedTasks): ?>
+.todo-bottom-add-container, .todo-delete-btn { display: none !important; }
+.todo-check-circle, .todo-star-icon { pointer-events: none; cursor: default !important; }
+<?php endif; ?>
 .todo-app-wrapper {
     background: #ffffff;
     color: #1e293b;
@@ -1704,6 +1709,7 @@ html.theme-dark .todo-forward-footer {
     var todoTargetRole = <?php echo json_encode($targetDashboardRole); ?>;
     var todoCurrentUid = <?php echo (int)$currentLoggedInUid; ?>;
     var isViewingSelf = <?php echo $isViewingSelf ? 'true' : 'false'; ?>;
+    var todoCanEdit = <?php echo $canEditViewedTasks ? 'true' : 'false'; ?>;
     var todoCanDelete = <?php echo $canDeleteTasks ? 'true' : 'false'; ?>;
     var currentReminderValue = '';
 
@@ -2222,6 +2228,7 @@ html.theme-dark .todo-forward-footer {
 
         // 5. Toggle Status
         $(document).on('click', '.todo-check-circle', function(e) {
+            if (!todoCanEdit) return;
             e.stopPropagation();
             e.preventDefault();
             var $btn = $(this);
@@ -2286,6 +2293,7 @@ html.theme-dark .todo-forward-footer {
 
         // 6. Toggle Star
         $(document).on('click', '.todo-star-icon', function(e) {
+            if (!todoCanEdit) return;
             e.stopPropagation();
             e.preventDefault();
             var $star = $(this);
